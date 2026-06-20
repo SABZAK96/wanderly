@@ -10,12 +10,26 @@
       type="text/css"
     />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      .filter-pills input[type="radio"] {
+        background: #eeedfe;
+        color: #534ab7;
+        border: 1px solid #d9d6f8;
+      }
+      .filter-pills input[type="radio"]:checked {
+        background: #534ab7;
+        color: white;
+        border-color: #534ab7;
+      }
+    </style>
   </head>
-  <body class="bg-base-200 min-h-screen items-center justify-center">
+  <body class="bg-base-200 min-h-screen flex flex-col">
     <!-- navbar -->
-    <div class="navbar bg-base-100 shadow-sm" style="background-color: #534ab7; color: white;">
+    <div
+      class="navbar bg-base-100 shadow-sm sticky top-0 z-20 px-4 lg:px-8"
+      style="background-color: #534ab7; color: white"
+    >
       <div class="navbar-start">
-        
         <a class="btn btn-ghost text-xl">Wanderly</a>
         <div class="hidden lg:flex">
           <ul class="menu menu-horizontal px-1">
@@ -39,153 +53,334 @@
       </div>
     </div>
     <!-- navbar end -->
-    <div class="flex flex-row gap-2">
-      <section class=" md:block md:w-[35%] md:py-8 hidden" style="background: #eeedfe"></section>
+    <div class="flex flex-row flex-1">
+      <!-- left panel on big screen -->
       <section
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mx-auto py-8 md:px-0 px-8"
+        class="md:block md:w-[40%] md:py-6 md:px-5 hidden"
+        style="background: #eeedfe"
       >
-        <div class="card bg-base-100 shadow-sm border border-base-200">
-          <figure class="relative">
-            <img
-              src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-              alt="Disneyland Resort"
-              class="w-full h-44 object-cover"
-            />
-            <div class="absolute top-2 left-2">
-              <span
-                class="badge text-white text-xs font-medium px-2 py-1"
-                style="background: #534ab7; border: none"
-                >#1</span
-              >
-            </div>
-            <div class="absolute top-2 right-2">
-              <span
-                class="badge text-xs font-medium px-2 py-1"
-                style="background: #eeedfe; color: #534ab7; border: none"
-                >ticket required</span
-              >
-            </div>
-          </figure>
-          <div class="card-body p-4 gap-2">
-            <div class="flex items-start justify-between gap-2">
-              <h2
-                class="card-title text-sm font-medium leading-tight"
-                style="color: #3c3489"
-              >
-                Disneyland Resort
-              </h2>
-              <div class="flex items-center gap-0.5 shrink-0">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="#854F0B"
-                  class="size-3.5"
-                >
-                  <path
-                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                  />
-                </svg>
-                <span class="text-xs" style="color: #854f0b">4.8</span>
-              </div>
-            </div>
-            <p
-              class="text-xs text-base-content/60 leading-relaxed line-clamp-2"
+        <!-- container of the name of the trip -->
+        <div class="flex flex-col gap-2">
+          <h2
+            class="flex flex-row items-baseline gap-2 text-base font-semibold"
+            style="color: #3c3489"
+          >
+            <span>Los Angeles</span
+            ><span class="text-sm font-normal text-base-content/60"
+              >Jul 12-17</span
             >
-              The original Disney park — classic rides, parades, and the iconic
-              Sleeping Beauty Castle. Great for all ages.
-            </p>
-            <div class="flex flex-col gap-1.5 mt-1">
-              <div class="flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="#534AB7"
-                  class="size-4 shrink-0"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"
-                  />
-                </svg>
-                <span class="text-xs text-base-content/70"
-                  >$109-$189 / person</span
-                >
+          </h2>
+          <!-- card containing the trip info -->
+          <div class="card flex-1 bg-base-100 card-xs shadow-sm">
+            <div class="card-body">
+              <div class="card-actions justify-end">
+                <button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
               </div>
-              <div class="flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="#534AB7"
-                  class="size-4 shrink-0"
+              <h2 id="destName" class="card-title">Los Angeles, CA</h2>
+              <p id="tripDate">Jul 12 - Jul 17, 2025</p>
+              <div class="flex flex-row gap-1">
+                <div
+                  id="nights"
+                  class="badge badge-secondary text-xs rounded-full p-2"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                  />
-                </svg>
-                <span class="text-xs text-base-content/70"
-                  >10-12 hrs · full day</span
+                  5 nights
+                </div>
+                <div
+                  id="people"
+                  class="badge badge-success text-xs rounded-full p-2"
                 >
+                  4 people
+                </div>
               </div>
-              <div class="flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="#534AB7"
-                  class="size-4 shrink-0"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
-                  />
-                </svg>
-                <span class="text-xs text-base-content/70"
-                  >Anaheim · 30 min from LA</span
+            </div>
+          </div>
+
+          <!-- summary of the acitivities added -->
+
+          <div class="flex flex-col gap-2">
+            <h2
+              class="flex flex-row items-baseline gap-2 text-base font-semibold"
+              style="color: #3c3489"
+            >
+              <span> Day 1</span
+              ><span class="text-sm font-normal text-base-content/60"
+                >Jul 12-17</span
+              >
+            </h2>
+          </div>
+          <!-- container  -->
+        </div>
+      </section>
+      <!-- main panel -->
+      <div class="flex flex-col flex-1 px-4 md:px-8 py-8">
+        <!-- conversation thread -->
+        <div class="flex flex-col gap-4 flex-1">
+          <!-- user query -->
+          <div class="chat chat-end">
+            <div class="chat-bubble" style="background: #534ab7; color: white">
+              Top attractions in LA for our trip
+            </div>
+          </div>
+
+          <!-- ai response -->
+          <div class="chat chat-start">
+            <div class="chat-image avatar">
+              <div
+                class="w-8 rounded-full flex items-center justify-center"
+                style="background: #3c3489"
+              >
+                <span class="text-white text-base font-bold leading-none"
+                  >W</span
                 >
               </div>
             </div>
-            <div class="card-actions justify-end mt-1">
-              <button
-                class="btn btn-sm text-white text-xs font-medium gap-1.5"
-                style="background: #534ab7; border: none"
-                onmouseover="this.style.background = '#3C3489'"
-                onmouseout="this.style.background = '#534AB7'"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-4"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
-                  />
-                </svg>
-                Add to calendar
-              </button>
+            <div class="chat-header text-xs opacity-60">Claude</div>
+            <div class="chat-bubble bg-base-100 text-base-content/80">
+              Here are the top picks in Los Angeles for Jul 12-17, sorted for a
+              group of 4. Tell me to refine if these don't look right.
             </div>
           </div>
         </div>
 
-      </section>
+        <!-- container of filters -->
+        <div class="filter filter-pills py-2">
+          <input
+            class="btn btn-xs rounded-full filter-reset"
+            type="radio"
+            name="metaframeworks"
+            aria-label="All"
+          />
+          <input
+            class="btn btn-xs rounded-full"
+            type="radio"
+            name="metaframeworks"
+            aria-label="attractions"
+          />
+          <input
+            class="btn btn-xs rounded-full"
+            type="radio"
+            name="metaframeworks"
+            aria-label="food & dining"
+          />
+          <input
+            class="btn btn-xs rounded-full"
+            type="radio"
+            name="metaframeworks"
+            aria-label="beaches"
+          />
+          <input
+            class="btn btn-xs rounded-full"
+            type="radio"
+            name="metaframeworks"
+            aria-label="outdoor"
+          />
+          <input
+            class="btn btn-xs rounded-full"
+            type="radio"
+            name="metaframeworks"
+            aria-label="nightlife"
+          />
+          <input
+            class="btn btn-xs rounded-full"
+            type="radio"
+            name="metaframeworks"
+            aria-label="most popular"
+          />
+          <input
+            class="btn btn-xs rounded-full"
+            type="radio"
+            name="metaframeworks"
+            aria-label="price: low-high"
+          />
+          <input
+            class="btn btn-xs rounded-full"
+            type="radio"
+            name="metaframeworks"
+            aria-label="duration"
+          />
+        </div>
+        <!-- container of the suggestions -->
+        <section
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 content-start items-start gap-5 py-8 min-w-0"
+        >
+          <div class="card bg-base-100 shadow-sm border border-base-200">
+            <figure class="relative">
+              <img
+                src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                alt="Disneyland Resort"
+                class="w-full h-44 object-cover"
+              />
+              <div class="absolute top-2 left-2">
+                <span
+                  class="badge text-white text-xs font-medium px-2 py-1"
+                  style="background: #534ab7; border: none"
+                  >#1</span
+                >
+              </div>
+              <div class="absolute top-2 right-2">
+                <span
+                  class="badge text-xs font-medium px-2 py-1"
+                  style="background: #eeedfe; color: #534ab7; border: none"
+                  >ticket required</span
+                >
+              </div>
+            </figure>
+            <div class="card-body p-4 gap-2">
+              <div class="flex items-start justify-between gap-2">
+                <h2
+                  class="card-title text-sm font-medium leading-tight"
+                  style="color: #3c3489"
+                >
+                  Disneyland Resort
+                </h2>
+                <div class="flex items-center gap-0.5 shrink-0">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="#854F0B"
+                    class="size-3.5"
+                  >
+                    <path
+                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                    />
+                  </svg>
+                  <span class="text-xs" style="color: #854f0b">4.8</span>
+                </div>
+              </div>
+              <p
+                class="text-xs text-base-content/60 leading-relaxed line-clamp-2"
+              >
+                The original Disney park — classic rides, parades, and the
+                iconic Sleeping Beauty Castle. Great for all ages.
+              </p>
+              <div class="flex flex-col gap-1.5 mt-1">
+                <div class="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="#534AB7"
+                    class="size-4 shrink-0"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"
+                    />
+                  </svg>
+                  <span class="text-xs text-base-content/70"
+                    >$109-$189 / person</span
+                  >
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="#534AB7"
+                    class="size-4 shrink-0"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                  <span class="text-xs text-base-content/70"
+                    >10-12 hrs · full day</span
+                  >
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="#534AB7"
+                    class="size-4 shrink-0"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+                    />
+                  </svg>
+                  <span class="text-xs text-base-content/70"
+                    >Anaheim · 30 min from LA</span
+                  >
+                </div>
+              </div>
+              <div class="card-actions justify-end mt-1">
+                <button
+                  class="btn btn-sm text-white text-xs font-medium gap-1.5"
+                  style="background: #534ab7; border: none"
+                  onmouseover="this.style.background = '#3C3489'"
+                  onmouseout="this.style.background = '#534AB7'"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="size-4"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
+                    />
+                  </svg>
+                  Add to calendar
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- refine-with-ai composer -->
+        <label class="input w-full rounded-3xl sticky bottom-4 mt-4 shadow-md">
+          <svg
+            class="h-[1em] opacity-50"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+          >
+            <g
+              stroke-linejoin="round"
+              stroke-linecap="round"
+              stroke-width="2.5"
+              fill="none"
+              stroke="currentColor"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </g>
+          </svg>
+          <input type="text" placeholder="Ask AI to refine these results..." />
+        </label>
+      </div>
     </div>
   </body>
 </html>
