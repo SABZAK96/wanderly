@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wanderly</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@5"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      /* mobile nav dropdown items */
+      .nav-dropdown li > a {
+        border-radius: 0.75rem;
+        font-weight: 500;
+        /* daisyUI's default menu padding is too tight for a touch dropdown */
+        padding: 0.6rem 0.75rem;
+      }
+      .nav-dropdown li > a:hover {
+        background: #eeedfe;
+        color: #534ab7;
+      }
+    </style>
+  </head>
+  <body class="bg-base-200 min-h-screen flex flex-col">
+    <!-- navbar -->
+    <div
+      class="navbar bg-base-100 shadow-sm sticky top-0 z-20 px-4 lg:px-8"
+      style="background-color: #534ab7; color: white"
+    >
+      <div class="navbar-start">
+        <div class="dropdown">
+          <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h8m-8 6h16"
+              />
+            </svg>
+          </div>
+          <ul
+            tabindex="-1"
+            class="menu menu-sm dropdown-content nav-dropdown bg-base-100 text-base-content rounded-2xl z-1 mt-3 w-52 p-2 gap-0.5 shadow-lg border border-base-200"
+          >
+            <li><a>Plan</a></li>
+            <li><a>Calendar</a></li>
+            <li><a>Expense</a></li>
+            <li><a>Packing</a></li>
+          </ul>
+        </div>
+        <a class="btn btn-ghost text-xl">Wanderly</a>
+        <div class="hidden lg:flex">
+          <ul class="menu menu-horizontal px-1">
+            <li><a>Plan</a></li>
+            <li><a>Calendar</a></li>
+            <li><a>Expense</a></li>
+            <li><a>Packing</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="navbar-end gap-2">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+          <div class="w-10 rounded-full">
+            <img
+              alt="Tailwind CSS Navbar component"
+              src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- navbar end -->
+    
+  </body>
+</html>
