@@ -23,6 +23,22 @@
         background: #eeedfe;
         color: #534ab7;
       }
+      :root {
+       --fc-button-bg-color: #532ab7
+      }
+
+      /* move the outer border to the div wrapper so border-radius + overflow:hidden work */
+      .fc-view-harness {
+        border: 1px solid #534ab7;
+        border-radius: 1rem;
+        overflow: hidden;
+      }
+      .fc-daygrid-day-frame{
+        border: 0.5px solid #eeedfe;
+      }
+   .fc .fc-button {
+    border-radius: 10px;
+   }
     </style>
   </head>
   <body class="bg-base-200 min-h-screen flex flex-col">
@@ -85,12 +101,10 @@
 
     <!-- main content -->
     <section class="flex justify-center px-4 py-8">
-        
       <div class="w-full max-w-6xl">
         <div class="font-light text-3xl">Weather</div>
         <!-- calendar -->
         <div id="calendar" class="font-light text-4xl"></div>
-        
       </div>
     </section>
 
