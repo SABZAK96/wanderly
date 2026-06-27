@@ -96,6 +96,7 @@
                   <th>Title</th>
                   <th>Amount</th>
                   <th>Paid By</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -104,7 +105,32 @@
                   <td class="font-medium" contenteditable="true">Hotel</td>
                   <td contenteditable="true">$2,500</td>
                   <td>
-                    <span class="badge" style="background:#dcfce7;color:#15803d;border:none">Soroush</span>
+                    <span
+                      class="badge"
+                      style="background: #dcfce7; color: #15803d; border: none"
+                      >Soroush</span
+                    >
+                  </td>
+                  <td>
+                    <button
+                      class="btn btn-ghost btn-xs text-error"
+                      onclick="this.closest('tr').remove()"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                        />
+                      </svg>
+                    </button>
                   </td>
                 </tr>
                 <tr>
@@ -118,6 +144,27 @@
                       >Sina</span
                     >
                   </td>
+                  <td>
+                    <button
+                      class="btn btn-ghost btn-xs text-error"
+                      onclick="this.closest('tr').remove()"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                        />
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
                 <tr>
                   <td class="text-base-content/30 text-sm">3</td>
@@ -130,12 +177,34 @@
                       >Saba</span
                     >
                   </td>
+                  <td>
+                    <button
+                      class="btn btn-ghost btn-xs text-error"
+                      onclick="this.closest('tr').remove()"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                        />
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr class="border-t-2 border-base-200 font-semibold">
                   <td colspan="2" class="text-base-content/50">Total</td>
                   <td>$3,150</td>
+                  <td></td>
                   <td></td>
                 </tr>
               </tfoot>
@@ -204,11 +273,37 @@
           <div class="flex flex-col gap-1">
             <label class="text-sm text-base-content/60">Paid By</label>
             <div id="exp-payer" class="flex flex-wrap gap-2 pt-1">
-              <span class="badge badge-lg cursor-pointer payer-option" data-name="Saba"    style="background:#eeedfe;color:#534ab7;border:none">Saba</span>
-              <span class="badge badge-lg cursor-pointer payer-option" data-name="Sina"    style="background:#dbeafe;color:#1d4ed8;border:none">Sina</span>
-              <span class="badge badge-lg cursor-pointer payer-option" data-name="Soroush" style="background:#dcfce7;color:#15803d;border:none">Soroush</span>
-              <span class="badge badge-lg cursor-pointer payer-option" data-name="Hassan"  style="background:#ffedd5;color:#c2410c;border:none">Hassan</span>
-              <span class="badge badge-lg cursor-pointer payer-option" data-name="Shohreh" style="background:#fce7f3;color:#be185d;border:none">Shohreh</span>
+              <input type="text" class="hidden" />
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#534ab7]"
+                data-name="Saba"
+                style="background: #eeedfe; color: #534ab7"
+                >Saba</span
+              >
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#1d4ed8]"
+                data-name="Sina"
+                style="background: #dbeafe; color: #1d4ed8"
+                >Sina</span
+              >
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#15803d]"
+                data-name="Soroush"
+                style="background: #dcfce7; color: #15803d"
+                >Soroush</span
+              >
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#c2410c]"
+                data-name="Hassan"
+                style="background: #ffedd5; color: #c2410c"
+                >Hassan</span
+              >
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#be185d]"
+                data-name="Shohreh"
+                style="background: #fce7f3; color: #be185d"
+                >Shohreh</span
+              >
             </div>
           </div>
 
@@ -235,6 +330,15 @@
         document.getElementById("my_modal_expense").showModal();
       });
 
+      // make all the borders bold when clicked
+      const allNameBadges = document.querySelectorAll("#exp-payer .badge");
+      allNameBadges.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          btn.classList.contains("border-2")
+            ? btn.classList.remove("border-2")
+            : btn.classList.add("border-2");
+        });
+      });
     </script>
   </body>
 </html>
