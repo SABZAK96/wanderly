@@ -39,6 +39,29 @@
    .fc .fc-button {
     border-radius: 10px;
    }
+   .fc-event-title-container{
+    display: flex;
+    flex-direction: row;
+   flex-grow: 1;
+  }
+   .fc-event-title {
+    font-size: small;
+   }
+
+   @media (max-width: 640px) {
+     .fc-daygrid-event {
+       min-height: 1.5rem;
+       padding: 2px 4px;
+     }
+     .fc-event-main {
+       padding: 2px 0;
+     }
+     .fc-event-title {
+       font-size: 0.7rem;
+       white-space: normal;
+       overflow: visible;
+     }
+   }
     </style>
   </head>
   <body class="bg-base-200 min-h-screen flex flex-col">

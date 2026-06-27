@@ -5,6 +5,12 @@ myEvents.push({
   end: "2026-06-26T17:00:00",
   color: "#534ab7",
   display:"block",
+}, {
+  title: "beach",
+  start: "2026-06-26T18:00:00",
+  end: "2026-06-26T21:00:00",
+  color: "",
+  display:"block",
 });
 
 //   this code block is obtained from https://fullcalendar.io/docs/initialize-globals for initializing the FullCalendar
