@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wanderly</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@5"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      /* mobile nav dropdown items */
+      .nav-dropdown li > a {
+        border-radius: 0.75rem;
+        font-weight: 500;
+        /* daisyUI's default menu padding is too tight for a touch dropdown */
+        padding: 0.6rem 0.75rem;
+      }
+      .nav-dropdown li > a:hover {
+        background: #eeedfe;
+        color: #534ab7;
+      }
+    </style>
+  </head>
+  <body class="bg-base-200 min-h-screen flex flex-col">
+    <!-- navbar -->
+    <div
+      class="navbar bg-base-100 shadow-sm sticky top-0 z-20 px-4 lg:px-8"
+      style="background-color: #534ab7; color: white"
+    >
+      <div class="navbar-start">
+        <div class="dropdown">
+          <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h8m-8 6h16"
+              />
+            </svg>
+          </div>
+          <ul
+            tabindex="-1"
+            class="menu menu-sm dropdown-content nav-dropdown bg-base-100 text-base-content rounded-2xl z-1 mt-3 w-52 p-2 gap-0.5 shadow-lg border border-base-200"
+          >
+            <li><a>Plan</a></li>
+            <li><a>Calendar</a></li>
+            <li><a>Expense</a></li>
+            <li><a>Packing</a></li>
+          </ul>
+        </div>
+        <a class="btn btn-ghost text-xl">Wanderly</a>
+        <div class="hidden lg:flex">
+          <ul class="menu menu-horizontal px-1">
+            <li><a>Plan</a></li>
+            <li><a>Calendar</a></li>
+            <li><a>Expense</a></li>
+            <li><a>Packing</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="navbar-end gap-2">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+          <div class="w-10 rounded-full">
+            <img
+              alt="Tailwind CSS Navbar component"
+              src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- navbar end -->
+    <!-- container of expenses -->
+    <section class="flex justify-center px-4 py-8">
+      <div class="w-full max-w-3xl">
+        <h1 class="text-2xl font-light mb-6">Shared Expenses</h1>
+        <div class="flex card bg-base-100 shadow-sm border border-base-200">
+          <div class="flex flex-col items-center">
+            <table class="table w-full">
+              <thead>
+                <tr
+                  class="text-base-content/50 text-xs uppercase tracking-wide"
+                >
+                  <th></th>
+                  <th>Title</th>
+                  <th>Amount</th>
+                  <th>Paid By</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-base-content/30 text-sm">1</td>
+                  <td class="font-medium" contenteditable="true">Hotel</td>
+                  <td contenteditable="true">$2,500</td>
+                  <td>
+                    <span class="badge" style="background:#dcfce7;color:#15803d;border:none">Soroush</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-base-content/30 text-sm">2</td>
+                  <td class="font-medium" contenteditable="true">Car Rental</td>
+                  <td contenteditable="true">$250</td>
+                  <td>
+                    <span
+                      class="badge"
+                      style="background: #dbeafe; color: #1d4ed8; border: none"
+                      >Sina</span
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-base-content/30 text-sm">3</td>
+                  <td class="font-medium" contenteditable="true">Gas</td>
+                  <td contenteditable="true">$400</td>
+                  <td>
+                    <span
+                      class="badge"
+                      style="background: #eeedfe; color: #534ab7; border: none"
+                      >Saba</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="border-t-2 border-base-200 font-semibold">
+                  <td colspan="2" class="text-base-content/50">Total</td>
+                  <td>$3,150</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <!-- insert a row to the table -->
+            <button
+              id="addExp"
+              class="btn my-4"
+              style="background-color: #534ab7; color: white"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add an Expense
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- modal for inserting expense -->
+      <dialog id="my_modal_expense" class="modal">
+        <div class="modal-box flex flex-col gap-4">
+          <!-- close button in its own form so it doesn't submit -->
+          <form method="dialog">
+            <button
+              class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+            >
+              ✕
+            </button>
+          </form>
+
+          <h3 class="text-lg font-semibold">Add an Expense</h3>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-base-content/60">Title</label>
+            <input
+              id="exp-title"
+              type="text"
+              placeholder="e.g. Hotel"
+              class="input input-bordered w-full"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-base-content/60">Cost</label>
+            <input
+              id="exp-cost"
+              type="number"
+              placeholder="0"
+              min="0"
+              class="input input-bordered w-full"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-base-content/60">Paid By</label>
+            <div id="exp-payer" class="flex flex-wrap gap-2 pt-1">
+              <span class="badge badge-lg cursor-pointer payer-option" data-name="Saba"    style="background:#eeedfe;color:#534ab7;border:none">Saba</span>
+              <span class="badge badge-lg cursor-pointer payer-option" data-name="Sina"    style="background:#dbeafe;color:#1d4ed8;border:none">Sina</span>
+              <span class="badge badge-lg cursor-pointer payer-option" data-name="Soroush" style="background:#dcfce7;color:#15803d;border:none">Soroush</span>
+              <span class="badge badge-lg cursor-pointer payer-option" data-name="Hassan"  style="background:#ffedd5;color:#c2410c;border:none">Hassan</span>
+              <span class="badge badge-lg cursor-pointer payer-option" data-name="Shohreh" style="background:#fce7f3;color:#be185d;border:none">Shohreh</span>
+            </div>
+          </div>
+
+          <div class="modal-action mt-0">
+            <button
+              id="exp-submit"
+              class="btn w-full"
+              style="background-color: #534ab7; color: white"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        <!-- click outside to close -->
+        <form method="dialog" class="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+    </section>
+
+    <script>
+      document.getElementById("addExp").addEventListener("click", () => {
+        document.getElementById("my_modal_expense").showModal();
+      });
+
+    </script>
+  </body>
+</html>
