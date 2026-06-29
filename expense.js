@@ -54,3 +54,43 @@ settleInputs.forEach((field) => {
     }
   });
 });
+
+// removing the paid debts when mark as settled is clicked
+let settledAmounts = 0;
+
+const allMarkAsSettledBtns = document.querySelectorAll(".settle");
+
+allMarkAsSettledBtns.forEach((btn) => {
+  const debtNode = btn.closest(".collapse").querySelector(".owed");
+
+  btn.addEventListener("click", () => {
+    let debt = Number(debtNode.textContent);
+
+    // go to the parent node and get all the input fields and put them in the array
+    const amounts = [
+      ...btn
+        .closest(".collapse-content")
+        .querySelectorAll("input[type='checkbox']"),
+    ];
+
+    amounts.forEach((amount) => {
+      if (amount.checked) {
+        const paidAmount = Number(amount.previousElementSibling.textContent);
+        settledAmounts += paidAmount;
+        amount.parentElement.parentElement.remove();
+      }
+    });
+
+    const remainingDebt = debt - settledAmounts;
+    debtNode.innerHTML = remainingDebt;
+    settledAmounts = 0;
+
+    //clear out the cards if the debt is zero
+    const allDebts = document.querySelectorAll(".owed");
+    allDebts.forEach((debt) => {
+      if (Number(debt.textContent) === 0) {
+        debt.closest(".collapse").remove();
+      }
+    });
+  });
+});
