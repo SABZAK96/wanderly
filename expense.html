@@ -82,8 +82,8 @@
     </div>
     <!-- navbar end -->
     <!-- container of expenses -->
-    <section class="flex justify-center px-4 py-8">
-      <div class="w-full max-w-3xl">
+    <section class="flex flex-col items-center px-4 py-8">
+      <div class="w-full max-w-6xl">
         <h1 class="text-2xl font-light mb-6">Shared Expenses</h1>
         <div class="flex card bg-base-100 shadow-sm border border-base-200">
           <div class="flex flex-col items-center">
@@ -235,6 +235,97 @@
           </div>
         </div>
       </div>
+      <div class="w-full max-w-6xl">
+        <!-- settle up info -->
+        <h1 class="text-2xl font-light mb-6 mt-4">Settle Up</h1>
+        <div class="card bg-base-100 shadow-sm border border-base-200">
+          <div class="flex flex-col">
+            <!-- Sina is owed -->
+            <div class="collapse collapse-plus border-b border-base-200">
+              <input type="checkbox" />
+              <div class="collapse-title">
+                <div class="flex flex-row items-center justify-between">
+                  <span
+                    class="badge badge-lg"
+                    style="background: #dbeafe; color: #1d4ed8; border: none"
+                    >Sina</span
+                  >
+                  <span class="text-sm text-base-content/50"
+                    >is owed
+                    <span class="font-semibold text-base-content"
+                      >$900</span
+                    ></span
+                  >
+                </div>
+              </div>
+              <div class="collapse-content flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <span
+                    class="badge badge-lg"
+                    style="background: #dcfce7; color: #15803d; border: none"
+                    >Soroush</span
+                  >
+                  <div class="flex items-center gap-4">
+                    <span class="font-medium">$300</span>
+                    <input type="checkbox" class="checkbox checkbox-success" />
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <span
+                    class="badge badge-lg"
+                    style="background: #ffedd5; color: #c2410c; border: none"
+                    >Hassan</span
+                  >
+                  <div class="flex items-center gap-4">
+                    <span class="font-medium">$600</span>
+                    <input type="checkbox" class="checkbox checkbox-success" />
+                  </div>
+                </div>
+                <button class="btn btn-xs btn-success self-end settle hidden">
+                  Mark as settled
+                </button>
+              </div>
+            </div>
+
+            <!-- Saba is owed -->
+            <div class="collapse collapse-plus">
+              <input type="checkbox" />
+              <div class="collapse-title">
+                <div class="flex flex-row items-center justify-between">
+                  <span
+                    class="badge badge-lg"
+                    style="background: #eeedfe; color: #534ab7; border: none"
+                    >Saba</span
+                  >
+                  <span class="text-sm text-base-content/50"
+                    >is owed
+                    <span class="font-semibold text-base-content"
+                      >$400</span
+                    ></span
+                  >
+                </div>
+              </div>
+              <div class="collapse-content flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <span
+                    class="badge badge-lg"
+                    style="background: #fce7f3; color: #be185d; border: none"
+                    >Shohreh</span
+                  >
+                  <div class="flex items-center gap-4">
+                    <span class="font-medium">$400</span>
+                    <input type="checkbox" class="checkbox checkbox-success" />
+                  </div>
+                </div>
+                <button class="btn btn-xs btn-success self-end settle hidden">
+                  Mark as settled
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- modal for inserting expense -->
       <dialog id="my_modal_expense" class="modal">
         <div class="modal-box flex flex-col gap-4">
@@ -374,31 +465,6 @@
       </dialog>
     </section>
 
-    <script>
-      document.getElementById("addExp").addEventListener("click", () => {
-        document.getElementById("my_modal_expense").showModal();
-      });
-
-      // make all the borders bold when clicked
-      const allNameBadges = document.querySelectorAll("#exp-payer .badge");
-      allNameBadges.forEach((btn) => {
-        btn.addEventListener("click", () => {
-          btn.classList.contains("border-2")
-            ? btn.classList.remove("border-2")
-            : btn.classList.add("border-2");
-        });
-      });
-
-      // enabling custom field when the radio button is checked
-      const radioGroup = document.querySelectorAll("input[name='radio-2']");
-      const customInputField = document.getElementById("customInput");
-      radioGroup.forEach((radio) => {
-        radio.addEventListener("change", () => {
-          document.getElementById("customRadio").checked
-            ? (customInputField.disabled = false)
-            : (customInputField.disabled = true);
-        });
-      });
-    </script>
+    <script src="expense.js" defer></script>
   </body>
 </html>
