@@ -87,12 +87,11 @@
         <h1 class="text-2xl font-light mb-6">Shared Expenses</h1>
         <div class="card bg-base-100 shadow-sm border border-base-200">
           <div class="flex flex-col items-center">
-            <table class="table w-full">
+            <table id="my_table" class="table w-full">
               <thead>
                 <tr
                   class="text-base-content/50 text-xs uppercase tracking-wide"
                 >
-                  <th></th>
                   <th>Title</th>
                   <th>Amount</th>
                   <th>Paid By</th>
@@ -101,7 +100,6 @@
               </thead>
               <tbody>
                 <tr>
-                  <td class="text-base-content/30 text-sm">1</td>
                   <td class="font-medium" contenteditable="true">Hotel</td>
                   <td contenteditable="true">$2,500</td>
                   <td>
@@ -134,7 +132,6 @@
                   </td>
                 </tr>
                 <tr>
-                  <td class="text-base-content/30 text-sm">2</td>
                   <td class="font-medium" contenteditable="true">Car Rental</td>
                   <td contenteditable="true">$250</td>
                   <td>
@@ -167,7 +164,6 @@
                   </td>
                 </tr>
                 <tr>
-                  <td class="text-base-content/30 text-sm">3</td>
                   <td class="font-medium" contenteditable="true">Gas</td>
                   <td contenteditable="true">$400</td>
                   <td>
@@ -202,10 +198,8 @@
               </tbody>
               <tfoot>
                 <tr class="border-t-2 border-base-200 font-semibold">
-                  <td colspan="2" class="text-base-content/50">Total</td>
-                  <td>$3,150</td>
-                  <td></td>
-                  <td></td>
+                  <td colspan="1" class="text-base-content/50">Total</td>
+                  <td colspan="3">$3,150</td>
                 </tr>
               </tfoot>
             </table>
@@ -242,26 +236,76 @@
         <div class="card bg-base-100 shadow-sm border border-base-200">
           <div class="card-body gap-3">
             <div class="flex items-center gap-2 text-sm text-base-content/50">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" style="color:#534ab7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                style="color: #534ab7"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
               </svg>
               Minimum payments needed to clear all debts
             </div>
             <div class="flex flex-col gap-3" id="simplify-rows">
               <div class="flex items-center gap-2">
-                <span class="badge badge-lg" style="background:#dcfce7;color:#15803d;border:none">Soroush</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                <span
+                  class="badge badge-lg"
+                  style="background: #dcfce7; color: #15803d; border: none"
+                  >Soroush</span
+                >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-base-content/30"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
                 </svg>
-                <span class="badge badge-lg" style="background:#dbeafe;color:#1d4ed8;border:none">Sina</span>
+                <span
+                  class="badge badge-lg"
+                  style="background: #dbeafe; color: #1d4ed8; border: none"
+                  >Sina</span
+                >
                 <span class="ml-auto font-medium">$<span>300</span></span>
               </div>
               <div class="flex items-center gap-2">
-                <span class="badge badge-lg" style="background:#fce7f3;color:#be185d;border:none">Shohreh</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                <span
+                  class="badge badge-lg"
+                  style="background: #fce7f3; color: #be185d; border: none"
+                  >Shohreh</span
+                >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-base-content/30"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
                 </svg>
-                <span class="badge badge-lg" style="background:#eeedfe;color:#534ab7;border:none">Saba</span>
+                <span
+                  class="badge badge-lg"
+                  style="background: #eeedfe; color: #534ab7; border: none"
+                  >Saba</span
+                >
                 <span class="ml-auto font-medium">$<span>400</span></span>
               </div>
             </div>
@@ -314,15 +358,28 @@
           </div>
 
           <!-- filter result card -->
-          <div id="filter-result" class="card bg-[#d3d3d8] shadow-sm border border-base-200 mt-4 mb-4">
+          <div
+            id="filter-result"
+            class="card bg-base-200 shadow-sm border border-base-300 mt-4 mb-4"
+          >
             <div class="card-body gap-3">
               <div class="flex items-center justify-between">
-                <span class="badge badge-lg" style="background:#dcfce7;color:#15803d;border:none">Soroush</span>
-                <span class="text-sm text-base-content/50">total owed $<span class="font-semibold text-base-content">300</span></span>
+                <span
+                  class="badge badge-lg"
+                  style="background: #dcfce7; color: #15803d; border: none"
+                  >Soroush</span
+                >
+                <span class="text-sm text-base-content/50"
+                  >total owed $<span class="font-semibold text-base-content"
+                    >300</span
+                  ></span
+                >
               </div>
               <div class="flex flex-col gap-2">
                 <div class="flex items-center justify-between">
-                  <span class="pl-2 text-sm text-base-content/60">owes Sina</span>
+                  <span class="pl-2 text-sm text-base-content/60"
+                    >owes Sina</span
+                  >
                   <span class="font-medium">$300</span>
                 </div>
               </div>
@@ -506,7 +563,6 @@
           <div class="flex flex-col gap-1">
             <label class="text-sm text-base-content/60">Paid By</label>
             <div id="exp-payer" class="flex flex-wrap gap-2 pt-1">
-              <input type="text" class="hidden" />
               <span
                 class="badge badge-lg cursor-pointer payer-option border-0 border-[#534ab7]"
                 data-name="Saba"
