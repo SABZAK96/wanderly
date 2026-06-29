@@ -270,6 +270,55 @@
             />
           </div>
 
+          <!-- Split options -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-base-content/60">Split</label>
+            <div
+              class="flex md:flex-row flex-col md:justify-between md:items-center md:gap-0 gap-2"
+            >
+              <label class="label">
+                <input
+                  type="radio"
+                  name="radio-2"
+                  class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
+                  checked="checked"
+                />
+                Equally
+              </label>
+              <label class="label">
+                <input
+                  type="radio"
+                  name="radio-2"
+                  class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
+                />
+                2-way
+              </label>
+              <label class="label">
+                <input
+                  type="radio"
+                  name="radio-2"
+                  class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
+                />
+                3-way
+              </label>
+              <label class="label">
+                <input
+                  id="customRadio"
+                  type="radio"
+                  name="radio-2"
+                  class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
+                />
+                <input
+                  id="customInput"
+                  type="number"
+                  placeholder="Custom Amount"
+                  class="input input-xs max-w-[150px]"
+                  disabled
+                />
+              </label>
+            </div>
+          </div>
+
           <div class="flex flex-col gap-1">
             <label class="text-sm text-base-content/60">Paid By</label>
             <div id="exp-payer" class="flex flex-wrap gap-2 pt-1">
@@ -337,6 +386,17 @@
           btn.classList.contains("border-2")
             ? btn.classList.remove("border-2")
             : btn.classList.add("border-2");
+        });
+      });
+
+      // enabling custom field when the radio button is checked
+      const radioGroup = document.querySelectorAll("input[name='radio-2']");
+      const customInputField = document.getElementById("customInput");
+      radioGroup.forEach((radio) => {
+        radio.addEventListener("change", () => {
+          document.getElementById("customRadio").checked
+            ? (customInputField.disabled = false)
+            : (customInputField.disabled = true);
         });
       });
     </script>
