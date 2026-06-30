@@ -48,6 +48,19 @@ function highlightBadges(id) {
         ? btn.classList.remove("border-2")
         : btn.classList.add("border-2");
       if (customRadio.checked) popBadgesInCustom();
+
+      //logic for having co-payers
+      const coPayerContainer = document.getElementById("coPayerAmount");
+      const paidByArray = [
+        ...document.getElementById("exp-payer").querySelectorAll(".badge"),
+      ].filter((element) => element.classList.contains("border-2"));
+      coPayerContainer.innerHTML = "";
+      if (paidByArray.length >= 2) {
+        coPayerContainer.classList.remove("hidden");
+        populateRows(paidByArray, "coPayerAmount");
+      } else {
+        coPayerContainer.classList.add("hidden");
+      }
     });
   });
 }
@@ -88,17 +101,17 @@ function popBadgesInCustom() {
     const allNames = [...container.querySelectorAll(".badge")].filter(
       (badge) => badge.id !== "allBadge",
     );
-    populateRows(allNames);
+    populateRows(allNames, "customAmount");
   }
   // logic for selecting nameBadges
   else {
-    populateRows(containerArray);
+    populateRows(containerArray, "customAmount");
   }
 }
 
 //function for adding rows to custom amount field
-function populateRows(myArray) {
-  const customAmountContainer = document.getElementById("customAmount");
+function populateRows(myArray, id) {
+  const customAmountContainer = document.getElementById(id);
   myArray.forEach((element) => {
     const row = document.createElement("div");
     row.className = "flex flex-row items-center justify-between";
