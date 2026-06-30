@@ -103,7 +103,7 @@
               <tbody>
                 <tr>
                   <td class="font-medium" contenteditable="true">Hotel</td>
-                  <td contenteditable="true">$2,500</td>
+                  <td contenteditable="true"><span>$</span><span class="tableAmounts">2,500</span></td>
                   <td>
                     <span
                       class="badge"
@@ -135,7 +135,7 @@
                 </tr>
                 <tr>
                   <td class="font-medium" contenteditable="true">Car Rental</td>
-                  <td contenteditable="true">$250</td>
+                  <td contenteditable="true"><span>$</span><span class="tableAmounts">250</span></td>
                   <td>
                     <span
                       class="badge"
@@ -167,7 +167,7 @@
                 </tr>
                 <tr>
                   <td class="font-medium" contenteditable="true">Gas</td>
-                  <td contenteditable="true">$400</td>
+                  <td contenteditable="true"><span>$</span><span class="tableAmounts" >400</span></td>
                   <td>
                     <span
                       class="badge"
@@ -201,7 +201,8 @@
               <tfoot>
                 <tr class="border-t-2 border-base-200 font-semibold">
                   <td colspan="1" class="text-base-content/50">Total</td>
-                  <td colspan="3">$3,150</td>
+                  <td  colspan="3"><span>$</span><span id="total">3,150</span>
+                    </td>
                 </tr>
               </tfoot>
             </table>
@@ -588,7 +589,7 @@
               >
 
               <!-- selected persons in the previous section should pop up here with an input field -->
-              <div id="customAmount" class="flex flex-col gap-1 pl-3 max-w-1/2 hidden">
+              <div id="customAmount" class="flex flex-col gap-1 pl-3 md:max-w-1/2 max-w-full hidden">
                 <div class="flex flex-row items-center justify-between">
                   <!-- badge -->
                   <span
@@ -646,7 +647,7 @@
                 >Shohreh</span
               >
             </div>
-            <div id="coPayerAmount" class="flex flex-col gap-1 pl-3 max-w-1/2 mt-2 hidden"></div>
+            <div id="coPayerAmount" class="flex flex-col gap-1 pl-3 md:max-w-1/2 max-w-full mt-2 hidden"></div>
             <p id="errorMsg" class=" mt-2 text-sm text-red-500/60 hidden"></p>
           </div>
 

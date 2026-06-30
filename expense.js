@@ -252,7 +252,7 @@ document.getElementById("exp-submit").addEventListener("click", () => {
   let newTableRow = "";
   newTableRow = `  <tr>
     <td class="font-medium " contenteditable="true">${expenseTitle}</td>
-    <td  contenteditable="true"><span>$</span>${costAmount}</td>
+    <td contenteditable="true"><span>$</span><span class="tableAmounts">${costAmount}</span></td>
     <td><div class="flex flex-wrap gap-1 badgePlaceHolder"></div></td>
     <td > <button
                       class="btn btn-ghost btn-xs text-error"
@@ -295,4 +295,15 @@ document.getElementById("exp-submit").addEventListener("click", () => {
     badge.classList.contains("border-2") && badge.classList.remove("border-2");
   });
   document.getElementById("my_modal_expense").close();
+
+  // second update the total amount in the table
+  // first get the Node list using spread operator then converts in inner text to number after replacing "," with empty string
+  const amounts = [...document.querySelectorAll(".tableAmounts")].map(
+    (element) => Number(element.textContent.replace(",", "")),
+  );
+  let sum = 0;
+  for (const number of amounts){
+    sum += number;
+  }
+  document.getElementById("total").innerHTML = sum.toLocaleString("en-US");
 });
