@@ -109,6 +109,7 @@ function populateRows(myArray) {
     input.type = "number";
     input.placeholder = "Amount";
     input.className = "input input-xs max-w-[100px] max-h-15 customInput";
+    input.dataset.name = element.dataset.name;
 
     row.appendChild(badgeClone);
     row.appendChild(input);
@@ -198,6 +199,7 @@ document.getElementById("exp-submit").addEventListener("click", () => {
   const expenseTitle = titleInput.value;
   const costAmount = costInput.value;
   const Allbadges = document.querySelectorAll("#exp-payer span");
+  const errorMsg = document.getElementById("errorMsg");
 
   let selectedBadges = [...Allbadges];
   //save the result of the filter back to the variable - otherwise it will be thorwn away
@@ -205,6 +207,28 @@ document.getElementById("exp-submit").addEventListener("click", () => {
     badge.classList.contains("border-2"),
   );
   console.log(selectedBadges);
+
+  //validate the fields are filled
+  if (titleInput.value.trim() === "") {
+    titleInput.classList.add("border-2", "border-red-500");
+    return;
+  }
+  titleInput.classList.contains("border-red-500") &&
+    titleInput.classList.remove("border-2", "border-red-500");
+
+  if (costInput.value === "" || costInput.value === "0") {
+    costInput.classList.add("border-2", "border-red-500");
+    return;
+  }
+  costInput.classList.contains("border-red-500") &&
+    costInput.classList.remove("border-2", "border-red-500");
+  if (selectedBadges.length === 0) {
+    errorMsg.classList.remove("hidden");
+    errorMsg.textContent = "* Please Select the Payers!";
+    return;
+  }
+  errorMsg.textContent = "";
+  errorMsg.classList.add("hidden");
 
   const tableBody = document.querySelector("#my_table tbody");
   let newTableRow = "";
@@ -234,7 +258,11 @@ document.getElementById("exp-submit").addEventListener("click", () => {
   </tr>`;
 
   tableBody.insertAdjacentHTML("beforeend", newTableRow);
-  const badgePlaceholder = tableBody.querySelector(".badgePlaceHolder");
+
+  //pick the lastly added element with class badgePlaceHolder - .at(-1) gets the last element in the array
+  const badgePlaceholder = [...tableBody.querySelectorAll(".badgePlaceHolder")].at(
+    -1,
+  );
 
   // cloneNode(true) so original badges stay in the modal for next time
   selectedBadges.forEach((badge) => {
@@ -245,5 +273,8 @@ document.getElementById("exp-submit").addEventListener("click", () => {
 
   titleInput.value = "";
   costInput.value = "";
+  Allbadges.forEach((badge) => {
+    badge.classList.contains("border-2") && badge.classList.remove("border-2");
+  });
   document.getElementById("my_modal_expense").close();
 });
