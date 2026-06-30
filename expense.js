@@ -22,6 +22,7 @@ function initAllBadge(id) {
       ) {
         allBadge.classList.add("border-2");
       }
+      if (document.getElementById("customRadio").checked) popBadgesInCustom();
     });
   });
 
@@ -34,6 +35,7 @@ function initAllBadge(id) {
         badge.classList.contains("border-2") &&
         badge.classList.remove("border-2"),
     );
+    if (document.getElementById("customRadio").checked) popBadgesInCustom();
   });
 }
 
@@ -45,6 +47,7 @@ function highlightBadges(id) {
       btn.classList.contains("border-2")
         ? btn.classList.remove("border-2")
         : btn.classList.add("border-2");
+      if (document.getElementById("customRadio").checked) popBadgesInCustom();
     });
   });
 }
@@ -58,12 +61,42 @@ const radioGroup = document.querySelectorAll("input[name='radio-2']");
 const customInputField = document.getElementById("customAmount");
 radioGroup.forEach((radio) => {
   radio.addEventListener("change", () => {
-    document.getElementById("customRadio").checked
-      ? customInputField.classList.remove("hidden")
-      : customInputField.classList.add("hidden");
+    if (document.getElementById("customRadio").checked) {
+      customInputField.classList.remove("hidden");
+
+      // run here, after the user has made selections
+      popBadgesInCustom();
+    } else {
+      customInputField.classList.add("hidden");
+    }
   });
 });
 
+// adding selected badges below custom field based on the selected badge
+function popBadgesInCustom() {
+  const container = document.getElementById("debt-payer");
+  const costumAmountContainer = document.getElementById("customAmount");
+  let containerArray = [...container.querySelectorAll(".badge")];
+  costumAmountContainer.innerHTML = "";
+  containerArray = containerArray.filter((element) =>
+    element.classList.contains("border-2"),
+  );
+  containerArray.forEach((element) => {
+    const row = document.createElement("div");
+    row.className = "flex flex-row items-center justify-between";
+
+    const badgeClone = element.cloneNode(true);
+
+    const input = document.createElement("input");
+    input.type = "number";
+    input.placeholder = "Amount";
+    input.className = "input input-xs max-w-[100px] max-h-15 customInput";
+
+    row.appendChild(badgeClone);
+    row.appendChild(input);
+    costumAmountContainer.appendChild(row);
+  });
+}
 
 const settleInputs = document.querySelectorAll(
   ".collapse-content input[type='checkbox']",
