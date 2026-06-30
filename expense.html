@@ -511,6 +511,51 @@
             />
           </div>
 
+          <!-- who should payback section -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-base-content/60"
+              >Who Owes the Payer</label
+            >
+            <div id="debt-payer" class="flex flex-wrap gap-2 pt-1">
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#0f766e]"
+                data-name="All"
+                style="background: #ccfbf1; color: #0f766e"
+                >All</span
+              >
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#534ab7]"
+                data-name="Saba"
+                style="background: #eeedfe; color: #534ab7"
+                >Saba</span
+              >
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#1d4ed8]"
+                data-name="Sina"
+                style="background: #dbeafe; color: #1d4ed8"
+                >Sina</span
+              >
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#15803d]"
+                data-name="Soroush"
+                style="background: #dcfce7; color: #15803d"
+                >Soroush</span
+              >
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#c2410c]"
+                data-name="Hassan"
+                style="background: #ffedd5; color: #c2410c"
+                >Hassan</span
+              >
+              <span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[#be185d]"
+                data-name="Shohreh"
+                style="background: #fce7f3; color: #be185d"
+                >Shohreh</span
+              >
+            </div>
+          </div>
+
           <!-- Split options -->
           <div class="flex flex-col gap-1">
             <label class="text-sm text-base-content/60">Split</label>
@@ -526,22 +571,7 @@
                 />
                 Equally
               </label>
-              <label class="label">
-                <input
-                  type="radio"
-                  name="radio-2"
-                  class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
-                />
-                2-way
-              </label>
-              <label class="label">
-                <input
-                  type="radio"
-                  name="radio-2"
-                  class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
-                />
-                3-way
-              </label>
+
               <label class="label">
                 <input
                   id="customRadio"
@@ -549,17 +579,35 @@
                   name="radio-2"
                   class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
                 />
-                <input
-                  id="customInput"
-                  type="number"
-                  placeholder="Custom Amount"
-                  class="input input-xs max-w-[150px]"
-                  disabled
-                />
-              </label>
+
+                Custom</label
+              >
+
+              <!-- selected persons in the previous section should pop up here with an input field -->
+              <div id="customAmount" class="flex flex-col gap-1 pl-3 hidden">
+                <div class="flex flex-row gap-2 items-center">
+                  <!-- badge -->
+                  <span
+                    class="badge badge-lg cursor-pointer payer-option border-0 border-[#be185d]"
+                    data-name="Shohreh"
+                    style="background: #fce7f3; color: #be185d"
+                    >Shohreh</span
+                  >
+                  <!-- custom field -->
+                  <input
+                    
+                    type="number"
+                    placeholder="Amount"
+                    class="input input-xs max-w-[100px] max-h-15 customInput"
+                    
+                  />
+                </div>
+              </div>
+              
             </div>
           </div>
 
+          <!-- paid by section -->
           <div class="flex flex-col gap-1">
             <label class="text-sm text-base-content/60">Paid By</label>
             <div id="exp-payer" class="flex flex-wrap gap-2 pt-1">

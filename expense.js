@@ -3,23 +3,27 @@ document.getElementById("addExp").addEventListener("click", () => {
 });
 
 // make all the borders bold when clicked
-const allNameBadges = document.querySelectorAll("#exp-payer .badge");
-allNameBadges.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    btn.classList.contains("border-2")
-      ? btn.classList.remove("border-2")
-      : btn.classList.add("border-2");
+function highlightBadges(id) {
+  const allNameBadges = document.querySelectorAll(`#${id} .badge`);
+  allNameBadges.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btn.classList.contains("border-2")
+        ? btn.classList.remove("border-2")
+        : btn.classList.add("border-2");
+    });
   });
-});
+}
+highlightBadges("exp-payer");
+highlightBadges("debt-payer");
 
-// enabling custom field when the radio button is checked
+// popping custom field when the radio button is checked
 const radioGroup = document.querySelectorAll("input[name='radio-2']");
-const customInputField = document.getElementById("customInput");
+const customInputField = document.getElementById("customAmount");
 radioGroup.forEach((radio) => {
   radio.addEventListener("change", () => {
     document.getElementById("customRadio").checked
-      ? (customInputField.disabled = false)
-      : (customInputField.disabled = true);
+      ? customInputField.classList.remove("hidden")
+      : customInputField.classList.add("hidden");
   });
 });
 
