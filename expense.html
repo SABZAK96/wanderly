@@ -83,7 +83,9 @@
     <!-- navbar end -->
     <!-- container of expenses -->
     <section class="flex flex-col items-center px-4 py-8">
-      <div class="w-full max-w-6xl">
+      <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[7fr_3fr] lg:gap-20 gap-8 items-start">
+        <!-- left column: expense table -->
+        <div>
         <h1 class="text-2xl font-light mb-6">Shared Expenses</h1>
         <div class="card bg-base-100 shadow-sm border border-base-200">
           <div class="flex flex-col items-center">
@@ -228,10 +230,12 @@
             </button>
           </div>
         </div>
-      </div>
+        </div><!-- end left column -->
 
-      <!-- simplest way to settle -->
-      <div class="w-full max-w-6xl mt-8">
+        <!-- right column: settle + debt breakdown -->
+        <div class="flex flex-col gap-8">
+        <!-- simplest way to settle -->
+        <div>
         <h1 class="text-2xl font-light mb-4">Simplest Way to Settle</h1>
         <div class="card bg-base-100 shadow-sm border border-base-200">
           <div class="card-body gap-3">
@@ -313,7 +317,6 @@
         </div>
       </div>
 
-      <div class="w-full max-w-6xl">
         <!-- who owes who -->
         <h1 class="text-2xl font-light mb-1 mt-4">Debt Breakdown</h1>
         <!-- person filter -->
@@ -475,7 +478,8 @@
             </div>
           </div>
         </div>
-      </div>
+        </div> <!-- end right column -->
+      </div> <!-- end grid -->
       <!-- modal for inserting expense -->
       <dialog id="my_modal_expense" class="modal">
         <div class="modal-box flex flex-col gap-4">
