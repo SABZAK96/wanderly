@@ -2,6 +2,41 @@ document.getElementById("addExp").addEventListener("click", () => {
   document.getElementById("my_modal_expense").showModal();
 });
 
+// pre-select All badge in the who owes the payer section
+function initAllBadge(id) {
+  const allBadge = document.getElementById("allBadge");
+  const container = document.getElementById(id);
+  const nameBadges = [...container.querySelectorAll(".badge")].filter(
+    (badge) => badge !== allBadge,
+  );
+  allBadge.classList.add("border-2");
+  nameBadges.forEach((nameBadge) => {
+    nameBadge.addEventListener("click", () => {
+      allBadge.classList.remove("border-2");
+
+      //re-select allBadge if nothing else is selected
+      if (
+        nameBadges.every(
+          (nameBadge) => !nameBadge.classList.contains("border-2"),
+        )
+      ) {
+        allBadge.classList.add("border-2");
+      }
+    });
+  });
+
+  //if allBadge is clicked again, de-select other badges
+  allBadge.addEventListener("click", () => {
+    !allBadge.classList.contains("border-2") &&
+      allBadge.classList.add("border-2");
+    nameBadges.forEach(
+      (badge) =>
+        badge.classList.contains("border-2") &&
+        badge.classList.remove("border-2"),
+    );
+  });
+}
+
 // make all the borders bold when clicked
 function highlightBadges(id) {
   const allNameBadges = document.querySelectorAll(`#${id} .badge`);
@@ -13,8 +48,10 @@ function highlightBadges(id) {
     });
   });
 }
+
 highlightBadges("exp-payer");
 highlightBadges("debt-payer");
+initAllBadge("debt-payer");
 
 // popping custom field when the radio button is checked
 const radioGroup = document.querySelectorAll("input[name='radio-2']");
@@ -26,6 +63,7 @@ radioGroup.forEach((radio) => {
       : customInputField.classList.add("hidden");
   });
 });
+
 
 const settleInputs = document.querySelectorAll(
   ".collapse-content input[type='checkbox']",
