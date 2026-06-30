@@ -22,7 +22,7 @@ function initAllBadge(id) {
       ) {
         allBadge.classList.add("border-2");
       }
-      if (document.getElementById("customRadio").checked) popBadgesInCustom();
+      if (customRadio.checked) popBadgesInCustom();
     });
   });
 
@@ -35,7 +35,7 @@ function initAllBadge(id) {
         badge.classList.contains("border-2") &&
         badge.classList.remove("border-2"),
     );
-    if (document.getElementById("customRadio").checked) popBadgesInCustom();
+    if (customRadio.checked) popBadgesInCustom();
   });
 }
 
@@ -47,7 +47,7 @@ function highlightBadges(id) {
       btn.classList.contains("border-2")
         ? btn.classList.remove("border-2")
         : btn.classList.add("border-2");
-      if (document.getElementById("customRadio").checked) popBadgesInCustom();
+      if (customRadio.checked) popBadgesInCustom();
     });
   });
 }
@@ -59,9 +59,10 @@ initAllBadge("debt-payer");
 // popping custom field when the radio button is checked
 const radioGroup = document.querySelectorAll("input[name='radio-2']");
 const customInputField = document.getElementById("customAmount");
+const customRadio = document.getElementById("customRadio");
 radioGroup.forEach((radio) => {
   radio.addEventListener("change", () => {
-    if (document.getElementById("customRadio").checked) {
+    if (customRadio.checked) {
       customInputField.classList.remove("hidden");
 
       // run here, after the user has made selections
@@ -75,13 +76,30 @@ radioGroup.forEach((radio) => {
 // adding selected badges below custom field based on the selected badge
 function popBadgesInCustom() {
   const container = document.getElementById("debt-payer");
-  const costumAmountContainer = document.getElementById("customAmount");
+  const customAmountContainer = document.getElementById("customAmount");
   let containerArray = [...container.querySelectorAll(".badge")];
-  costumAmountContainer.innerHTML = "";
+  customAmountContainer.innerHTML = "";
+
   containerArray = containerArray.filter((element) =>
     element.classList.contains("border-2"),
   );
-  containerArray.forEach((element) => {
+  //logic for allBadge
+  if (containerArray.find((element) => element.id === "allBadge")) {
+    const allNames = [...container.querySelectorAll(".badge")].filter(
+      (badge) => badge.id !== "allBadge",
+    );
+    populateRows(allNames);
+  }
+  // logic for selecting nameBadges
+  else {
+    populateRows(containerArray);
+  }
+}
+
+//function for adding rows to custom amount field
+function populateRows(myArray) {
+  const customAmountContainer = document.getElementById("customAmount");
+  myArray.forEach((element) => {
     const row = document.createElement("div");
     row.className = "flex flex-row items-center justify-between";
 
@@ -94,10 +112,9 @@ function popBadgesInCustom() {
 
     row.appendChild(badgeClone);
     row.appendChild(input);
-    costumAmountContainer.appendChild(row);
+    customAmountContainer.appendChild(row);
   });
 }
-
 const settleInputs = document.querySelectorAll(
   ".collapse-content input[type='checkbox']",
 );
