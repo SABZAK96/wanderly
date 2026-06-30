@@ -196,8 +196,8 @@ allMarkAsSettledBtns.forEach((btn) => {
 document.getElementById("exp-submit").addEventListener("click", () => {
   const titleInput = document.getElementById("exp-title");
   const costInput = document.getElementById("exp-cost");
-  const expenseTitle = titleInput.value;
-  const costAmount = costInput.value;
+  let expenseTitle = titleInput.value;
+  let costAmount = costInput.value;
   const Allbadges = document.querySelectorAll("#exp-payer span");
   const errorMsg = document.getElementById("errorMsg");
 
@@ -230,6 +230,11 @@ document.getElementById("exp-submit").addEventListener("click", () => {
   errorMsg.textContent = "";
   errorMsg.classList.add("hidden");
 
+  //cleaning the values to have a good look in the UI
+  expenseTitle = expenseTitle.trim();
+  expenseTitle = expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
+  costAmount = Number(costAmount).toLocaleString("en-US");
+
   const tableBody = document.querySelector("#my_table tbody");
   let newTableRow = "";
   newTableRow = `  <tr>
@@ -260,9 +265,9 @@ document.getElementById("exp-submit").addEventListener("click", () => {
   tableBody.insertAdjacentHTML("beforeend", newTableRow);
 
   //pick the lastly added element with class badgePlaceHolder - .at(-1) gets the last element in the array
-  const badgePlaceholder = [...tableBody.querySelectorAll(".badgePlaceHolder")].at(
-    -1,
-  );
+  const badgePlaceholder = [
+    ...tableBody.querySelectorAll(".badgePlaceHolder"),
+  ].at(-1);
 
   // cloneNode(true) so original badges stay in the modal for next time
   selectedBadges.forEach((badge) => {
