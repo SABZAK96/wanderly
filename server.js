@@ -92,9 +92,10 @@ async function main() {
       console.log("Connected to MongoDB!");
       app.listen(port, () => console.log("Server running!"));
 
-      // add trip id to all users 
-      // await userModel.updateMany({}, { $push: { trips: "6a445ee01781d2a29c611442" } });
-      // console.log("Trip id added to all users");
+      // update badge colors — delete after running once
+      // await userModel.updateOne({ name: "Soroush" }, { $set: { badgeInfo: { bg: "#fef9c3", color: "#a16207", border: "#a16207" } } });
+      // await userModel.updateOne({ name: "Shohreh" }, { $set: { badgeInfo: { bg: "#cffafe", color: "#0e7490", border: "#0e7490" } } });
+      // console.log("Badge colors updated");
     })
     .catch((err) => {
       console.error("MongoDB connection failed:", err);

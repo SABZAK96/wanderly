@@ -3,14 +3,39 @@ document.getElementById("addExp").addEventListener("click", () => {
 });
 
 // fetch all the badges from the db
-async function getBadges() {
+async function getPeople() {
   const response = await (
     await fetch("/people/6a445ee01781d2a29c611442")
   ).json();
   return response;
 }
-const test = await getBadges();
-console.log(test);
+
+// load the modal with the badges recieved from the db
+async function populateFieldsBadges(id) {
+  const response = await getPeople();
+  const container = document.getElementById(id);
+  response.forEach((person) => {
+    const badgeSpan = `<span
+                class="badge badge-lg cursor-pointer payer-option border-0 border-[${person.badgeInfo.border}]"
+                data-name="${person.name}"
+                style="background: ${person.badgeInfo.bg}; color: ${person.badgeInfo.color}"
+                >${person.name}</span>`;
+    container.insertAdjacentHTML("beforeend", badgeSpan);
+  });
+}
+
+//funtion that set up the modal using the info of people retrieved from the db
+async function setUpModal() {
+  await Promise.all([
+    populateFieldsBadges("debt-payer"),
+    populateFieldsBadges("exp-payer"),
+  ]);
+  highlightBadges("debt-payer");
+  highlightBadges("exp-payer");
+  initAllBadge("debt-payer");
+}
+setUpModal();
+
 // pre-select All badge in the who owes the payer section
 function initAllBadge(id) {
   const allBadge = document.getElementById("allBadge");
@@ -73,10 +98,6 @@ function highlightBadges(id) {
     });
   });
 }
-
-highlightBadges("exp-payer");
-highlightBadges("debt-payer");
-initAllBadge("debt-payer");
 
 // popping custom field when the radio button is checked
 const radioGroup = document.querySelectorAll("input[name='radio-2']");
