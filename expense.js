@@ -144,7 +144,7 @@ function populateRows(myArray, id) {
   const customAmountContainer = document.getElementById(id);
   myArray.forEach((element) => {
     const row = document.createElement("div");
-    row.className = "flex flex-row items-center justify-between";
+    row.className = "flex flex-row items-center justify-between customInputRow";
 
     const badgeClone = element.cloneNode(true);
 
@@ -236,7 +236,7 @@ allMarkAsSettledBtns.forEach((btn) => {
 //================================================================================================
 
 // first update the table with added row
-document.getElementById("exp-submit").addEventListener("click", () => {
+document.getElementById("exp-submit").addEventListener("click", async () => {
   const titleInput = document.getElementById("exp-title");
   const costInput = document.getElementById("exp-cost");
   let expenseTitle = titleInput.value;
@@ -249,7 +249,6 @@ document.getElementById("exp-submit").addEventListener("click", () => {
   selectedBadges = selectedBadges.filter((badge) =>
     badge.classList.contains("border-2"),
   );
-  console.log(selectedBadges);
 
   //validate the fields are filled
   if (titleInput.value.trim() === "") {
@@ -278,6 +277,23 @@ document.getElementById("exp-submit").addEventListener("click", () => {
   expenseTitle = expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
   costAmount = Number(costAmount).toLocaleString("en-US");
 
+  updateTable(selectedBadges, expenseTitle, costAmount);
+
+  await owesAmount(costAmount);
+  console.log(await owesAmount(costAmount));
+  // clearing the modal for the next use
+
+  titleInput.value = "";
+  costInput.value = "";
+  Allbadges.forEach((badge) => {
+    badge.classList.contains("border-2") && badge.classList.remove("border-2");
+  });
+  document.getElementById("my_modal_expense").close();
+});
+
+// send the added expense info to the db
+
+function updateTable(selectedBadges, expenseTitle, costAmount) {
   const tableBody = document.querySelector("#my_table tbody");
   let newTableRow = "";
   newTableRow = `  <tr>
@@ -317,16 +333,7 @@ document.getElementById("exp-submit").addEventListener("click", () => {
     badgePlaceholder.appendChild(badge.cloneNode(true));
   });
 
-  // clearing the modal for the next use
-
-  titleInput.value = "";
-  costInput.value = "";
-  Allbadges.forEach((badge) => {
-    badge.classList.contains("border-2") && badge.classList.remove("border-2");
-  });
-  document.getElementById("my_modal_expense").close();
-
-  // second update the total amount in the table
+  // update the total amount in the table
   // first get the Node list using spread operator then converts in inner text to number after replacing "," with empty string
   const amounts = [...document.querySelectorAll(".tableAmounts")].map(
     (element) => Number(element.textContent.replace(",", "")),
@@ -336,4 +343,46 @@ document.getElementById("exp-submit").addEventListener("click", () => {
     sum += number;
   }
   document.getElementById("total").innerHTML = sum.toLocaleString("en-US");
-});
+}
+
+// send the added expense to the db
+async function sendExpenseToDB(title, cost, owed, owes) {
+  const data = await fetch("/newExpense/6a445ee01781d2a29c611442", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+}
+
+// calculate the "owes" amounts
+async function owesAmount(cost) {
+  //get the total number of persons in a trip with same id
+  const people = await getPeople();
+  const numberOfPeople = people.length;
+  let result = [];
+
+  // if custom radio is checked
+  if (document.getElementById("customRadio").checked) {
+    const whoOwesDivs = [...document.querySelectorAll(".customInputRow")];
+    whoOwesDivs.map((element) => {
+      const span = element.children[0];
+      const input = element.children[1];
+
+      let person = span.dataset.name;
+      let amount = input.value;
+      result.push({ person: person, amount: amount });
+      console.log(result);
+    });
+
+    // if shared equally
+  } else {
+    const sharedAmount = (cost / numberOfPeople).toFixed(2);
+    people.map((person) => {
+      result.push({ person: person.name, amount: sharedAmount });
+      console.log(result);
+    });
+  }
+  return result;
+}
