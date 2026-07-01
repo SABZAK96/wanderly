@@ -565,7 +565,7 @@
           <div class="flex flex-col gap-1">
             <label class="text-sm text-base-content/60">Split</label>
             <div
-              class="flex md:flex-row flex-col md:justify-between md:items-center md:gap-0 gap-2"
+              class="flex flex-col md:justify-between items-start md:gap-0 gap-2"
             >
               <label class="label">
                 <input
@@ -589,25 +589,7 @@
               >
 
               <!-- selected persons in the previous section should pop up here with an input field -->
-              <div id="customAmount" class="flex flex-col gap-1 pl-3 md:max-w-1/2 max-w-full hidden">
-                <div class="flex flex-row items-center justify-between">
-                  <!-- badge -->
-                  <span
-                    class="badge badge-lg cursor-pointer payer-option border-0 border-[#be185d]"
-                    data-name="Shohreh"
-                    style="background: #fce7f3; color: #be185d"
-                    >Shohreh</span
-                  >
-                  <!-- custom field -->
-                  <input
-                    
-                    type="number"
-                    placeholder="Amount"
-                    class="input input-xs max-w-[100px] max-h-15 customInput"
-                    
-                  />
-                </div>
-              </div>
+              <div id="customAmount" class="flex flex-col gap-1 pl-3 w-full hidden"></div>
               
             </div>
           </div>
@@ -647,7 +629,7 @@
                 >Shohreh</span
               >
             </div>
-            <div id="coPayerAmount" class="flex flex-col gap-1 pl-3 md:max-w-1/2 max-w-full mt-2 hidden"></div>
+            <div id="coPayerAmount" class="flex flex-col gap-1 pl-3 w-full mt-2 hidden"></div>
             <p id="errorMsg" class=" mt-2 text-sm text-red-500/60 hidden"></p>
           </div>
 
