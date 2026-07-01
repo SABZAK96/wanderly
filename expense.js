@@ -2,6 +2,15 @@ document.getElementById("addExp").addEventListener("click", () => {
   document.getElementById("my_modal_expense").showModal();
 });
 
+// fetch all the badges from the db
+async function getBadges() {
+  const response = await (
+    await fetch("/people/6a445ee01781d2a29c611442")
+  ).json();
+  return response;
+}
+const test = await getBadges();
+console.log(test);
 // pre-select All badge in the who owes the payer section
 function initAllBadge(id) {
   const allBadge = document.getElementById("allBadge");
@@ -302,7 +311,7 @@ document.getElementById("exp-submit").addEventListener("click", () => {
     (element) => Number(element.textContent.replace(",", "")),
   );
   let sum = 0;
-  for (const number of amounts){
+  for (const number of amounts) {
     sum += number;
   }
   document.getElementById("total").innerHTML = sum.toLocaleString("en-US");

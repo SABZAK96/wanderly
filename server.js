@@ -27,7 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 const userSchema = new mongoose.Schema({
   name: String,
   email: String,
-  password: String,
+  // password: String,
   badgeInfo: {
     bg: String, // comes from front-end
     color: String,
@@ -40,26 +40,26 @@ const userSchema = new mongoose.Schema({
 const tripSchema = new mongoose.Schema({
   destination: String,
   date: Date,
-  people: [{ person: String, amount: Number }], // user ids for co-payers and the amount they paid
+  people: [String], // user ids of people in the trip
   expenses: [
     {
       title: String,
       amount: Number,
-      paidBy: [String],   // single user id — one or more persons pay
+      paidBy: [{ person: String, amount: Number }], // user ids for co-payers and the amount they paid
       owedBy: [{ person: String, amount: Number }], // people splitting the cost with their share
     },
   ],
   debts: [
     {
-      person: String,  // user id of who owes
-      owedTo: String,  // user id of who is owed
+      person: String, // user id of who owes
+      owedTo: String, // user id of who is owed
       amount: Number,
     },
   ],
   payments: [
     {
-      payer: String,  // user id of person paying back
-      payee: String,  // user id of person being paid back
+      payer: String, // user id of person paying back
+      payee: String, // user id of person being paid back
       amount: Number,
       forCost: String, // expense _id
     },
@@ -88,13 +88,30 @@ main().catch((err) => console.log(err));
 async function main() {
   mongoose
     .connect(db)
-    .then(() => {
+    .then(async () => {
       console.log("Connected to MongoDB!");
-      app.listen(port, () => {
-        console.log("Server running!");
-      });
+      app.listen(port, () => console.log("Server running!"));
+
+      // add trip id to all users 
+      // await userModel.updateMany({}, { $push: { trips: "6a445ee01781d2a29c611442" } });
+      // console.log("Trip id added to all users");
     })
     .catch((err) => {
       console.error("MongoDB connection failed:", err);
     });
 }
+
+//getting people information related to each specific trip with id
+app.get("/people/:id", async (req, res) => {
+  try {
+    const data = await tripModel.findById(req.params.id);
+
+    //should use promise all to fetch all the results and then send them to server
+    const result = await Promise.all(
+      data.people.map((id) => userModel.findById(id))
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
