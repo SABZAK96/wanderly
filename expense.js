@@ -1,3 +1,6 @@
+// string badges and update them when they are build to update the table tags easily
+let poepleBadges = undefined;
+
 document.getElementById("addExp").addEventListener("click", () => {
   document.getElementById("my_modal_expense").showModal();
 
@@ -55,6 +58,7 @@ async function populateFieldsBadges(id) {
                 >${person.name}</span>`;
     container.insertAdjacentHTML("beforeend", badgeSpan);
   });
+  poepleBadges = [...container.querySelectorAll(".badge")];
 }
 
 //funtion that set up the modal using the info of people retrieved from the db
@@ -66,6 +70,7 @@ async function setUpModal() {
   highlightBadges("debt-payer");
   highlightBadges("exp-payer");
   initAllBadge("debt-payer");
+  initTable();
 }
 setUpModal();
 
@@ -338,7 +343,31 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
   document.getElementById("my_modal_expense").close();
 });
 
-// send the added expense info to the db
+// init table
+async function initTable() {
+
+  //response would be an array of expenses
+
+  const response = await (
+    await fetch("/getExpenses/6a445ee01781d2a29c611442")
+  ).json();
+
+  response.forEach((expense) => {
+    //preparing badges
+    const selectedBadges = expense.paidBy.map((item) =>
+      poepleBadges.find((badge) => badge.dataset.id === item.person),
+    );
+
+    //preparing expense title
+    const expTitle = expense.title;
+
+    //preparing total cost
+    const cost = expense.amount;
+
+    updateTable(selectedBadges, expTitle, cost);
+  });
+}
+// update the table with adding a new row
 
 function updateTable(selectedBadges, expenseTitle, costAmount) {
   const tableBody = document.querySelector("#my_table tbody");
@@ -431,7 +460,12 @@ async function sendExpenseToDB(title, cost, paidBy, owes) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ title: title, amount: cost, paidBy: paidBy, owedBy: owes }),
+    body: JSON.stringify({
+      title: title,
+      amount: cost,
+      paidBy: paidBy,
+      owedBy: owes,
+    }),
   });
 }
 

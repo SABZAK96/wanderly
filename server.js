@@ -137,3 +137,16 @@ app.post("/newExpense/:id", async (req, res) => {
     res.status(500).send("Server Error!");
   }
 });
+
+//get all the expenses for a trip
+app.get("/getExpenses/:id", async (req, res) => {
+  try {
+    const trip = await tripModel.findById(req.params.id);
+
+    const tripExpenses = trip.expenses;
+
+    res.json(tripExpenses);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
