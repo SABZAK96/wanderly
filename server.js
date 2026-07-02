@@ -109,9 +109,30 @@ app.get("/people/:id", async (req, res) => {
 
     //should use promise all to fetch all the results and then send them to server
     const result = await Promise.all(
-      data.people.map((id) => userModel.findById(id))
+      data.people.map((id) => userModel.findById(id)),
     );
     res.json(result);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
+//add new expense
+app.post("/newExpense/:id", async (req, res) => {
+  try {
+    const { title, amount, paidBy, owedBy } = req.body;
+
+    const trip = await tripModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: {
+          expenses: { title, amount, paidBy, owedBy },
+        },
+      },
+      { new: true }, // return the updated document instead of the pre-update one
+    );
+
+    res.json(trip);
   } catch (error) {
     res.status(500).send("Server Error!");
   }

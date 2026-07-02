@@ -315,14 +315,18 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
   errorMsg.classList.add("hidden");
 
   const owes = await calculateSplitAmounts(costAmount, selectedBadgesDebts);
-  const owed = calculateOwedAmount(owes, selectedBadgesPayers, costAmount);
+  const { paidBy, owed } = calculateOwedAmount(
+    owes,
+    selectedBadgesPayers,
+    costAmount,
+  );
 
   if (!expenseInputValidator(costAmount, owes, owed)) {
     errorMsg.classList.remove("hidden");
     errorMsg.textContent = "* Split amounts must add up to the total cost!";
     return;
   }
-  // sendExpenseToDB(expenseTitle, costAmount, owed, owes);
+  sendExpenseToDB(expenseTitle, costAmount, paidBy, owes);
 
   //cleaning the values to have a good look in the UI
   expenseTitle = expenseTitle.trim();
@@ -421,13 +425,13 @@ function expenseInputValidator(cost, owes, owed) {
 }
 
 // send the added expense to the db
-async function sendExpenseToDB(title, cost, owed, owes) {
+async function sendExpenseToDB(title, cost, paidBy, owes) {
   const data = await fetch("/newExpense/6a445ee01781d2a29c611442", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({}),
+    body: JSON.stringify({ title: title, amount: cost, paidBy: paidBy, owedBy: owes }),
   });
 }
 
@@ -479,17 +483,21 @@ async function calculateSplitAmounts(cost, selectedBadgesDebts) {
   return splitAmounts;
 }
 
-// calculate owed amounts
+// calculate raw paid amounts (what each payer actually contributed) and
+// owed amounts (net amount currently owed back to each payer)
 function calculateOwedAmount(owes, selectedBadgesPayers, costAmount) {
   let owed = [];
+  let paidBy = [];
 
   if (selectedBadgesPayers.length === 1) {
     const name = selectedBadgesPayers[0].dataset.id;
     const ownShare = Number(
       owes.find((item) => item.person === name)?.amount ?? 0,
     );
-    const amount = Number(costAmount) - ownShare;
+    const paidAmount = Number(costAmount);
+    const amount = paidAmount - ownShare;
 
+    paidBy.push({ person: name, amount: paidAmount });
     owed.push({ person: name, amount: amount });
   } else {
     const paidByDivs = [
@@ -501,9 +509,10 @@ function calculateOwedAmount(owes, selectedBadgesPayers, costAmount) {
       const ownShare = Number(
         owes.find((item) => item.person === name)?.amount ?? 0,
       );
+      paidBy.push({ person: name, amount: paidAmount });
       owed.push({ person: name, amount: paidAmount - ownShare });
     });
   }
-  console.log(owed);
-  return owed;
+  console.log(paidBy, owed);
+  return { paidBy, owed };
 }
