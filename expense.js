@@ -315,8 +315,13 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
   errorMsg.classList.add("hidden");
 
   const owes = await calculateSplitAmounts(costAmount, selectedBadgesDebts);
-
   const owed = calculateOwedAmount(owes, selectedBadgesPayers, costAmount);
+
+  if (!expenseInputValidator(costAmount, owes, owed)) {
+    errorMsg.classList.remove("hidden");
+    errorMsg.textContent = "* Split amounts must add up to the total cost!";
+    return;
+  }
   // sendExpenseToDB(expenseTitle, costAmount, owed, owes);
 
   //cleaning the values to have a good look in the UI
@@ -381,6 +386,38 @@ function updateTable(selectedBadges, expenseTitle, costAmount) {
     sum += number;
   }
   document.getElementById("total").innerHTML = sum.toLocaleString("en-US");
+}
+
+// validating fields in the add expense modal
+function expenseInputValidator(cost, owes, owed) {
+  let sumOfOwes = 0;
+  for (const item of owes) {
+    const amount = Number(item.amount);
+    if (item.amount === "" || Number.isNaN(amount)) return false;
+    sumOfOwes += amount;
+  }
+
+  // we should do a tolerance check because of the roundings we do in the owes calculation
+  if (Math.abs(Number(cost) - sumOfOwes) >= 0.01) return false;
+
+  // the amounts entered in owed should make sense with the total cost as well
+  for (const item of owed) {
+    if (item.amount === "" || Number.isNaN(Number(item.amount))) return false;
+  }
+
+  let filteredOwes = owed.map((item) => {
+    const newOwes =
+      owes.find((debt) => debt.person === item.person)?.amount ?? 0;
+    return Number(item.amount) + Number(newOwes);
+  });
+
+  let owedSum = 0;
+  for (const item of filteredOwes) {
+    owedSum += item;
+  }
+
+  // we should do a tolerance check because of the roundings we do in the owes calculation
+  return Math.abs(Number(cost) - owedSum) < 0.01;
 }
 
 // send the added expense to the db
