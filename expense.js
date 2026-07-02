@@ -26,7 +26,7 @@ document.getElementById("addExp").addEventListener("click", () => {
   debtBadges.forEach((badge) => {
     badge.classList.contains("border-2") && badge.classList.remove("border-2");
   });
-  
+
   // re-select the "All" badge as the default, without re-attaching listeners via initAllBadge
   document.getElementById("allBadge").classList.add("border-2");
 
@@ -50,6 +50,7 @@ async function populateFieldsBadges(id) {
     const badgeSpan = `<span
                 class="badge badge-lg cursor-pointer payer-option border-0 border-[${person.badgeInfo.border}]"
                 data-name="${person.name}"
+                data-id="${person._id}"
                 style="background: ${person.badgeInfo.bg}; color: ${person.badgeInfo.color}"
                 >${person.name}</span>`;
     container.insertAdjacentHTML("beforeend", badgeSpan);
@@ -113,19 +114,21 @@ function highlightBadges(id) {
       btn.classList.contains("border-2")
         ? btn.classList.remove("border-2")
         : btn.classList.add("border-2");
-      if (customRadio.checked) popBadgesInCustom();
+      if (id === "debt-payer" && customRadio.checked) popBadgesInCustom();
 
       //logic for having co-payers
-      const coPayerContainer = document.getElementById("coPayerAmount");
-      const paidByArray = [
-        ...document.getElementById("exp-payer").querySelectorAll(".badge"),
-      ].filter((element) => element.classList.contains("border-2"));
-      coPayerContainer.innerHTML = "";
-      if (paidByArray.length >= 2) {
-        coPayerContainer.classList.remove("hidden");
-        populateRows(paidByArray, "coPayerAmount");
-      } else {
-        coPayerContainer.classList.add("hidden");
+      if (id === "exp-payer") {
+        const coPayerContainer = document.getElementById("coPayerAmount");
+        const paidByArray = [
+          ...document.getElementById("exp-payer").querySelectorAll(".badge"),
+        ].filter((element) => element.classList.contains("border-2"));
+        coPayerContainer.innerHTML = "";
+        if (paidByArray.length >= 2) {
+          coPayerContainer.classList.remove("hidden");
+          populateRows(paidByArray, "coPayerAmount");
+        } else {
+          coPayerContainer.classList.add("hidden");
+        }
       }
     });
   });
@@ -185,6 +188,7 @@ function populateRows(myArray, id) {
     input.placeholder = "Amount";
     input.className = "input input-xs max-w-[100px] max-h-15 customInput";
     input.dataset.name = element.dataset.name;
+    input.dataset.id = element.dataset.id;
 
     row.appendChild(badgeClone);
     row.appendChild(input);
@@ -276,9 +280,15 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
   const Allbadges = document.querySelectorAll("#exp-payer span");
   const errorMsg = document.getElementById("errorMsg");
 
-  let selectedBadges = [...Allbadges];
+  let selectedBadgesPayers = [...Allbadges];
   //save the result of the filter back to the variable - otherwise it will be thorwn away
-  selectedBadges = selectedBadges.filter((badge) =>
+  selectedBadgesPayers = selectedBadgesPayers.filter((badge) =>
+    badge.classList.contains("border-2"),
+  );
+
+  const allBadgesDebts = document.querySelectorAll("#debt-payer span");
+  let selectedBadgesDebts = [...allBadgesDebts];
+  selectedBadgesDebts = selectedBadgesDebts.filter((badge) =>
     badge.classList.contains("border-2"),
   );
 
@@ -296,7 +306,7 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
   }
   costInput.classList.contains("border-red-500") &&
     costInput.classList.remove("border-2", "border-red-500");
-  if (selectedBadges.length === 0) {
+  if (selectedBadgesPayers.length === 0) {
     errorMsg.classList.remove("hidden");
     errorMsg.textContent = "* Please Select the Payers!";
     return;
@@ -304,9 +314,9 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
   errorMsg.textContent = "";
   errorMsg.classList.add("hidden");
 
-  const owes = await calculateSplitAmounts(costAmount);
-  console.log(await calculateSplitAmounts(costAmount));
-  // owed -> ??
+  const owes = await calculateSplitAmounts(costAmount, selectedBadgesDebts);
+
+  const owed = calculateOwedAmount(owes, selectedBadgesPayers, costAmount);
   // sendExpenseToDB(expenseTitle, costAmount, owed, owes);
 
   //cleaning the values to have a good look in the UI
@@ -314,7 +324,7 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
   expenseTitle = expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
   costAmount = Number(costAmount).toLocaleString("en-US");
 
-  updateTable(selectedBadges, expenseTitle, costAmount);
+  updateTable(selectedBadgesPayers, expenseTitle, costAmount);
 
   document.getElementById("my_modal_expense").close();
 });
@@ -385,7 +395,7 @@ async function sendExpenseToDB(title, cost, owed, owes) {
 }
 
 // calculate how much each person owes for this expense
-async function calculateSplitAmounts(cost) {
+async function calculateSplitAmounts(cost, selectedBadgesDebts) {
   //get the total number of persons in a trip with same id
   const people = await getPeople();
   const numberOfPeople = people.length;
@@ -393,12 +403,14 @@ async function calculateSplitAmounts(cost) {
 
   // if custom radio is checked
   if (document.getElementById("customRadio").checked) {
-    const customSplitRows = [...document.querySelectorAll(".customInputRow")];
+    const customSplitRows = [
+      ...document.querySelectorAll("#customAmount .customInputRow"),
+    ];
     customSplitRows.map((row) => {
       const nameBadge = row.children[0];
       const amountInput = row.children[1];
 
-      let person = nameBadge.dataset.name;
+      let person = nameBadge.dataset.id;
       let amount = amountInput.value;
       splitAmounts.push({ person: person, amount: amount });
       console.log(splitAmounts);
@@ -406,11 +418,55 @@ async function calculateSplitAmounts(cost) {
 
     // if shared equally
   } else {
-    const sharedAmount = (cost / numberOfPeople).toFixed(2);
-    people.map((person) => {
-      splitAmounts.push({ person: person.name, amount: sharedAmount });
-      console.log(splitAmounts);
-    });
+    if (
+      selectedBadgesDebts.length === 1 &&
+      selectedBadgesDebts[0].dataset.name === "All"
+    ) {
+      const sharedAmount = (cost / numberOfPeople).toFixed(2);
+      people.map((person) => {
+        splitAmounts.push({ person: person._id, amount: sharedAmount });
+        console.log(splitAmounts);
+      });
+    } else {
+      const numberOfBadges = selectedBadgesDebts.length;
+      const costPerPerson = cost / numberOfBadges;
+      selectedBadgesDebts.map((element) => {
+        splitAmounts.push({
+          person: element.dataset.id,
+          amount: costPerPerson,
+        });
+        console.log(splitAmounts);
+      });
+    }
   }
   return splitAmounts;
+}
+
+// calculate owed amounts
+function calculateOwedAmount(owes, selectedBadgesPayers, costAmount) {
+  let owed = [];
+
+  if (selectedBadgesPayers.length === 1) {
+    const name = selectedBadgesPayers[0].dataset.id;
+    const ownShare = Number(
+      owes.find((item) => item.person === name)?.amount ?? 0,
+    );
+    const amount = Number(costAmount) - ownShare;
+
+    owed.push({ person: name, amount: amount });
+  } else {
+    const paidByDivs = [
+      ...document.querySelectorAll("#coPayerAmount .customInputRow"),
+    ];
+    paidByDivs.forEach((row) => {
+      const name = row.children[0].dataset.id;
+      const paidAmount = Number(row.children[1].value);
+      const ownShare = Number(
+        owes.find((item) => item.person === name)?.amount ?? 0,
+      );
+      owed.push({ person: name, amount: paidAmount - ownShare });
+    });
+  }
+  console.log(owed);
+  return owed;
 }
