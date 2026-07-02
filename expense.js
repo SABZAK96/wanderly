@@ -1,5 +1,37 @@
 document.getElementById("addExp").addEventListener("click", () => {
   document.getElementById("my_modal_expense").showModal();
+
+  // clearing up the fields in the modal whenever add expense is clicked
+  const titleInput = document.getElementById("exp-title");
+  const costInput = document.getElementById("exp-cost");
+
+  titleInput.value = "";
+  costInput.value = "";
+
+  //clearing paidBy section highlights
+  const Allbadges = document.querySelectorAll("#exp-payer span");
+  Allbadges.forEach((badge) => {
+    badge.classList.contains("border-2") && badge.classList.remove("border-2");
+  });
+  const coPayerContainer = document.getElementById("coPayerAmount");
+  coPayerContainer.innerHTML = "";
+  coPayerContainer.classList.add("hidden");
+
+  //clearing who owes who highlights
+  const customAmountContainer = document.getElementById("customAmount");
+  customAmountContainer.innerHTML = "";
+  customAmountContainer.classList.add("hidden");
+
+  const debtBadges = document.querySelectorAll("#debt-payer span");
+  debtBadges.forEach((badge) => {
+    badge.classList.contains("border-2") && badge.classList.remove("border-2");
+  });
+  
+  // re-select the "All" badge as the default, without re-attaching listeners via initAllBadge
+  document.getElementById("allBadge").classList.add("border-2");
+
+  // setting the radio button to equally
+  document.getElementById("equalRadio").checked = true;
 });
 
 // fetch all the badges from the db
@@ -272,6 +304,11 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
   errorMsg.textContent = "";
   errorMsg.classList.add("hidden");
 
+  const owes = await calculateSplitAmounts(costAmount);
+  console.log(await calculateSplitAmounts(costAmount));
+  // owed -> ??
+  // sendExpenseToDB(expenseTitle, costAmount, owed, owes);
+
   //cleaning the values to have a good look in the UI
   expenseTitle = expenseTitle.trim();
   expenseTitle = expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
@@ -279,15 +316,6 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
 
   updateTable(selectedBadges, expenseTitle, costAmount);
 
-  await owesAmount(costAmount);
-  console.log(await owesAmount(costAmount));
-  // clearing the modal for the next use
-
-  titleInput.value = "";
-  costInput.value = "";
-  Allbadges.forEach((badge) => {
-    badge.classList.contains("border-2") && badge.classList.remove("border-2");
-  });
   document.getElementById("my_modal_expense").close();
 });
 
@@ -356,33 +384,33 @@ async function sendExpenseToDB(title, cost, owed, owes) {
   });
 }
 
-// calculate the "owes" amounts
-async function owesAmount(cost) {
+// calculate how much each person owes for this expense
+async function calculateSplitAmounts(cost) {
   //get the total number of persons in a trip with same id
   const people = await getPeople();
   const numberOfPeople = people.length;
-  let result = [];
+  let splitAmounts = [];
 
   // if custom radio is checked
   if (document.getElementById("customRadio").checked) {
-    const whoOwesDivs = [...document.querySelectorAll(".customInputRow")];
-    whoOwesDivs.map((element) => {
-      const span = element.children[0];
-      const input = element.children[1];
+    const customSplitRows = [...document.querySelectorAll(".customInputRow")];
+    customSplitRows.map((row) => {
+      const nameBadge = row.children[0];
+      const amountInput = row.children[1];
 
-      let person = span.dataset.name;
-      let amount = input.value;
-      result.push({ person: person, amount: amount });
-      console.log(result);
+      let person = nameBadge.dataset.name;
+      let amount = amountInput.value;
+      splitAmounts.push({ person: person, amount: amount });
+      console.log(splitAmounts);
     });
 
     // if shared equally
   } else {
     const sharedAmount = (cost / numberOfPeople).toFixed(2);
     people.map((person) => {
-      result.push({ person: person.name, amount: sharedAmount });
-      console.log(result);
+      splitAmounts.push({ person: person.name, amount: sharedAmount });
+      console.log(splitAmounts);
     });
   }
-  return result;
+  return splitAmounts;
 }
