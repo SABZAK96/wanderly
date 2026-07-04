@@ -345,7 +345,6 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
 
 // init table
 async function initTable() {
-
   //response would be an array of expenses
 
   const response = await (
@@ -359,12 +358,15 @@ async function initTable() {
     );
 
     //preparing expense title
-    const expTitle = expense.title;
+    const expTitle = expense.title.trim();
+    const expTitlePrepped =
+      expTitle.charAt(0).toUpperCase() + expTitle.slice(1);
 
     //preparing total cost
     const cost = expense.amount;
+    const costPrepped = Number(cost).toLocaleString("en-US");
 
-    updateTable(selectedBadges, expTitle, cost);
+    updateTable(selectedBadges, expTitlePrepped, costPrepped);
   });
 }
 // update the table with adding a new row
