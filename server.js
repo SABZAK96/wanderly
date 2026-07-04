@@ -49,13 +49,6 @@ const tripSchema = new mongoose.Schema({
       owedBy: [{ person: String, amount: Number }], // people splitting the cost with their share
     },
   ],
-  debts: [
-    {
-      person: String, // user id of who owes
-      owedTo: String, // user id of who is owed
-      amount: Number,
-    },
-  ],
   payments: [
     {
       payer: String, // user id of person paying back

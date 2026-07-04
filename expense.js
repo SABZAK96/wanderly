@@ -552,3 +552,137 @@ function calculateOwedAmount(owes, selectedBadgesPayers, costAmount) {
   console.log(paidBy, owed);
   return { paidBy, owed };
 }
+
+//compute the breakdown of debts - should be ready and displayed upon the page load
+async function computeDebtBreakdown() {
+  // response is an array of expenses, people is an array containing person ids -
+  // fetched concurrently since neither depends on the other
+  const [response, people] = await Promise.all([
+    fetch("/getExpenses/6a445ee01781d2a29c611442").then((res) => res.json()),
+    getPeople(),
+  ]);
+  let debts = [];
+  let summary = [];
+  // find how much each person is owed and who owes to them, if any
+
+  response.forEach((expense) => {
+    // branch for no co-payers
+    if (expense.paidBy.length === 1) {
+      expense.owedBy.map((element) => {
+        if (element.person !== expense.paidBy[0].person) {
+          debts.push({
+            to: expense.paidBy[0].person,
+            from: element.person,
+            amount: Number(element.amount),
+          });
+        }
+      });
+    }
+
+    // branch for having co-payers
+    else {
+      let debtors = [];
+      let creditors = [];
+
+      expense.paidBy.forEach((payer) => {
+        // how much of the cost was this payer's own share
+        let ownShare =
+          expense.owedBy.find((element) => element.person === payer.person)
+            ?.amount ?? 0;
+        // net position for this expense: positive = overpaid, negative = underpaid
+        let isOwed = payer.amount - ownShare;
+
+        if (isOwed > 0) {
+          // overpaid their share -> owed money back
+          creditors.push({ person: payer.person, amount: isOwed });
+        } else if (isOwed < 0) {
+          // paid less than their share -> still owes the difference
+          debtors.push({ person: payer.person, amount: -isOwed });
+        }
+        // isOwed === 0 -> already settled for this expense, goes in neither list
+      });
+
+      // ids of everyone who contributed money to this expense
+      const payerIds = expense.paidBy.map((payer) => payer.person);
+      // people who owe a share but never paid anything toward this expense
+      const nonPayerDebtors = expense.owedBy
+        .filter((element) => !payerIds.includes(element.person))
+        .map((element) => ({
+          person: element.person,
+          amount: Number(element.amount),
+        }));
+      debtors.push(...nonPayerDebtors);
+
+      //calculate how the debt should be settled for each expense
+
+      //counter for debtors
+      let i = 0;
+
+      //counter for creditors
+      let j = 0;
+
+      while (i < debtors.length && j < creditors.length) {
+        const debtAmount = Number(debtors[i].amount);
+        const creditAmount = Number(creditors[j].amount);
+
+        if (debtAmount < creditAmount) {
+          // debtor fully paid off, creditor has leftover
+          debts.push({
+            to: creditors[j].person,
+            from: debtors[i].person,
+            amount: debtAmount,
+          });
+          creditors[j].amount = creditAmount - debtAmount;
+          i++;
+        } else if (debtAmount > creditAmount) {
+          // creditor fully paid off, debtor has leftover
+          debts.push({
+            to: creditors[j].person,
+            from: debtors[i].person,
+            amount: creditAmount,
+          });
+          debtors[i].amount = debtAmount - creditAmount;
+          j++;
+        } else {
+          // exact match, both fully settled
+          debts.push({
+            to: creditors[j].person,
+            from: debtors[i].person,
+            amount: debtAmount,
+          });
+          i++;
+          j++;
+        }
+      }
+    }
+  });
+
+  // accumulating the results in debts array
+  people.forEach((element) => {
+    const newDebts = debts.filter(
+      (individual) => individual.to === element._id,
+    );
+    if (newDebts.length > 0) {
+      newDebts.forEach((item) => {
+        let shouldPay = item.amount;
+        
+        // match on both fields - "from" alone could merge this debtor's debts to different creditors
+        const debtorExist = summary.find(
+          (element) => element.to === item.to && element.from === item.from,
+        );
+        if (debtorExist) {
+          shouldPay = debtorExist.amount + item.amount;
+          debtorExist.amount = shouldPay;
+        } else {
+          summary.push({
+            to: element._id,
+            from: item.from,
+            amount: shouldPay,
+          });
+        }
+      });
+    }
+  });
+  return summary;
+}
+await computeDebtBreakdown();
