@@ -51,14 +51,14 @@ async function populateFieldsBadges(id) {
   const container = document.getElementById(id);
   response.forEach((person) => {
     const badgeSpan = `<span
-                class="badge badge-lg cursor-pointer payer-option border-0 border-[${person.badgeInfo.border}]"
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill cursor-pointer payer-option border-0 border-[${person.badgeInfo.border}]"
                 data-name="${person.name}"
                 data-id="${person._id}"
                 style="background: ${person.badgeInfo.bg}; color: ${person.badgeInfo.color}"
                 >${person.name}</span>`;
     container.insertAdjacentHTML("beforeend", badgeSpan);
   });
-  poepleBadges = [...container.querySelectorAll(".badge")];
+  poepleBadges = [...container.querySelectorAll(".person-pill")];
 }
 
 //funtion that set up the modal using the info of people retrieved from the db
@@ -73,13 +73,13 @@ async function setUpModal() {
   initTable();
 }
 setUpModal();
-renderDebtBreakdown();
+renderDebtBreakdown().then(initSettleToggles);
 
 // pre-select All badge in the who owes the payer section
 function initAllBadge(id) {
   const allBadge = document.getElementById("allBadge");
   const container = document.getElementById(id);
-  const nameBadges = [...container.querySelectorAll(".badge")].filter(
+  const nameBadges = [...container.querySelectorAll(".person-pill")].filter(
     (badge) => badge !== allBadge,
   );
   allBadge.classList.add("border-2");
@@ -114,7 +114,7 @@ function initAllBadge(id) {
 
 // make all the borders bold when clicked
 function highlightBadges(id) {
-  const allNameBadges = document.querySelectorAll(`#${id} .badge`);
+  const allNameBadges = document.querySelectorAll(`#${id} .person-pill`);
   allNameBadges.forEach((btn) => {
     btn.addEventListener("click", () => {
       btn.classList.contains("border-2")
@@ -126,7 +126,7 @@ function highlightBadges(id) {
       if (id === "exp-payer") {
         const coPayerContainer = document.getElementById("coPayerAmount");
         const paidByArray = [
-          ...document.getElementById("exp-payer").querySelectorAll(".badge"),
+          ...document.getElementById("exp-payer").querySelectorAll(".person-pill"),
         ].filter((element) => element.classList.contains("border-2"));
         coPayerContainer.innerHTML = "";
         if (paidByArray.length >= 2) {
@@ -161,7 +161,7 @@ radioGroup.forEach((radio) => {
 function popBadgesInCustom() {
   const container = document.getElementById("debt-payer");
   const customAmountContainer = document.getElementById("customAmount");
-  let containerArray = [...container.querySelectorAll(".badge")];
+  let containerArray = [...container.querySelectorAll(".person-pill")];
   customAmountContainer.innerHTML = "";
 
   containerArray = containerArray.filter((element) =>
@@ -169,7 +169,7 @@ function popBadgesInCustom() {
   );
   //logic for allBadge
   if (containerArray.find((element) => element.id === "allBadge")) {
-    const allNames = [...container.querySelectorAll(".badge")].filter(
+    const allNames = [...container.querySelectorAll(".person-pill")].filter(
       (badge) => badge.id !== "allBadge",
     );
     populateRows(allNames, "customAmount");
@@ -201,37 +201,41 @@ function populateRows(myArray, id) {
     customAmountContainer.appendChild(row);
   });
 }
-const settleInputs = document.querySelectorAll(
-  ".collapse-content input[type='checkbox']",
-);
+// popping up/hiding the Mark as settled button as checkboxes are (un)checked -
+// needs to run after the debt breakdown cards exist in the DOM, so it's called
+// once renderDebtBreakdown() has finished inserting them, not at script load
+function initSettleToggles() {
+  const settleInputs = document.querySelectorAll(
+    ".collapse-content input[type='checkbox']",
+  );
 
-// popping up Mark as settled button when checking the inputs in the settle up section
-settleInputs.forEach((field) => {
-  field.addEventListener("change", () => {
-    //scoping to the currnt accordion only - get the parent of the field we are working through and put all the input fields under that parent in an array
-    const allInputsAsArray = [
-      ...field
-        .closest(".collapse-content")
-        .querySelectorAll("input[type='checkbox']"),
-    ];
-    if (field.checked) {
-      field
-        .closest(".collapse-content")
-        .lastElementChild.classList.remove("hidden");
-    }
+  settleInputs.forEach((field) => {
+    field.addEventListener("change", () => {
+      //scoping to the currnt accordion only - get the parent of the field we are working through and put all the input fields under that parent in an array
+      const allInputsAsArray = [
+        ...field
+          .closest(".collapse-content")
+          .querySelectorAll("input[type='checkbox']"),
+      ];
+      if (field.checked) {
+        field
+          .closest(".collapse-content")
+          .lastElementChild.classList.remove("hidden");
+      }
 
-    const allUnChecked = allInputsAsArray.every(
-      (element) => element.checked === false,
-    );
+      const allUnChecked = allInputsAsArray.every(
+        (element) => element.checked === false,
+      );
 
-    // popping out Mark as settled button when all inputs are unchecked
-    if (allUnChecked) {
-      field
-        .closest(".collapse-content")
-        .lastElementChild.classList.add("hidden");
-    }
+      // popping out Mark as settled button when all inputs are unchecked
+      if (allUnChecked) {
+        field
+          .closest(".collapse-content")
+          .lastElementChild.classList.add("hidden");
+      }
+    });
   });
-});
+}
 
 // removing the paid debts when mark as settled is clicked
 let settledAmounts = 0;
@@ -810,10 +814,10 @@ async function renderDebtBreakdown() {
       <div class="collapse-title">
         <div class="flex items-center justify-between">
           <span
-            class="badge badge-lg cursor-pointer payer-option border-0 border-[${person.badgeInfo.border}]"
+            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill"
             data-name="${person.name}"
             data-id="${person._id}"
-            style="background: ${person.badgeInfo.bg}; color: ${person.badgeInfo.color}"
+            style="background: ${person.badgeInfo.bg}; color: ${person.badgeInfo.color}; border: none"
             >${person.name}</span
           >
           <span class="text-sm text-base-content/50"
@@ -833,12 +837,14 @@ async function renderDebtBreakdown() {
         element += `
         <div class="flex items-center justify-between">
           <span
-            class="badge badge-lg"
+            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill"
+            data-name="${debtor.name}"
+            data-id="${debtor._id}"
             style="background: ${debtor.badgeInfo.bg}; color: ${debtor.badgeInfo.color}; border: none"
             >${debtor.name}</span
           >
           <div class="flex items-center gap-1">
-            $<span class="font-medium amount">${debt.amount}</span>
+            $<span class="font-medium text-xs amount">${debt.amount}</span>
             <input type="checkbox" class="checkbox checkbox-success" />
           </div>
         </div>`;
