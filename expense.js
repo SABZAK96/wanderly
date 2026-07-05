@@ -553,7 +553,217 @@ function calculateOwedAmount(owes, selectedBadgesPayers, costAmount) {
   return { paidBy, owed };
 }
 
-//compute the breakdown of debts - should be ready and displayed upon the page load
+// --- Debt Breakdown pipeline -----------------------------------------
+// per-expense who-owes-whom, handling single- and
+// multi-payer (co-payer) cases via net paid-vs-owed classification
+function computeExpenseDebts(expense) {
+  let debts = [];
+  // branch for no co-payers
+  if (expense.paidBy.length === 1) {
+    expense.owedBy.map((element) => {
+      if (element.person !== expense.paidBy[0].person) {
+        debts.push({
+          to: expense.paidBy[0].person,
+          from: element.person,
+          amount: Number(element.amount),
+        });
+      }
+    });
+  }
+
+  // branch for having co-payers
+  else {
+    let debtors = [];
+    let creditors = [];
+
+    expense.paidBy.forEach((payer) => {
+      // how much of the cost was this payer's own share
+      let ownShare =
+        expense.owedBy.find((element) => element.person === payer.person)
+          ?.amount ?? 0;
+      // net position for this expense: positive = overpaid, negative = underpaid
+      let isOwed = payer.amount - ownShare;
+
+      if (isOwed > 0) {
+        // overpaid their share -> owed money back
+        creditors.push({ person: payer.person, amount: isOwed });
+      } else if (isOwed < 0) {
+        // paid less than their share -> still owes the difference
+        debtors.push({ person: payer.person, amount: -isOwed });
+      }
+      // isOwed === 0 -> already settled for this expense, goes in neither list
+    });
+
+    // ids of everyone who contributed money to this expense
+    const payerIds = expense.paidBy.map((payer) => payer.person);
+    // people who owe a share but never paid anything toward this expense
+    const nonPayerDebtors = expense.owedBy
+      .filter((element) => !payerIds.includes(element.person))
+      .map((element) => ({
+        person: element.person,
+        amount: Number(element.amount),
+      }));
+    debtors.push(...nonPayerDebtors);
+
+    //calculate how the debt should be settled for each expense
+
+    //counter for debtors
+    let i = 0;
+
+    //counter for creditors
+    let j = 0;
+
+    while (i < debtors.length && j < creditors.length) {
+      const debtAmount = Number(debtors[i].amount);
+      const creditAmount = Number(creditors[j].amount);
+
+      if (debtAmount < creditAmount) {
+        // debtor fully paid off, creditor has leftover
+        debts.push({
+          to: creditors[j].person,
+          from: debtors[i].person,
+          amount: debtAmount,
+        });
+        creditors[j].amount = creditAmount - debtAmount;
+        i++;
+      } else if (debtAmount > creditAmount) {
+        // creditor fully paid off, debtor has leftover
+        debts.push({
+          to: creditors[j].person,
+          from: debtors[i].person,
+          amount: creditAmount,
+        });
+        debtors[i].amount = debtAmount - creditAmount;
+        j++;
+      } else {
+        // exact match, both fully settled
+        debts.push({
+          to: creditors[j].person,
+          from: debtors[i].person,
+          amount: debtAmount,
+        });
+        i++;
+        j++;
+      }
+    }
+  }
+  return debts;
+}
+
+// collapses one person's repeated debt entries (across expenses) into a single running total per debtor
+function mergeDebts(element, debts) {
+  let summary = [];
+  const newDebts = debts.filter((individual) => individual.to === element._id);
+  if (newDebts.length > 0) {
+    newDebts.forEach((item) => {
+      let shouldPay = item.amount;
+
+      // match on both fields - "from" alone could merge this debtor's debts to different creditors
+      const debtorExist = summary.find(
+        (element) => element.to === item.to && element.from === item.from,
+      );
+      if (debtorExist) {
+        shouldPay = debtorExist.amount + item.amount;
+        debtorExist.amount = shouldPay;
+      } else {
+        summary.push({
+          to: element._id,
+          from: item.from,
+          amount: shouldPay,
+        });
+      }
+    });
+  }
+  return summary;
+}
+
+// Nets out opposite debts between the same two people and returns the simplified list of debts
+function netOppositeDebts(summary) {
+  let nettedResult = [];
+
+  let referencedSummary = [...summary];
+
+  // store the indices of the matched and netted elements in these arrays to avoid in the next iterations
+  let avoidIndexI = [];
+  let avoidIndexJ = [];
+
+  for (let i = 0; i < summary.length; i++) {
+    for (let j = 0; j < referencedSummary.length; j++) {
+      if (!avoidIndexI.includes(j) && !avoidIndexJ.includes(i)) {
+        if (
+          summary[i].to === referencedSummary[j].from &&
+          summary[i].from === referencedSummary[j].to
+        ) {
+          avoidIndexI.push(i, j);
+          avoidIndexJ.push(i, j);
+
+          // Check if this pair of people already exists in the result,
+          // regardless of who currently owes whom.
+          const ItemFound = nettedResult.find(
+            (item) =>
+              (item.to === summary[i].to && item.from === summary[i].from) ||
+              (item.to === summary[i].from && item.from === summary[i].to),
+          );
+
+          if (summary[i].amount > referencedSummary[j].amount) {
+            // update the object already exists in the nettedResult
+            if (ItemFound) {
+              ItemFound.to = summary[i].to;
+              ItemFound.from = summary[i].from;
+              ItemFound.amount =
+                summary[i].amount - referencedSummary[j].amount;
+            } else {
+              // create a new obj in nettedResult
+
+              nettedResult.push({
+                to: summary[i].to,
+                from: summary[i].from,
+                amount: summary[i].amount - referencedSummary[j].amount,
+              });
+            }
+          } else if (summary[i].amount < referencedSummary[j].amount) {
+            if (ItemFound) {
+              ItemFound.to = referencedSummary[j].to;
+              ItemFound.from = referencedSummary[j].from;
+              ItemFound.amount =
+                referencedSummary[j].amount - summary[i].amount;
+            } else {
+              nettedResult.push({
+                to: referencedSummary[j].to,
+                from: referencedSummary[j].from,
+                amount: referencedSummary[j].amount - summary[i].amount,
+              });
+            }
+          }
+          // equal amounts -> fully cancels out; remove any stale entry
+          // this pair may have pushed earlier (e.g. via self-comparison)
+          else if (ItemFound) {
+            nettedResult.splice(nettedResult.indexOf(ItemFound), 1);
+          }
+        } else {
+          // stops the same entry (a fixed i) from being pushed multiple times across the inner j loop.
+          const ItemFound = nettedResult.find(
+            (item) =>
+              item.to === summary[i].to && item.from === summary[i].from,
+          );
+          if (ItemFound) continue;
+          else {
+            nettedResult.push({
+              to: summary[i].to,
+              from: summary[i].from,
+              amount: summary[i].amount,
+            });
+          }
+        }
+      }
+      // Skip pairs that have already been processed
+      else continue;
+    }
+  }
+  return nettedResult;
+}
+
+// orchestrates the above over all expenses/people
 async function computeDebtBreakdown() {
   // response is an array of expenses, people is an array containing person ids -
   // fetched concurrently since neither depends on the other
@@ -561,128 +771,18 @@ async function computeDebtBreakdown() {
     fetch("/getExpenses/6a445ee01781d2a29c611442").then((res) => res.json()),
     getPeople(),
   ]);
-  let debts = [];
-  let summary = [];
+
   // find how much each person is owed and who owes to them, if any
-
-  response.forEach((expense) => {
-    // branch for no co-payers
-    if (expense.paidBy.length === 1) {
-      expense.owedBy.map((element) => {
-        if (element.person !== expense.paidBy[0].person) {
-          debts.push({
-            to: expense.paidBy[0].person,
-            from: element.person,
-            amount: Number(element.amount),
-          });
-        }
-      });
-    }
-
-    // branch for having co-payers
-    else {
-      let debtors = [];
-      let creditors = [];
-
-      expense.paidBy.forEach((payer) => {
-        // how much of the cost was this payer's own share
-        let ownShare =
-          expense.owedBy.find((element) => element.person === payer.person)
-            ?.amount ?? 0;
-        // net position for this expense: positive = overpaid, negative = underpaid
-        let isOwed = payer.amount - ownShare;
-
-        if (isOwed > 0) {
-          // overpaid their share -> owed money back
-          creditors.push({ person: payer.person, amount: isOwed });
-        } else if (isOwed < 0) {
-          // paid less than their share -> still owes the difference
-          debtors.push({ person: payer.person, amount: -isOwed });
-        }
-        // isOwed === 0 -> already settled for this expense, goes in neither list
-      });
-
-      // ids of everyone who contributed money to this expense
-      const payerIds = expense.paidBy.map((payer) => payer.person);
-      // people who owe a share but never paid anything toward this expense
-      const nonPayerDebtors = expense.owedBy
-        .filter((element) => !payerIds.includes(element.person))
-        .map((element) => ({
-          person: element.person,
-          amount: Number(element.amount),
-        }));
-      debtors.push(...nonPayerDebtors);
-
-      //calculate how the debt should be settled for each expense
-
-      //counter for debtors
-      let i = 0;
-
-      //counter for creditors
-      let j = 0;
-
-      while (i < debtors.length && j < creditors.length) {
-        const debtAmount = Number(debtors[i].amount);
-        const creditAmount = Number(creditors[j].amount);
-
-        if (debtAmount < creditAmount) {
-          // debtor fully paid off, creditor has leftover
-          debts.push({
-            to: creditors[j].person,
-            from: debtors[i].person,
-            amount: debtAmount,
-          });
-          creditors[j].amount = creditAmount - debtAmount;
-          i++;
-        } else if (debtAmount > creditAmount) {
-          // creditor fully paid off, debtor has leftover
-          debts.push({
-            to: creditors[j].person,
-            from: debtors[i].person,
-            amount: creditAmount,
-          });
-          debtors[i].amount = debtAmount - creditAmount;
-          j++;
-        } else {
-          // exact match, both fully settled
-          debts.push({
-            to: creditors[j].person,
-            from: debtors[i].person,
-            amount: debtAmount,
-          });
-          i++;
-          j++;
-        }
-      }
-    }
-  });
+  // map should be used instead of forEach so that the return value of ythe functions wont be thrown away
+  // .flat() needed because each computeExpenseDebts call returns its own array - without it debts would be an array of arrays, not a flat list
+  const debts = response.map((expense) => computeExpenseDebts(expense)).flat();
 
   // accumulating the results in debts array
-  people.forEach((element) => {
-    const newDebts = debts.filter(
-      (individual) => individual.to === element._id,
-    );
-    if (newDebts.length > 0) {
-      newDebts.forEach((item) => {
-        let shouldPay = item.amount;
-        
-        // match on both fields - "from" alone could merge this debtor's debts to different creditors
-        const debtorExist = summary.find(
-          (element) => element.to === item.to && element.from === item.from,
-        );
-        if (debtorExist) {
-          shouldPay = debtorExist.amount + item.amount;
-          debtorExist.amount = shouldPay;
-        } else {
-          summary.push({
-            to: element._id,
-            from: item.from,
-            amount: shouldPay,
-          });
-        }
-      });
-    }
-  });
-  return summary;
+  // .flat() needed for the same reason - each mergeDebts call returns its own array, one per person
+  const summary = people.map((element) => mergeDebts(element, debts)).flat();
+
+  const nettedResult = netOppositeDebts(summary);
+
+  return nettedResult;
 }
 await computeDebtBreakdown();
