@@ -843,9 +843,10 @@ async function renderDebtBreakdown() {
             style="background: ${debtor.badgeInfo.bg}; color: ${debtor.badgeInfo.color}; border: none"
             >${debtor.name}</span
           >
-          <div class="flex items-center gap-1">
-            $<span class="font-medium text-xs amount">${debt.amount}</span>
+          <div class="flex items-center text-sm font-thin">
+            $<div class="flex flex-row gap-1 justify-center items-center "><span class="  amount">${debt.amount}</span>
             <input type="checkbox" class="checkbox checkbox-success" />
+            </div>
           </div>
         </div>`;
       });
