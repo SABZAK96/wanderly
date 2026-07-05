@@ -73,6 +73,7 @@ async function setUpModal() {
   initTable();
 }
 setUpModal();
+renderDebtBreakdown();
 
 // pre-select All badge in the who owes the payer section
 function initAllBadge(id) {
@@ -785,4 +786,72 @@ async function computeDebtBreakdown() {
 
   return nettedResult;
 }
-await computeDebtBreakdown();
+
+//========================================================================
+// rendering the debt breakdown section in the ui
+//========================================================================
+async function renderDebtBreakdown() {
+  const [nettedResult, people] = await Promise.all([
+    computeDebtBreakdown(),
+    getPeople(),
+  ]);
+  const container = document.getElementById("debtBreakdown");
+
+  people.forEach((person) => {
+    const netPerPerson = nettedResult.filter((item) => item.to === person._id);
+    if (netPerPerson.length > 0) {
+      let sum = 0;
+      for (let i = 0; i < netPerPerson.length; i++) {
+        sum += netPerPerson[i].amount;
+      }
+
+      let element = `<div class="collapse collapse-plus border-b border-base-200">
+      <input type="checkbox" />
+      <div class="collapse-title">
+        <div class="flex items-center justify-between">
+          <span
+            class="badge badge-lg cursor-pointer payer-option border-0 border-[${person.badgeInfo.border}]"
+            data-name="${person.name}"
+            data-id="${person._id}"
+            style="background: ${person.badgeInfo.bg}; color: ${person.badgeInfo.color}"
+            >${person.name}</span
+          >
+          <span class="text-sm text-base-content/50"
+            >is owed
+            <span class="font-semibold text-base-content">$</span
+            ><span class="font-semibold text-base-content owed">${sum}</span
+            ></span
+          >
+        </div>
+      </div>
+      <div class="collapse-content flex flex-col gap-2">`;
+
+      netPerPerson.forEach((debt) => {
+        const debtor = people.find(
+          (individual) => individual._id === debt.from,
+        );
+        element += `
+        <div class="flex items-center justify-between">
+          <span
+            class="badge badge-lg"
+            style="background: ${debtor.badgeInfo.bg}; color: ${debtor.badgeInfo.color}; border: none"
+            >${debtor.name}</span
+          >
+          <div class="flex items-center gap-1">
+            $<span class="font-medium amount">${debt.amount}</span>
+            <input type="checkbox" class="checkbox checkbox-success" />
+          </div>
+        </div>`;
+      });
+
+      element += `
+        <button class="btn btn-xs btn-success self-end settle hidden">
+          Mark as settled
+        </button>
+      </div>
+    </div>`;
+
+      container.insertAdjacentHTML("beforeend", element);
+    }
+  });
+}
