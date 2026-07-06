@@ -805,36 +805,51 @@ async function markAsSettled(debtorId, creditorId) {
     .map((expense) => computeExpenseDebts(expense))
     .flat();
 
-  // filter raw debts for the selected pair
+  // filter raw debts for the selected pair - in EITHER direction, since the
+  // amount shown on screen may already be netted between the two of them
+  // (e.g. soroush owes sina $400 but sina also owes soroush $100, netted
+  // down to "soroush owes sina $300" for display)
   // result would be something like [{ expenseId: "hotel123", to: "sinaId", from: "soroushId", amount: 70 }, { expenseId: "car452", to: "sinaId", from: "soroushId", amount: 30 }]
   const filteredDebt = rawDebts.filter(
-    (debt) => debt.to === creditorId && debt.from === debtorId,
+    (debt) =>
+      (debt.to === creditorId && debt.from === debtorId) ||
+      (debt.to === debtorId && debt.from === creditorId),
   );
 
   // if there's no unsettled debt for that expense in the rawDebts array , send the id to the db to remove soroush from it completely, otherwise find that expense id and replace the amount owed to the co-payer with it
 
   // first get the remaining debts to see if there is an unsettled debt for a certain ID for the same debtor
+  // covers both people now, since filteredDebt can contain entries "owned" by either of them once netting is involved
   const remaining = rawDebts.filter(
-    (item) => !filteredDebt.includes(item) && item.from === debtorId,
+    (item) =>
+      !filteredDebt.includes(item) &&
+      (item.from === debtorId || item.from === creditorId),
   );
 
   let result = [];
 
   // id check
   filteredDebt.forEach((obj) => {
+    // whichever person this specific raw entry says owes the money - not
+    // always debtorId, since a netted-in reverse entry has creditorId owing
+    const thisEntryDebtor = obj.from;
+
     // if there's a co payer send the amount to "deduct"
     if (
       remaining.length > 0 &&
-      remaining.some((item) => item.expenseId === obj.expenseId) // check if at least one element passes the check with .some
+      remaining.some(
+        (item) =>
+          item.expenseId === obj.expenseId && item.from === thisEntryDebtor,
+      ) // check if at least one element passes the check with .some
     ) {
       result.push({
         expenseId: obj.expenseId,
-        debtor: debtorId,
+        debtor: thisEntryDebtor,
         amount: obj.amount,
       });
       // with the absence of amount we can remove that entry entirely from db
     } else {
-      result.push({ expenseId: obj.expenseId, debtor: debtorId });
+      result.push({ expenseId: obj.expenseId, debtor: thisEntryDebtor });
     }
   });
 

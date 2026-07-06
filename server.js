@@ -158,6 +158,7 @@ app.delete("/deleteExpense/:tripId/:expenseId", async (req, res) => {
   }
 });
 
+// update the owedBy array based on the payments that are made
 app.put("/markSettled/:tripId", async (req, res) => {
   try {
     const body = req.body;
@@ -189,6 +190,7 @@ app.put("/markSettled/:tripId", async (req, res) => {
   }
 });
 
+// record the payments made in the db
 app.post("/payment/:tripId", async (req, res) => {
   try {
     const body = req.body;
