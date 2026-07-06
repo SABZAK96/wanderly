@@ -125,7 +125,8 @@ app.post("/newExpense/:id", async (req, res) => {
       { new: true }, // return the updated document instead of the pre-update one
     );
 
-    res.json(trip);
+    // send just the new expense with its real _id
+    res.json(trip.expenses.at(-1));
   } catch (error) {
     res.status(500).send("Server Error!");
   }
@@ -139,6 +140,20 @@ app.get("/getExpenses/:id", async (req, res) => {
     const tripExpenses = trip.expenses;
 
     res.json(tripExpenses);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
+// delete a certain expense from the db
+app.delete("/deleteExpense/:tripId/:expenseId", async (req, res) => {
+  try {
+    const expense = await tripModel.findByIdAndUpdate(
+      req.params.tripId,
+      { $pull: { expenses: { _id: req.params.expenseId } } },
+      { new: true },
+    );
+    res.json(expense);
   } catch (error) {
     res.status(500).send("Server Error!");
   }

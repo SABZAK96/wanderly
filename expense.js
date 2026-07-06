@@ -73,10 +73,13 @@ async function setUpModal() {
   initTable();
 }
 setUpModal();
-renderDebtBreakdown().then(() => {
-  initSettleToggles();
-  filterPerson();
-});
+
+function setUpPage() {
+  renderDebtBreakdown().then(() => {
+    initSettleToggles();
+  });
+}
+setUpPage();
 
 // pre-select All badge in the who owes the payer section
 function initAllBadge(id) {
@@ -283,7 +286,7 @@ allMarkAsSettledBtns.forEach((btn) => {
 });
 
 //================================================================================================
-// add an expense logic in modal
+// add/remove an expense logic in modal
 //================================================================================================
 
 // first update the table with added row
@@ -341,14 +344,21 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
     errorMsg.textContent = "* Split amounts must add up to the total cost!";
     return;
   }
-  sendExpenseToDB(expenseTitle, costAmount, paidBy, owes);
+  const serverResponse = await (
+    await sendExpenseToDB(expenseTitle, costAmount, paidBy, owes)
+  ).json();
 
   //cleaning the values to have a good look in the UI
   expenseTitle = expenseTitle.trim();
   expenseTitle = expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
   costAmount = Number(costAmount).toLocaleString("en-US");
 
-  updateTable(selectedBadgesPayers, expenseTitle, costAmount);
+  updateTable(
+    selectedBadgesPayers,
+    expenseTitle,
+    costAmount,
+    serverResponse._id,
+  );
 
   document.getElementById("my_modal_expense").close();
 });
@@ -376,21 +386,20 @@ async function initTable() {
     const cost = expense.amount;
     const costPrepped = Number(cost).toLocaleString("en-US");
 
-    updateTable(selectedBadges, expTitlePrepped, costPrepped);
+    updateTable(selectedBadges, expTitlePrepped, costPrepped, expense._id);
   });
 }
 // update the table with adding a new row
 
-function updateTable(selectedBadges, expenseTitle, costAmount) {
+function updateTable(selectedBadges, expenseTitle, costAmount, expenseId) {
   const tableBody = document.querySelector("#my_table tbody");
   let newTableRow = "";
-  newTableRow = `  <tr>
+  newTableRow = `  <tr data-id="${expenseId}">
     <td class="font-medium " contenteditable="true">${expenseTitle}</td>
     <td contenteditable="true"><span>$</span><span class="tableAmounts">${costAmount}</span></td>
     <td><div class="flex flex-wrap gap-1 badgePlaceHolder"></div></td>
     <td > <button
-                      class="btn btn-ghost btn-xs text-error"
-                      onclick="this.closest('tr').remove()"
+                      class="btn btn-ghost btn-xs text-error remove"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -465,6 +474,29 @@ function expenseInputValidator(cost, owes, owed) {
   return Math.abs(Number(cost) - owedSum) < 0.01;
 }
 
+// removing a row from db
+document
+  .querySelector("#my_table tbody")
+  .addEventListener("click", async (event) => {
+    const btn = event.target.closest(".remove");
+    if (!btn) return; // click wasn't on (or inside) a delete button
+
+    const row = btn.closest("tr");
+    const id = row.dataset.id;
+
+    const response = await fetch(
+      `/deleteExpense/6a445ee01781d2a29c611442/${id}`,
+      {
+        method: "DELETE",
+      },
+    );
+
+    if (response.ok) {
+      row.remove(); // only remove from the page once the server confirms it's gone
+      setUpPage();
+    }
+  });
+
 // send the added expense to the db
 async function sendExpenseToDB(title, cost, paidBy, owes) {
   const data = await fetch("/newExpense/6a445ee01781d2a29c611442", {
@@ -479,6 +511,8 @@ async function sendExpenseToDB(title, cost, paidBy, owes) {
       owedBy: owes,
     }),
   });
+  setUpPage();
+  return data;
 }
 
 // calculate how much each person owes for this expense
@@ -805,6 +839,7 @@ async function renderDebtBreakdown() {
     getPeople(),
   ]);
   const container = document.getElementById("debtBreakdown");
+  container.innerHTML = "";
 
   people.forEach((person) => {
     const netPerPerson = nettedResult.filter((item) => item.to === person._id);
@@ -871,76 +906,86 @@ async function renderDebtBreakdown() {
 // ========================================================================================
 // the filtering logic
 // ========================================================================================
-async function filterPerson() {
-  const isOwedBreakdown = document.querySelectorAll(
-    "#debtBreakdown .collapse-title .person-pill",
-  );
-  const container = document.getElementById("filterCard");
-  const isDebtorBreakdown = document.querySelectorAll(
-    "#debtBreakdown .collapse-content .person-pill",
-  );
-  const filterBtns = document.querySelectorAll("#person-filters .btn");
-  const resetbtn = document.getElementById("resetFilter");
-  filterBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (btn.id === "resetFilter") {
-        container.innerHTML = "";
-        document.getElementById("filter-result").classList.add("hidden");
-        resetbtn.classList.add("hidden");
-      } else {
-        document.getElementById("filter-result").classList.remove("hidden");
-        resetbtn.classList.remove("hidden");
-        let result = "";
-        container.innerHTML = "";
-        const personName = btn.dataset.name;
+// attached once, since #person-filters and its buttons are static HTML that
+// exists from page load - isOwedBreakdown/isDebtorBreakdown are re-queried
+// fresh on every click instead, since #debtBreakdown gets rebuilt whenever
+// renderDebtBreakdown() re-runs (e.g. after adding/deleting an expense)
+document
+  .getElementById("person-filters")
+  .addEventListener("click", (event) => {
+    const btn = event.target.closest(".btn");
+    if (!btn) return;
 
-        const isOwed = [...isOwedBreakdown].find(
-          (element) => element.dataset.name === personName,
-        );
+    const container = document.getElementById("filterCard");
+    const resetbtn = document.getElementById("resetFilter");
 
-        const hasDebts = [...isDebtorBreakdown].filter(
-          (element) => element.dataset.name === personName,
-        );
+    if (btn.id === "resetFilter") {
+      container.innerHTML = "";
+      document.getElementById("filter-result").classList.add("hidden");
+      resetbtn.classList.add("hidden");
+      return;
+    }
 
-        // holds actual DOM element
-        const personBadge = peopleBadges.find(
-          (item) => item.dataset.name === personName,
-        );
-        if (hasDebts.length > 0 || isOwed) {
-          result += `<div class="flex items-center justify-between">
+    document.getElementById("filter-result").classList.remove("hidden");
+    resetbtn.classList.remove("hidden");
+    let result = "";
+    container.innerHTML = "";
+    const personName = btn.dataset.name;
+
+    const isOwedBreakdown = document.querySelectorAll(
+      "#debtBreakdown .collapse-title .person-pill",
+    );
+    const isDebtorBreakdown = document.querySelectorAll(
+      "#debtBreakdown .collapse-content .person-pill",
+    );
+
+    const isOwed = [...isOwedBreakdown].find(
+      (element) => element.dataset.name === personName,
+    );
+
+    const hasDebts = [...isDebtorBreakdown].filter(
+      (element) => element.dataset.name === personName,
+    );
+
+    // holds actual DOM element
+    const personBadge = peopleBadges.find(
+      (item) => item.dataset.name === personName,
+    );
+    if (hasDebts.length > 0 || isOwed) {
+      result += `<div class="flex items-center justify-between">
                   ${personBadge.outerHTML}`;
 
-          // if the person is owed something
-          if (isOwed) {
-            const sum = isOwed
-              .closest(".collapse-title")
-              .querySelector(".owed").textContent;
-            result += `
+      // if the person is owed something
+      if (isOwed) {
+        const sum = isOwed
+          .closest(".collapse-title")
+          .querySelector(".owed").textContent;
+        result += `
                   <span class="text-sm text-base-content/50"
                     >total owed $<span class="font-semibold text-base-content"
                       >${sum}</span
                     ></span
                   >`;
-          }
+      }
 
-          result += `</div>`;
-        } else {
-          result += `<div class="flex items-center justify-between">
+      result += `</div>`;
+    } else {
+      result += `<div class="flex items-center justify-between">
                   ${personBadge.outerHTML}
                   <span class="text-sm text-base-content/50">no debts to show</span>
                 </div>`;
-        }
+    }
 
-        if (hasDebts.length > 0) {
-          result += `<div class="flex flex-col gap-2">`;
-          hasDebts.forEach((item) => {
-            const owesTo = item
-              .closest(".collapse")
-              .querySelector(".collapse-title .person-pill").textContent;
-            const amountOwes = item
-              .closest(".debtor")
-              .querySelector(".amount").textContent;
-            result += `
+    if (hasDebts.length > 0) {
+      result += `<div class="flex flex-col gap-2">`;
+      hasDebts.forEach((item) => {
+        const owesTo = item
+          .closest(".collapse")
+          .querySelector(".collapse-title .person-pill").textContent;
+        const amountOwes = item
+          .closest(".debtor")
+          .querySelector(".amount").textContent;
+        result += `
                 <div class="flex items-center justify-between">
                   <span class="pl-2 text-sm text-base-content/60"
                     >owes <span>${owesTo}</span></span
@@ -948,11 +993,8 @@ async function filterPerson() {
                   <span class="font-medium">$<span>${amountOwes}</span></span>
                 </div>
               `;
-          });
-          result += `</div>`;
-        }
-        container.insertAdjacentHTML("beforeend", result);
-      }
-    });
+      });
+      result += `</div>`;
+    }
+    container.insertAdjacentHTML("beforeend", result);
   });
-}
