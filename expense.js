@@ -245,46 +245,6 @@ function initSettleToggles() {
   });
 }
 
-// removing the paid debts when mark as settled is clicked
-let settledAmounts = 0;
-
-const allMarkAsSettledBtns = document.querySelectorAll(".settle");
-
-allMarkAsSettledBtns.forEach((btn) => {
-  const debtNode = btn.closest(".collapse").querySelector(".owed");
-
-  btn.addEventListener("click", () => {
-    let debt = Number(debtNode.textContent);
-
-    // go to the parent node and get all the input fields and put them in the array
-    const amounts = [
-      ...btn
-        .closest(".collapse-content")
-        .querySelectorAll("input[type='checkbox']"),
-    ];
-
-    amounts.forEach((amount) => {
-      if (amount.checked) {
-        const paidAmount = Number(amount.previousElementSibling.textContent);
-        settledAmounts += paidAmount;
-        amount.parentElement.parentElement.remove();
-      }
-    });
-
-    const remainingDebt = debt - settledAmounts;
-    debtNode.innerHTML = remainingDebt;
-    settledAmounts = 0;
-
-    //clear out the cards if the debt is zero
-    const allDebts = document.querySelectorAll(".owed");
-    allDebts.forEach((debt) => {
-      if (Number(debt.textContent) === 0) {
-        debt.closest(".collapse").remove();
-      }
-    });
-  });
-});
-
 //================================================================================================
 // add/remove an expense logic in modal
 //================================================================================================
@@ -607,6 +567,7 @@ function computeExpenseDebts(expense) {
     expense.owedBy.map((element) => {
       if (element.person !== expense.paidBy[0].person) {
         debts.push({
+          expenseId: expense._id,
           to: expense.paidBy[0].person,
           from: element.person,
           amount: Number(element.amount),
@@ -664,6 +625,7 @@ function computeExpenseDebts(expense) {
       if (debtAmount < creditAmount) {
         // debtor fully paid off, creditor has leftover
         debts.push({
+          expenseId: expense._id,
           to: creditors[j].person,
           from: debtors[i].person,
           amount: debtAmount,
@@ -673,6 +635,7 @@ function computeExpenseDebts(expense) {
       } else if (debtAmount > creditAmount) {
         // creditor fully paid off, debtor has leftover
         debts.push({
+          expenseId: expense._id,
           to: creditors[j].person,
           from: debtors[i].person,
           amount: creditAmount,
@@ -682,6 +645,7 @@ function computeExpenseDebts(expense) {
       } else {
         // exact match, both fully settled
         debts.push({
+          expenseId: expense._id,
           to: creditors[j].person,
           from: debtors[i].person,
           amount: debtAmount,
@@ -830,6 +794,88 @@ async function computeDebtBreakdown() {
   return nettedResult;
 }
 
+async function markAsSettled(debtorId, creditorId) {
+  const response = await (
+    await fetch("/getExpenses/6a445ee01781d2a29c611442")
+  ).json();
+  // lets say soroush settled all his debts to sina
+  // an array of objects like [{ expenseId: "hotel123", to: "sinaId", from: "soroushId", amount: 70 },
+  // { expenseId: "hotel123", to: "hassanId", from: "soroushId", amount: 30 }, { expenseId: "car452", to: "sinaId", from: "soroushId", amount: 30 }]
+  const rawDebts = response
+    .map((expense) => computeExpenseDebts(expense))
+    .flat();
+
+  // filter raw debts for the selected pair
+  // result would be something like [{ expenseId: "hotel123", to: "sinaId", from: "soroushId", amount: 70 }, { expenseId: "car452", to: "sinaId", from: "soroushId", amount: 30 }]
+  const filteredDebt = rawDebts.filter(
+    (debt) => debt.to === creditorId && debt.from === debtorId,
+  );
+
+  // if there's no unsettled debt for that expense in the rawDebts array , send the id to the db to remove soroush from it completely, otherwise find that expense id and replace the amount owed to the co-payer with it
+
+  // first get the remaining debts to see if there is an unsettled debt for a certain ID for the same debtor
+  const remaining = rawDebts.filter(
+    (item) => !filteredDebt.includes(item) && item.from === debtorId,
+  );
+
+  let result = [];
+
+  // id check
+  filteredDebt.forEach((obj) => {
+    // if there's a co payer send the amount to "deduct"
+    if (
+      remaining.length > 0 &&
+      remaining.some((item) => item.expenseId === obj.expenseId) // check if at least one element passes the check with .some
+    ) {
+      result.push({
+        expenseId: obj.expenseId,
+        debtor: debtorId,
+        amount: obj.amount,
+      });
+      // with the absence of amount we can remove that entry entirely from db
+    } else {
+      result.push({ expenseId: obj.expenseId, debtor: debtorId });
+    }
+  });
+
+  await fetch("/markSettled/6a445ee01781d2a29c611442", {
+    method:"PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(result),
+  })
+}
+
+// removing the paid debts when mark as settled is clicked
+document
+  .getElementById("debtBreakdown")
+  .addEventListener("click", async (event) => {
+    const btn = event.target.closest(".settle");
+    if (!btn) return;
+
+    const collapseSection = btn.closest(".collapse");
+    const creditorId = collapseSection.querySelector(
+      ".collapse-title .person-pill",
+    ).dataset.id;
+
+    const checkedRows = [...collapseSection.querySelectorAll(".debtor")].filter(
+      (row) => row.querySelector("input[type='checkbox']").checked,
+    );
+
+    // the user might check several debtor checkboxes in one creditor's section  wait for the full result before setting up the page again
+    await Promise.all(
+      checkedRows.map((row) => {
+        const debtorId = row.querySelector(".person-pill").dataset.id;
+        return markAsSettled(debtorId, creditorId);
+      }),
+    );
+
+    // re-render everything from the DB now that it reflects the settlement,
+    // rather than hand-patching the DOM to guess what changed
+    setUpPage();
+  });
+
 //========================================================================
 // rendering the debt breakdown section in the ui
 //========================================================================
@@ -910,82 +956,80 @@ async function renderDebtBreakdown() {
 // exists from page load - isOwedBreakdown/isDebtorBreakdown are re-queried
 // fresh on every click instead, since #debtBreakdown gets rebuilt whenever
 // renderDebtBreakdown() re-runs (e.g. after adding/deleting an expense)
-document
-  .getElementById("person-filters")
-  .addEventListener("click", (event) => {
-    const btn = event.target.closest(".btn");
-    if (!btn) return;
+document.getElementById("person-filters").addEventListener("click", (event) => {
+  const btn = event.target.closest(".btn");
+  if (!btn) return;
 
-    const container = document.getElementById("filterCard");
-    const resetbtn = document.getElementById("resetFilter");
+  const container = document.getElementById("filterCard");
+  const resetbtn = document.getElementById("resetFilter");
 
-    if (btn.id === "resetFilter") {
-      container.innerHTML = "";
-      document.getElementById("filter-result").classList.add("hidden");
-      resetbtn.classList.add("hidden");
-      return;
-    }
-
-    document.getElementById("filter-result").classList.remove("hidden");
-    resetbtn.classList.remove("hidden");
-    let result = "";
+  if (btn.id === "resetFilter") {
     container.innerHTML = "";
-    const personName = btn.dataset.name;
+    document.getElementById("filter-result").classList.add("hidden");
+    resetbtn.classList.add("hidden");
+    return;
+  }
 
-    const isOwedBreakdown = document.querySelectorAll(
-      "#debtBreakdown .collapse-title .person-pill",
-    );
-    const isDebtorBreakdown = document.querySelectorAll(
-      "#debtBreakdown .collapse-content .person-pill",
-    );
+  document.getElementById("filter-result").classList.remove("hidden");
+  resetbtn.classList.remove("hidden");
+  let result = "";
+  container.innerHTML = "";
+  const personName = btn.dataset.name;
 
-    const isOwed = [...isOwedBreakdown].find(
-      (element) => element.dataset.name === personName,
-    );
+  const isOwedBreakdown = document.querySelectorAll(
+    "#debtBreakdown .collapse-title .person-pill",
+  );
+  const isDebtorBreakdown = document.querySelectorAll(
+    "#debtBreakdown .collapse-content .person-pill",
+  );
 
-    const hasDebts = [...isDebtorBreakdown].filter(
-      (element) => element.dataset.name === personName,
-    );
+  const isOwed = [...isOwedBreakdown].find(
+    (element) => element.dataset.name === personName,
+  );
 
-    // holds actual DOM element
-    const personBadge = peopleBadges.find(
-      (item) => item.dataset.name === personName,
-    );
-    if (hasDebts.length > 0 || isOwed) {
-      result += `<div class="flex items-center justify-between">
+  const hasDebts = [...isDebtorBreakdown].filter(
+    (element) => element.dataset.name === personName,
+  );
+
+  // holds actual DOM element
+  const personBadge = peopleBadges.find(
+    (item) => item.dataset.name === personName,
+  );
+  if (hasDebts.length > 0 || isOwed) {
+    result += `<div class="flex items-center justify-between">
                   ${personBadge.outerHTML}`;
 
-      // if the person is owed something
-      if (isOwed) {
-        const sum = isOwed
-          .closest(".collapse-title")
-          .querySelector(".owed").textContent;
-        result += `
+    // if the person is owed something
+    if (isOwed) {
+      const sum = isOwed
+        .closest(".collapse-title")
+        .querySelector(".owed").textContent;
+      result += `
                   <span class="text-sm text-base-content/50"
                     >total owed $<span class="font-semibold text-base-content"
                       >${sum}</span
                     ></span
                   >`;
-      }
+    }
 
-      result += `</div>`;
-    } else {
-      result += `<div class="flex items-center justify-between">
+    result += `</div>`;
+  } else {
+    result += `<div class="flex items-center justify-between">
                   ${personBadge.outerHTML}
                   <span class="text-sm text-base-content/50">no debts to show</span>
                 </div>`;
-    }
+  }
 
-    if (hasDebts.length > 0) {
-      result += `<div class="flex flex-col gap-2">`;
-      hasDebts.forEach((item) => {
-        const owesTo = item
-          .closest(".collapse")
-          .querySelector(".collapse-title .person-pill").textContent;
-        const amountOwes = item
-          .closest(".debtor")
-          .querySelector(".amount").textContent;
-        result += `
+  if (hasDebts.length > 0) {
+    result += `<div class="flex flex-col gap-2">`;
+    hasDebts.forEach((item) => {
+      const owesTo = item
+        .closest(".collapse")
+        .querySelector(".collapse-title .person-pill").textContent;
+      const amountOwes = item
+        .closest(".debtor")
+        .querySelector(".amount").textContent;
+      result += `
                 <div class="flex items-center justify-between">
                   <span class="pl-2 text-sm text-base-content/60"
                     >owes <span>${owesTo}</span></span
@@ -993,8 +1037,8 @@ document
                   <span class="font-medium">$<span>${amountOwes}</span></span>
                 </div>
               `;
-      });
-      result += `</div>`;
-    }
-    container.insertAdjacentHTML("beforeend", result);
-  });
+    });
+    result += `</div>`;
+  }
+  container.insertAdjacentHTML("beforeend", result);
+});

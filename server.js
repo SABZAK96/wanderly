@@ -54,7 +54,6 @@ const tripSchema = new mongoose.Schema({
       payer: String, // user id of person paying back
       payee: String, // user id of person being paid back
       amount: Number,
-      forCost: String, // expense _id
     },
   ],
 });
@@ -154,6 +153,37 @@ app.delete("/deleteExpense/:tripId/:expenseId", async (req, res) => {
       { new: true },
     );
     res.json(expense);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
+app.put("/markSettled/:tripId", async (req, res) => {
+  try {
+    const body = req.body;
+    const trip = await tripModel.findById(req.params.tripId);
+
+    body.forEach((entry) => {
+      // step 1: find the specific expense inside the expenses array
+      const expense = trip.expenses.id(entry.expenseId);
+
+      // step 2: find the specific owedBy entry inside that expense
+      const owedByEntry = expense.owedBy.find(
+        (item) => item.person === entry.debtor,
+      );
+
+      if (entry.amount) {
+        // step 3: just... subtract, like a normal JS object
+        owedByEntry.amount -= entry.amount;
+      } else {
+        // step 3: remove that person and amount from the owedBy array
+        expense.owedBy.pull({ person: entry.debtor });
+      }
+    });
+
+    // step 4: persist every mutation above in a single write
+    await trip.save();
+    res.json(trip);
   } catch (error) {
     res.status(500).send("Server Error!");
   }
