@@ -1,5 +1,5 @@
 // string badges and update them when they are build to update the table tags easily
-let poepleBadges = undefined;
+let peopleBadges = undefined;
 
 document.getElementById("addExp").addEventListener("click", () => {
   document.getElementById("my_modal_expense").showModal();
@@ -58,7 +58,7 @@ async function populateFieldsBadges(id) {
                 >${person.name}</span>`;
     container.insertAdjacentHTML("beforeend", badgeSpan);
   });
-  poepleBadges = [...container.querySelectorAll(".person-pill")];
+  peopleBadges = [...container.querySelectorAll(".person-pill")];
 }
 
 //funtion that set up the modal using the info of people retrieved from the db
@@ -73,7 +73,10 @@ async function setUpModal() {
   initTable();
 }
 setUpModal();
-renderDebtBreakdown().then(initSettleToggles);
+renderDebtBreakdown().then(() => {
+  initSettleToggles();
+  filterPerson();
+});
 
 // pre-select All badge in the who owes the payer section
 function initAllBadge(id) {
@@ -126,7 +129,9 @@ function highlightBadges(id) {
       if (id === "exp-payer") {
         const coPayerContainer = document.getElementById("coPayerAmount");
         const paidByArray = [
-          ...document.getElementById("exp-payer").querySelectorAll(".person-pill"),
+          ...document
+            .getElementById("exp-payer")
+            .querySelectorAll(".person-pill"),
         ].filter((element) => element.classList.contains("border-2"));
         coPayerContainer.innerHTML = "";
         if (paidByArray.length >= 2) {
@@ -359,7 +364,7 @@ async function initTable() {
   response.forEach((expense) => {
     //preparing badges
     const selectedBadges = expense.paidBy.map((item) =>
-      poepleBadges.find((badge) => badge.dataset.id === item.person),
+      peopleBadges.find((badge) => badge.dataset.id === item.person),
     );
 
     //preparing expense title
@@ -835,7 +840,7 @@ async function renderDebtBreakdown() {
           (individual) => individual._id === debt.from,
         );
         element += `
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between debtor">
           <span
             class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill"
             data-name="${debtor.name}"
@@ -844,7 +849,7 @@ async function renderDebtBreakdown() {
             >${debtor.name}</span
           >
           <div class="flex items-center text-sm font-thin">
-            $<div class="flex flex-row gap-1 justify-center items-center "><span class="  amount">${debt.amount}</span>
+            $<div class="flex flex-row gap-1 justify-center items-center "><span class="amount">${debt.amount}</span>
             <input type="checkbox" class="checkbox checkbox-success" />
             </div>
           </div>
@@ -860,5 +865,94 @@ async function renderDebtBreakdown() {
 
       container.insertAdjacentHTML("beforeend", element);
     }
+  });
+}
+
+// ========================================================================================
+// the filtering logic
+// ========================================================================================
+async function filterPerson() {
+  const isOwedBreakdown = document.querySelectorAll(
+    "#debtBreakdown .collapse-title .person-pill",
+  );
+  const container = document.getElementById("filterCard");
+  const isDebtorBreakdown = document.querySelectorAll(
+    "#debtBreakdown .collapse-content .person-pill",
+  );
+  const filterBtns = document.querySelectorAll("#person-filters .btn");
+  const resetbtn = document.getElementById("resetFilter");
+  filterBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.id === "resetFilter") {
+        container.innerHTML = "";
+        document.getElementById("filter-result").classList.add("hidden");
+        resetbtn.classList.add("hidden");
+      } else {
+        document.getElementById("filter-result").classList.remove("hidden");
+        resetbtn.classList.remove("hidden");
+        let result = "";
+        container.innerHTML = "";
+        const personName = btn.dataset.name;
+
+        const isOwed = [...isOwedBreakdown].find(
+          (element) => element.dataset.name === personName,
+        );
+
+        const hasDebts = [...isDebtorBreakdown].filter(
+          (element) => element.dataset.name === personName,
+        );
+
+        // holds actual DOM element
+        const personBadge = peopleBadges.find(
+          (item) => item.dataset.name === personName,
+        );
+        if (hasDebts.length > 0 || isOwed) {
+          result += `<div class="flex items-center justify-between">
+                  ${personBadge.outerHTML}`;
+
+          // if the person is owed something
+          if (isOwed) {
+            const sum = isOwed
+              .closest(".collapse-title")
+              .querySelector(".owed").textContent;
+            result += `
+                  <span class="text-sm text-base-content/50"
+                    >total owed $<span class="font-semibold text-base-content"
+                      >${sum}</span
+                    ></span
+                  >`;
+          }
+
+          result += `</div>`;
+        } else {
+          result += `<div class="flex items-center justify-between">
+                  ${personBadge.outerHTML}
+                  <span class="text-sm text-base-content/50">no debts to show</span>
+                </div>`;
+        }
+
+        if (hasDebts.length > 0) {
+          result += `<div class="flex flex-col gap-2">`;
+          hasDebts.forEach((item) => {
+            const owesTo = item
+              .closest(".collapse")
+              .querySelector(".collapse-title .person-pill").textContent;
+            const amountOwes = item
+              .closest(".debtor")
+              .querySelector(".amount").textContent;
+            result += `
+                <div class="flex items-center justify-between">
+                  <span class="pl-2 text-sm text-base-content/60"
+                    >owes <span>${owesTo}</span></span
+                  >
+                  <span class="font-medium">$<span>${amountOwes}</span></span>
+                </div>
+              `;
+          });
+          result += `</div>`;
+        }
+        container.insertAdjacentHTML("beforeend", result);
+      }
+    });
   });
 }

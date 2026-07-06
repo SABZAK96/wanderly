@@ -327,35 +327,21 @@
             >
               Shohreh
             </button>
+            <button
+              id="resetFilter"
+              class="btn btn-sm rounded-full hidden"
+              style="background: #534ab7; color: white; border: none"
+            >
+              Clear
+            </button>
           </div>
 
           <!-- filter result card -->
           <div
             id="filter-result"
-            class="card bg-base-200 shadow-sm border border-base-300 mt-4 mb-4"
+            class="card bg-base-200 shadow-sm border border-base-300 mt-4 mb-4 hidden"
           >
-            <div class="card-body gap-3">
-              <div class="flex items-center justify-between">
-                <span
-                  class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill"
-                  style="background: #dcfce7; color: #15803d; border: none"
-                  >Soroush</span
-                >
-                <span class="text-sm text-base-content/50"
-                  >total owed $<span class="font-semibold text-base-content"
-                    >300</span
-                  ></span
-                >
-              </div>
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                  <span class="pl-2 text-sm text-base-content/60"
-                    >owes Sina</span
-                  >
-                  <span class="font-medium">$300</span>
-                </div>
-              </div>
-            </div>
+            <div id="filterCard" class="card-body gap-3"></div>
           </div>
         </div>
         <div class="card bg-base-100 shadow-sm border border-base-200">
