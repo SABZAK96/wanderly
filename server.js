@@ -188,3 +188,21 @@ app.put("/markSettled/:tripId", async (req, res) => {
     res.status(500).send("Server Error!");
   }
 });
+
+app.post("/payment/:tripId", async (req, res) => {
+  try {
+    const body = req.body;
+    const trip = await tripModel.findByIdAndUpdate(
+      req.params.tripId,
+      {
+        $push: {
+          payments: { payer: body.from, payee: body.to, amount: body.amount },
+        },
+      },
+      { new: true },
+    );
+    res.json(trip);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});

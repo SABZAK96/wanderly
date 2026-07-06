@@ -839,12 +839,12 @@ async function markAsSettled(debtorId, creditorId) {
   });
 
   await fetch("/markSettled/6a445ee01781d2a29c611442", {
-    method:"PUT",
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(result),
-  })
+  });
 }
 
 // removing the paid debts when mark as settled is clicked
@@ -865,8 +865,16 @@ document
 
     // the user might check several debtor checkboxes in one creditor's section  wait for the full result before setting up the page again
     await Promise.all(
-      checkedRows.map((row) => {
+      checkedRows.map(async (row) => {
         const debtorId = row.querySelector(".person-pill").dataset.id;
+        const amount = Number(row.querySelector(".amount").textContent);
+        await fetch("/payment/6a445ee01781d2a29c611442", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({to: creditorId, from: debtorId, amount: amount}),
+        });
         return markAsSettled(debtorId, creditorId);
       }),
     );
