@@ -208,3 +208,29 @@ app.post("/payment/:tripId", async (req, res) => {
     res.status(500).send("Server Error!");
   }
 });
+
+// route for sending all owedBy amounts and payments amounts for a specific id
+app.get("/spentDetails/:tripId/:personId", async (req, res) => {
+  try {
+    const trip = await tripModel.findById(req.params.tripId);
+    // resuly would be similar to [ {person:"a",amount:5}, {person:"b",amount:10}, {person:"a",amount:3} ]
+    const expenses = trip.expenses
+      .flatMap((expense) => expense.owedBy)
+      .filter((item) => item.person === req.params.personId);
+    const payments = trip.payments.filter(
+      (item) => item.payer === req.params.personId,
+    );
+    const totalExp = expenses.reduce(
+      (accum, element) => accum + element.amount,
+      0,
+    );
+    const totalPay = payments.reduce(
+      (accum, element) => accum + element.amount,
+      0,
+    );
+    const response = {id: req.params.personId, expenses:totalExp, payments: totalPay}
+    res.json(response);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});

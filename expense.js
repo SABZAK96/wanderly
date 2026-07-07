@@ -75,8 +75,10 @@ async function setUpModal() {
 setUpModal();
 
 function setUpPage() {
-  return renderDebtBreakdown().then(() => {
+  return renderDebtBreakdown().then(async () => {
     initSettleToggles();
+    const results = await calculateSpending();
+    renderSpending(results);
   });
 }
 setUpPage();
@@ -1092,3 +1094,46 @@ document.getElementById("person-filters").addEventListener("click", (event) => {
   currentFilterPerson = btn.dataset.name;
   renderFilterCard(currentFilterPerson);
 });
+
+// ===========================================================================
+// showing total spent per person in the trip -dynamically
+// ===========================================================================
+
+// first get the info from the db and calculate spending for each person
+async function calculateSpending() {
+  const people = await getPeople();
+  const personsIds = people.map((person) => person._id);
+  const results = await Promise.all(
+    personsIds.map((id) =>
+      fetch(`/spentDetails/6a445ee01781d2a29c611442/${id}`).then((res) =>
+        res.json(),
+      ),
+    ),
+  );
+  return results;
+}
+
+// render the results
+function renderSpending(results) {
+  const container = document.getElementById("totalSpent");
+  container.innerHTML = "";
+  results.forEach((element) => {
+    const personName = peopleBadges.find(
+      (person) => person.dataset.id === element.id,
+    ).dataset.name;
+    const totalSpent = Number(element.expenses) + Number(element.payments);
+    let stat = ` <div
+            class="stats shadow-sm border border-base-200"
+            style="background: #eeedfe"
+          >
+            <div class="stat py-2 px-4 place-items-center text-center">
+              <div class="stat-title text-xs font-medium" style="color: #534ab7">
+                ${personName}
+              </div>
+              <div class="stat-value text-lg" style="color: #534ab7"><span>$</span>${totalSpent}</div>
+            </div>
+
+          </div>`;
+    container.insertAdjacentHTML("beforeend", stat);
+  });
+}
