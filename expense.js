@@ -253,7 +253,9 @@ function initSettleToggles() {
 //================================================================================================
 
 // first update the table with added row
-document.getElementById("exp-submit").addEventListener("click", async () => {
+document.getElementById("exp-submit").addEventListener("click", async (event) => {
+  const submitBtn = event.currentTarget;
+  if (submitBtn.dataset.loading === "true") return; // guard against double-click
   const titleInput = document.getElementById("exp-title");
   const costInput = document.getElementById("exp-cost");
   let expenseTitle = titleInput.value;
@@ -295,35 +297,44 @@ document.getElementById("exp-submit").addEventListener("click", async () => {
   errorMsg.textContent = "";
   errorMsg.classList.add("hidden");
 
-  const owes = await calculateSplitAmounts(costAmount, selectedBadgesDebts);
-  const { paidBy, owed } = calculateOwedAmount(
-    owes,
-    selectedBadgesPayers,
-    costAmount,
-  );
+  const originalBtnContent = submitBtn.innerHTML;
+  submitBtn.dataset.loading = "true";
+  submitBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
 
-  if (!expenseInputValidator(costAmount, owes, owed)) {
-    errorMsg.classList.remove("hidden");
-    errorMsg.textContent = "* Split amounts must add up to the total cost!";
-    return;
+  try {
+    const owes = await calculateSplitAmounts(costAmount, selectedBadgesDebts);
+    const { paidBy, owed } = calculateOwedAmount(
+      owes,
+      selectedBadgesPayers,
+      costAmount,
+    );
+
+    if (!expenseInputValidator(costAmount, owes, owed)) {
+      errorMsg.classList.remove("hidden");
+      errorMsg.textContent = "* Split amounts must add up to the total cost!";
+      return;
+    }
+    const serverResponse = await (
+      await sendExpenseToDB(expenseTitle, costAmount, paidBy, owes)
+    ).json();
+
+    //cleaning the values to have a good look in the UI
+    expenseTitle = expenseTitle.trim();
+    expenseTitle = expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
+    costAmount = Number(costAmount).toLocaleString("en-US");
+
+    updateTable(
+      selectedBadgesPayers,
+      expenseTitle,
+      costAmount,
+      serverResponse._id,
+    );
+
+    document.getElementById("my_modal_expense").close();
+  } finally {
+    submitBtn.dataset.loading = "false";
+    submitBtn.innerHTML = originalBtnContent;
   }
-  const serverResponse = await (
-    await sendExpenseToDB(expenseTitle, costAmount, paidBy, owes)
-  ).json();
-
-  //cleaning the values to have a good look in the UI
-  expenseTitle = expenseTitle.trim();
-  expenseTitle = expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
-  costAmount = Number(costAmount).toLocaleString("en-US");
-
-  updateTable(
-    selectedBadgesPayers,
-    expenseTitle,
-    costAmount,
-    serverResponse._id,
-  );
-
-  document.getElementById("my_modal_expense").close();
 });
 
 // init table
@@ -445,10 +456,13 @@ document
   .addEventListener("click", async (event) => {
     const btn = event.target.closest(".remove");
     if (!btn) return; // click wasn't on (or inside) a delete button
+    if (btn.dataset.loading === "true") return; // guard against double-click
 
     const row = btn.closest("tr");
     const id = row.dataset.id;
-
+    const originalIcon = btn.innerHTML;
+    btn.dataset.loading = "true";
+    btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
     const response = await fetch(
       `/deleteExpense/6a445ee01781d2a29c611442/${id}`,
       {
@@ -459,6 +473,9 @@ document
     if (response.ok) {
       row.remove(); // only remove from the page once the server confirms it's gone
       setUpPage().then(refreshFilterCard);
+    } else {
+      btn.dataset.loading = "false";
+      btn.innerHTML = originalIcon;
     }
   });
 
@@ -873,6 +890,11 @@ document
   .addEventListener("click", async (event) => {
     const btn = event.target.closest(".settle");
     if (!btn) return;
+    if (btn.dataset.loading === "true") return; // guard against double-click
+
+    const originalBtn = btn.innerHTML;
+    btn.dataset.loading = "true";
+    btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
 
     const collapseSection = btn.closest(".collapse");
     const creditorId = collapseSection.querySelector(
@@ -888,7 +910,7 @@ document
       checkedRows.map(async (row) => {
         const debtorId = row.querySelector(".person-pill").dataset.id;
         const amount = Number(row.querySelector(".amount").textContent);
-        await fetch("/payment/6a445ee01781d2a29c611442", {
+        const response = await fetch("/payment/6a445ee01781d2a29c611442", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -899,6 +921,11 @@ document
             amount: amount,
           }),
         });
+        if (!response.ok) {
+          btn.dataset.loading = "false";
+          btn.innerHTML = originalBtn;
+          return; // don't mark it settled if recording the payment failed
+        }
         return markAsSettled(debtorId, creditorId);
       }),
     );
