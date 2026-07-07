@@ -314,9 +314,13 @@ document.getElementById("exp-submit").addEventListener("click", async (event) =>
       errorMsg.textContent = "* Split amounts must add up to the total cost!";
       return;
     }
-    const serverResponse = await (
-      await sendExpenseToDB(expenseTitle, costAmount, paidBy, owes)
-    ).json();
+    const response = await sendExpenseToDB(expenseTitle, costAmount, paidBy, owes);
+    if (!response.ok) {
+      errorMsg.classList.remove("hidden");
+      errorMsg.textContent = "* Failed to save expense. Please try again.";
+      return;
+    }
+    const serverResponse = await response.json();
 
     //cleaning the values to have a good look in the UI
     expenseTitle = expenseTitle.trim();
@@ -463,6 +467,10 @@ document
     const originalIcon = btn.innerHTML;
     btn.dataset.loading = "true";
     btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+    const deleteError = document.getElementById("deleteError");
+    deleteError.classList.add("hidden");
+
     const response = await fetch(
       `/deleteExpense/6a445ee01781d2a29c611442/${id}`,
       {
@@ -476,6 +484,8 @@ document
     } else {
       btn.dataset.loading = "false";
       btn.innerHTML = originalIcon;
+      deleteError.textContent = "Failed to delete expense. Please try again.";
+      deleteError.classList.remove("hidden");
     }
   });
 
@@ -493,7 +503,7 @@ async function sendExpenseToDB(title, cost, paidBy, owes) {
       owedBy: owes,
     }),
   });
-  setUpPage().then(refreshFilterCard);
+  if (data.ok) setUpPage().then(refreshFilterCard);
   return data;
 }
 
@@ -896,6 +906,9 @@ document
     btn.dataset.loading = "true";
     btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
 
+    const settleError = document.getElementById("settleError");
+    settleError.classList.add("hidden");
+
     const collapseSection = btn.closest(".collapse");
     const creditorId = collapseSection.querySelector(
       ".collapse-title .person-pill",
@@ -924,6 +937,8 @@ document
         if (!response.ok) {
           btn.dataset.loading = "false";
           btn.innerHTML = originalBtn;
+          settleError.textContent = "Failed to settle debt. Please try again.";
+          settleError.classList.remove("hidden");
           return; // don't mark it settled if recording the payment failed
         }
         return markAsSettled(debtorId, creditorId);
