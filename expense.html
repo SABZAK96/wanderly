@@ -126,7 +126,7 @@
     <!-- navbar end -->
     <!-- container of expenses -->
     <section class="flex flex-col items-center px-4 py-8">
-      <div class="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[7fr_3fr] lg:gap-10 gap-8 items-start">
+      <div class="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4 md:gap-8 lg:gap-10 items-start">
         <!-- left column: expense table and spent per person container -->
         <div>
         <!-- total spent per person -->
@@ -147,7 +147,7 @@
                   <th>Title</th>
                   <th class="text-center">Amount</th>
                   <th>Paid By</th>
-                  <th class="w-px"></th>
+                  <th class="w-px">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -191,7 +191,7 @@
         </div><!-- end left column -->
 
         <!-- right column: settle + debt breakdown -->
-        <div class="flex flex-col gap-8">
+        <div class="flex flex-col md:gap-8 gap-4">
         <!-- simplest way to settle -->
         <div>
         <h1 class="text-2xl font-light mb-4">Simplest Way to Settle</h1>
@@ -226,9 +226,9 @@
       </div>
 
         <!-- who owes who -->
-        <h1 class="text-2xl font-light mb-1 mt-4">Debt Breakdown</h1>
-        <!-- person filter -->
         <div>
+          <h1 class="text-2xl font-light mb-2">Debt Breakdown</h1>
+          <!-- person filter -->
           <h1 class="text-lg font-light mb-4">Filter by Person</h1>
           <div class="flex flex-wrap gap-2 mb-4" id="person-filters">
             <!-- per-person buttons are inserted here by populatePersonFilters() -->
@@ -257,7 +257,7 @@
       </div> <!-- end grid -->
 
       <!-- destructive, trip-wide reset - kept apart from the normal add/delete actions -->
-      <div class="w-full max-w-[1600px] flex flex-col items-end mt-2">
+      <div class="w-full max-w-[1600px] flex flex-col items-end mt-4 md:mt-8">
         <button
           id="resetTrip"
           class="btn btn-sm btn-outline btn-error"

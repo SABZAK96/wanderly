@@ -514,6 +514,12 @@ function updateTable(selectedBadges, expenseTitle, costAmount, expenseId) {
   });
 
   // update the total amount in the table
+  recalculateTableTotal();
+}
+
+// recomputes and displays the table's running total from whatever
+// .tableAmounts cells currently exist in the DOM
+function recalculateTableTotal() {
   // first get the Node list using spread operator then converts in inner text to number after replacing "," with empty string
   const amounts = [...document.querySelectorAll(".tableAmounts")].map(
     (element) => Number(element.textContent.replace(",", "")),
@@ -548,14 +554,7 @@ function updateExistingTableRow(
   });
 
   // recompute the running total, same as updateTable does
-  const amounts = [...document.querySelectorAll(".tableAmounts")].map(
-    (element) => Number(element.textContent.replace(",", "")),
-  );
-  let sum = 0;
-  for (const number of amounts) {
-    sum += number;
-  }
-  document.getElementById("total").innerHTML = sum.toLocaleString("en-US");
+  recalculateTableTotal();
 }
 
 // validating fields in the add expense modal
@@ -624,6 +623,7 @@ document
             `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`,
           );
       }
+      recalculateTableTotal();
       setUpPage().then(refreshFilterCard);
     } else {
       btn.dataset.loading = "false";
