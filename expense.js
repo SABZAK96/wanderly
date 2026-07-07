@@ -258,93 +258,101 @@ function initSettleToggles() {
 //================================================================================================
 
 // first update the table with added row
-document.getElementById("exp-submit").addEventListener("click", async (event) => {
-  const submitBtn = event.currentTarget;
-  if (submitBtn.dataset.loading === "true") return; // guard against double-click
-  const titleInput = document.getElementById("exp-title");
-  const costInput = document.getElementById("exp-cost");
-  let expenseTitle = titleInput.value;
-  let costAmount = costInput.value;
-  const Allbadges = document.querySelectorAll("#exp-payer span");
-  const errorMsg = document.getElementById("errorMsg");
+document
+  .getElementById("exp-submit")
+  .addEventListener("click", async (event) => {
+    const submitBtn = event.currentTarget;
+    if (submitBtn.dataset.loading === "true") return; // guard against double-click
+    const titleInput = document.getElementById("exp-title");
+    const costInput = document.getElementById("exp-cost");
+    let expenseTitle = titleInput.value;
+    let costAmount = costInput.value;
+    const Allbadges = document.querySelectorAll("#exp-payer span");
+    const errorMsg = document.getElementById("errorMsg");
 
-  let selectedBadgesPayers = [...Allbadges];
-  //save the result of the filter back to the variable - otherwise it will be thorwn away
-  selectedBadgesPayers = selectedBadgesPayers.filter((badge) =>
-    badge.classList.contains("border-2"),
-  );
-
-  const allBadgesDebts = document.querySelectorAll("#debt-payer span");
-  let selectedBadgesDebts = [...allBadgesDebts];
-  selectedBadgesDebts = selectedBadgesDebts.filter((badge) =>
-    badge.classList.contains("border-2"),
-  );
-
-  //validate the fields are filled
-  if (titleInput.value.trim() === "") {
-    titleInput.classList.add("border-2", "border-red-500");
-    return;
-  }
-  titleInput.classList.contains("border-red-500") &&
-    titleInput.classList.remove("border-2", "border-red-500");
-
-  if (costInput.value === "" || costInput.value === "0") {
-    costInput.classList.add("border-2", "border-red-500");
-    return;
-  }
-  costInput.classList.contains("border-red-500") &&
-    costInput.classList.remove("border-2", "border-red-500");
-  if (selectedBadgesPayers.length === 0) {
-    errorMsg.classList.remove("hidden");
-    errorMsg.textContent = "* Please Select the Payers!";
-    return;
-  }
-  errorMsg.textContent = "";
-  errorMsg.classList.add("hidden");
-
-  const originalBtnContent = submitBtn.innerHTML;
-  submitBtn.dataset.loading = "true";
-  submitBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
-
-  try {
-    const owes = await calculateSplitAmounts(costAmount, selectedBadgesDebts);
-    const { paidBy, owed } = calculateOwedAmount(
-      owes,
-      selectedBadgesPayers,
-      costAmount,
+    let selectedBadgesPayers = [...Allbadges];
+    //save the result of the filter back to the variable - otherwise it will be thorwn away
+    selectedBadgesPayers = selectedBadgesPayers.filter((badge) =>
+      badge.classList.contains("border-2"),
     );
 
-    if (!expenseInputValidator(costAmount, owes, owed)) {
-      errorMsg.classList.remove("hidden");
-      errorMsg.textContent = "* Split amounts must add up to the total cost!";
-      return;
-    }
-    const response = await sendExpenseToDB(expenseTitle, costAmount, paidBy, owes);
-    if (!response.ok) {
-      errorMsg.classList.remove("hidden");
-      errorMsg.textContent = "* Failed to save expense. Please try again.";
-      return;
-    }
-    const serverResponse = await response.json();
-
-    //cleaning the values to have a good look in the UI
-    expenseTitle = expenseTitle.trim();
-    expenseTitle = expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
-    costAmount = Number(costAmount).toLocaleString("en-US");
-
-    updateTable(
-      selectedBadgesPayers,
-      expenseTitle,
-      costAmount,
-      serverResponse._id,
+    const allBadgesDebts = document.querySelectorAll("#debt-payer span");
+    let selectedBadgesDebts = [...allBadgesDebts];
+    selectedBadgesDebts = selectedBadgesDebts.filter((badge) =>
+      badge.classList.contains("border-2"),
     );
 
-    document.getElementById("my_modal_expense").close();
-  } finally {
-    submitBtn.dataset.loading = "false";
-    submitBtn.innerHTML = originalBtnContent;
-  }
-});
+    //validate the fields are filled
+    if (titleInput.value.trim() === "") {
+      titleInput.classList.add("border-2", "border-red-500");
+      return;
+    }
+    titleInput.classList.contains("border-red-500") &&
+      titleInput.classList.remove("border-2", "border-red-500");
+
+    if (costInput.value === "" || costInput.value === "0") {
+      costInput.classList.add("border-2", "border-red-500");
+      return;
+    }
+    costInput.classList.contains("border-red-500") &&
+      costInput.classList.remove("border-2", "border-red-500");
+    if (selectedBadgesPayers.length === 0) {
+      errorMsg.classList.remove("hidden");
+      errorMsg.textContent = "* Please Select the Payers!";
+      return;
+    }
+    errorMsg.textContent = "";
+    errorMsg.classList.add("hidden");
+
+    const originalBtnContent = submitBtn.innerHTML;
+    submitBtn.dataset.loading = "true";
+    submitBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+    try {
+      const owes = await calculateSplitAmounts(costAmount, selectedBadgesDebts);
+      const { paidBy, owed } = calculateOwedAmount(
+        owes,
+        selectedBadgesPayers,
+        costAmount,
+      );
+
+      if (!expenseInputValidator(costAmount, owes, owed)) {
+        errorMsg.classList.remove("hidden");
+        errorMsg.textContent = "* Split amounts must add up to the total cost!";
+        return;
+      }
+      const response = await sendExpenseToDB(
+        expenseTitle,
+        costAmount,
+        paidBy,
+        owes,
+      );
+      if (!response.ok) {
+        errorMsg.classList.remove("hidden");
+        errorMsg.textContent = "* Failed to save expense. Please try again.";
+        return;
+      }
+      const serverResponse = await response.json();
+
+      //cleaning the values to have a good look in the UI
+      expenseTitle = expenseTitle.trim();
+      expenseTitle =
+        expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
+      costAmount = Number(costAmount).toLocaleString("en-US");
+
+      updateTable(
+        selectedBadgesPayers,
+        expenseTitle,
+        costAmount,
+        serverResponse._id,
+      );
+
+      document.getElementById("my_modal_expense").close();
+    } finally {
+      submitBtn.dataset.loading = "false";
+      submitBtn.innerHTML = originalBtnContent;
+    }
+  });
 
 // init table
 async function initTable() {
@@ -1183,4 +1191,99 @@ function renderSpending(results) {
           </div>`;
     container.insertAdjacentHTML("beforeend", stat);
   });
+}
+
+// ======================================================================================================================
+// simplest way to settle logic - repeatedly match the largest creditor with the largest debtor , cancel out the debt
+// store the info as one transaction and repeat the process.
+// we can already use the cleaned data we used in debt breakdown section , which already includes pairwise netting
+// =======================================================================================================================
+
+// calculate the net amounts for each person
+function netAmountCalc() {
+  // total amount owed by each person
+  // this will store all the spans that contain "is owed" section for all the persons
+  const allOwedNodes = document
+    .getElementById("debtBreakdown")
+    .querySelectorAll(".collapse-title .person-pill");
+
+  // all the nodes- debt for each person
+  const allDebtNodes = document
+    .getElementById("debtBreakdown")
+    .querySelectorAll(".collapse-content .person-pill");
+
+  let result = [];
+  peopleBadges.forEach((element) => {
+    const owed = [...allOwedNodes].find(
+      (item) => item.dataset.id === element.dataset.id,
+    );
+
+    // a debtor can be seen in multiple rows - get all of them
+    const debtor = [...allDebtNodes].filter(
+      (item) => item.dataset.id === element.dataset.id,
+    );
+    let owedAmount;
+    if (owed) {
+      owedAmount = Number(
+        owed.closest(".collapse-title").querySelector(".owed").textContent,
+      );
+    } else {
+      owedAmount = 0;
+    }
+
+    let debtAmount;
+    if (debtor) {
+      const personDebtArray = debtor.map((debt) =>
+        Number(debt.closest(".debtor").querySelector(".amount").textContent),
+      );
+      debtAmount = personDebtArray.reduce((accum, debt) => accum + debt, 0);
+    } else {
+      debtAmount = 0;
+    }
+
+    // is owed amount will be recorded for each person once - if exist, but that could appear multiple times for debts
+    const existing = result.find((item) => item.id === element.dataset.id);
+    if (existing) {
+      existing.debt += debtAmount;
+    } else {
+      result.push({
+        id: element.dataset.id,
+        owed: owedAmount,
+        debt: debtAmount,
+      });
+    }
+  });
+
+  let netted = [];
+  result.forEach((entry) => {
+    const net = entry.owed - entry.debt;
+    netted.push({ id: entry.id, net: net });
+  });
+
+  return netted;
+}
+
+// calculate min number of transaction to settle
+function simplestSettle(netted) {
+  let transactions = [];
+  // netted is an array of obj for each person where net > 0 shows the person is owed and net < 0 shows the person owes sth
+  while (netted.length > 1) {
+    // Descending order (highest to lowest) - biggest creditor would be at index 0 and the biggest debtor would be at last
+    // netted would be mutated in place
+    netted.sort((a, b) => b.net - a.net);
+    // cap at whichever side is smaller, so we never pay the creditor more than they're owed 
+    // totals sum to zero, but one debtor can still owe more than any single creditor is due (e.g. A:30, D:30, B:-60)
+    const amount = Math.min(netted[0].net, -(netted[netted.length - 1].net));
+    transactions.push({
+      to: netted[0].id,
+      from: netted[netted.length - 1].id,
+      amount: amount,
+    });
+    netted[0].net -= amount;
+    netted[netted.length - 1].net += amount;
+    // drop anyone who's now fully settled
+    netted = netted.filter((entry) => Math.abs(entry.net) > 0.01);
+    continue;
+  }
+  return transactions;
 }
