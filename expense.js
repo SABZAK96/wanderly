@@ -1,15 +1,21 @@
 // string badges and update them when they are build to update the table tags easily
 let peopleBadges = undefined;
 
-document.getElementById("addExp").addEventListener("click", () => {
-  document.getElementById("my_modal_expense").showModal();
+// the expense id currently being edited, taken straight from that row's own
+// data-id - null means the modal is in "Add" mode. the submit handler
+// (defined elsewhere) branches on this to know whether to create or update
+let editingExpenseId = null;
 
-  // clearing up the fields in the modal whenever add expense is clicked
-  const titleInput = document.getElementById("exp-title");
-  const costInput = document.getElementById("exp-cost");
+// resets the add-expense modal fields back to their defaults - shared by the
+// "Add" button and the edit flow, since editing needs the same clean slate
+// before applying a different expense's values on top of it
+function resetExpenseModal() {
+  document.getElementById("exp-title").value = "";
+  document.getElementById("exp-cost").value = "";
 
-  titleInput.value = "";
-  costInput.value = "";
+  editingExpenseId = null;
+  document.getElementById("expModalTitle").textContent = "Add an Expense";
+  document.getElementById("exp-submit").textContent = "Add";
 
   //clearing paidBy section highlights
   const Allbadges = document.querySelectorAll("#exp-payer span");
@@ -35,6 +41,11 @@ document.getElementById("addExp").addEventListener("click", () => {
 
   // setting the radio button to equally
   document.getElementById("equalRadio").checked = true;
+}
+
+document.getElementById("addExp").addEventListener("click", () => {
+  document.getElementById("my_modal_expense").showModal();
+  resetExpenseModal();
 });
 
 // fetch all the badges from the db
@@ -352,15 +363,20 @@ document
         errorMsg.textContent = "* Split amounts must add up to the total cost!";
         return;
       }
-      const response = await sendExpenseToDB(
-        expenseTitle,
-        costAmount,
-        paidBy,
-        owes,
-      );
+      const response = editingExpenseId
+        ? await sendExpenseUpdateToDB(
+            editingExpenseId,
+            expenseTitle,
+            costAmount,
+            paidBy,
+            owes,
+          )
+        : await sendExpenseToDB(expenseTitle, costAmount, paidBy, owes);
       if (!response.ok) {
         errorMsg.classList.remove("hidden");
-        errorMsg.textContent = "* Failed to save expense. Please try again.";
+        errorMsg.textContent = editingExpenseId
+          ? "* Failed to save changes. Please try again."
+          : "* Failed to save expense. Please try again.";
         return;
       }
       const serverResponse = await response.json();
@@ -371,12 +387,21 @@ document
         expenseTitle.charAt(0).toUpperCase() + expenseTitle.slice(1);
       costAmount = Number(costAmount).toLocaleString("en-US");
 
-      updateTable(
-        selectedBadgesPayers,
-        expenseTitle,
-        costAmount,
-        serverResponse._id,
-      );
+      if (editingExpenseId) {
+        updateExistingTableRow(
+          selectedBadgesPayers,
+          expenseTitle,
+          costAmount,
+          editingExpenseId,
+        );
+      } else {
+        updateTable(
+          selectedBadgesPayers,
+          expenseTitle,
+          costAmount,
+          serverResponse._id,
+        );
+      }
 
       document.getElementById("my_modal_expense").close();
     } finally {
@@ -394,10 +419,12 @@ async function initTable() {
   ).json();
 
   if (response.length === 0) {
-    document.querySelector("#my_table tbody").insertAdjacentHTML(
-      "beforeend",
-      `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`,
-    );
+    document
+      .querySelector("#my_table tbody")
+      .insertAdjacentHTML(
+        "beforeend",
+        `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`,
+      );
     return;
   }
 
@@ -419,6 +446,7 @@ async function initTable() {
     updateTable(selectedBadges, expTitlePrepped, costPrepped, expense._id);
   });
 }
+
 // update the table with adding a new row
 
 function updateTable(selectedBadges, expenseTitle, costAmount, expenseId) {
@@ -497,6 +525,39 @@ function updateTable(selectedBadges, expenseTitle, costAmount, expenseId) {
   document.getElementById("total").innerHTML = sum.toLocaleString("en-US");
 }
 
+// updates an existing row's own cells in place, instead of appending a new
+// row like updateTable does - used after editing an expense
+function updateExistingTableRow(
+  selectedBadges,
+  expenseTitle,
+  costAmount,
+  expenseId,
+) {
+  const row = document.querySelector(`tr[data-id="${expenseId}"]`);
+  if (!row) return;
+
+  row.querySelector("td:first-child").textContent = expenseTitle;
+  row.querySelector(".tableAmounts").textContent = costAmount;
+
+  const badgePlaceholder = row.querySelector(".badgePlaceHolder");
+  badgePlaceholder.innerHTML = "";
+  selectedBadges.forEach((badge) => {
+    const badgeClone = badge.cloneNode(true);
+    badgeClone.classList.remove("border-2");
+    badgePlaceholder.appendChild(badgeClone);
+  });
+
+  // recompute the running total, same as updateTable does
+  const amounts = [...document.querySelectorAll(".tableAmounts")].map(
+    (element) => Number(element.textContent.replace(",", "")),
+  );
+  let sum = 0;
+  for (const number of amounts) {
+    sum += number;
+  }
+  document.getElementById("total").innerHTML = sum.toLocaleString("en-US");
+}
+
 // validating fields in the add expense modal
 function expenseInputValidator(cost, owes, owed) {
   let sumOfOwes = 0;
@@ -556,10 +617,12 @@ document
     if (response.ok) {
       row.remove(); // only remove from the page once the server confirms it's gone
       if (document.querySelectorAll("#my_table tbody tr").length === 0) {
-        document.querySelector("#my_table tbody").insertAdjacentHTML(
-          "beforeend",
-          `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`,
-        );
+        document
+          .querySelector("#my_table tbody")
+          .insertAdjacentHTML(
+            "beforeend",
+            `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`,
+          );
       }
       setUpPage().then(refreshFilterCard);
     } else {
@@ -570,6 +633,107 @@ document
     }
   });
 
+// edit the table
+document.querySelector("#my_table tbody").addEventListener("click", async (event) => {
+  const editBtn = event.target.closest(".edit");
+     if (!editBtn) return; // click wasn't on (or inside) a delete button
+
+    const row = editBtn.closest("tr");
+    const id = row.dataset.id;
+
+    resetExpenseModal();
+    document.getElementById("my_modal_expense").showModal();
+
+    // show loading on the modal's own submit button while the expense's
+    // details are fetched and the fields/selections are pre-filled, since
+    // that's what's actually visible now that the modal is already open
+    const submitBtn = document.getElementById("exp-submit");
+    if (submitBtn.dataset.loading === "true") return; // guard against double-click
+    submitBtn.dataset.loading = "true";
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+    const expenses = await (
+      await fetch("/getExpenses/6a445ee01781d2a29c611442")
+    ).json();
+    const expense = expenses.find((item) => item._id === id);
+
+    editingExpenseId = id;
+    document.getElementById("expModalTitle").textContent = "Edit Expense";
+
+    document.getElementById("exp-title").value = expense.title;
+    document.getElementById("exp-cost").value = expense.amount;
+
+    // select whoever actually paid - .click() reuses the existing highlightBadges
+    // listener, so the co-payer amount rows pop up exactly like a real click would
+    const expPayerBadges = [
+      ...document.querySelectorAll("#exp-payer .person-pill"),
+    ];
+    expense.paidBy.forEach((payer) => {
+      const badge = expPayerBadges.find(
+        (item) => item.dataset.id === payer.person,
+      );
+      badge?.click();
+    });
+
+    // fill in each co-payer's actual amount, once the rows exist for them
+    if (expense.paidBy.length >= 2) {
+      expense.paidBy.forEach((payer) => {
+        const input = document.querySelector(
+          `#coPayerAmount .customInput[data-id="${payer.person}"]`,
+        );
+        if (input) input.value = payer.amount;
+      });
+    }
+
+    // figure out who this expense is split between - only click individual
+    // debt-payer badges if it's a subset, since "All" already covers everyone
+    const owedIds = expense.owedBy.map((share) => share.person);
+    const debtPayerBadges = [
+      ...document.querySelectorAll("#debt-payer .person-pill"),
+    ];
+    const everyonePersonIds = debtPayerBadges
+      .filter((badge) => badge.id !== "allBadge")
+      .map((badge) => badge.dataset.id);
+    const coversEveryone =
+      everyonePersonIds.length === owedIds.length &&
+      everyonePersonIds.every((personId) => owedIds.includes(personId));
+
+    if (!coversEveryone) {
+      owedIds.forEach((personId) => {
+        const badge = debtPayerBadges.find(
+          (item) => item.dataset.id === personId,
+        );
+        badge?.click();
+      });
+    }
+
+    // equal split still stores individual amounts, so compare against what an
+    // equal share would be (with a cent of tolerance) to tell equal from custom
+    const equalShare = expense.amount / expense.owedBy.length;
+    const isEqualSplit = expense.owedBy.every(
+      (share) => Math.abs(Number(share.amount) - equalShare) < 0.01,
+    );
+
+    if (!isEqualSplit) {
+      const customRadioInput = document.getElementById("customRadio");
+      customRadioInput.checked = true;
+      // .checked alone doesn't fire "change" - dispatch it so the existing
+      // listener reveals the custom section and builds one row per person
+      customRadioInput.dispatchEvent(new Event("change"));
+
+      expense.owedBy.forEach((share) => {
+        const input = document.querySelector(
+          `#customAmount .customInput[data-id="${share.person}"]`,
+        );
+        if (input) input.value = share.amount;
+      });
+    }
+
+    submitBtn.dataset.loading = "false";
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Save";
+})
 // destructive, so gate it behind a confirmation modal instead of firing right away
 document.getElementById("resetTrip").addEventListener("click", () => {
   document.getElementById("resetConfirmModal").showModal();
@@ -630,6 +794,27 @@ async function sendExpenseToDB(title, cost, paidBy, owes) {
       owedBy: owes,
     }),
   });
+  if (data.ok) setUpPage().then(refreshFilterCard);
+  return data;
+}
+
+// same shape as sendExpenseToDB, but PUTs to the existing expense instead of creating a new one
+async function sendExpenseUpdateToDB(expenseId, title, cost, paidBy, owes) {
+  const data = await fetch(
+    `/updateExpense/6a445ee01781d2a29c611442/${expenseId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: title,
+        amount: cost,
+        paidBy: paidBy,
+        owedBy: owes,
+      }),
+    },
+  );
   if (data.ok) setUpPage().then(refreshFilterCard);
   return data;
 }

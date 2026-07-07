@@ -131,6 +131,29 @@ app.post("/newExpense/:id", async (req, res) => {
   }
 });
 
+// update an existing expense in place
+app.put("/updateExpense/:tripId/:expenseId", async (req, res) => {
+  try {
+    const { title, amount, paidBy, owedBy } = req.body;
+    const trip = await tripModel.findById(req.params.tripId);
+
+    // find the specific expense inside the expenses array
+    const expense = trip.expenses.id(req.params.expenseId);
+
+    // mutate it directly, like a normal JS object
+    expense.title = title;
+    expense.amount = amount;
+    expense.paidBy = paidBy;
+    expense.owedBy = owedBy;
+
+    // persist the mutation
+    await trip.save();
+    res.json(expense);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
 //get all the expenses for a trip
 app.get("/getExpenses/:id", async (req, res) => {
   try {
