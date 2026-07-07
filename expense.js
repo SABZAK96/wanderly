@@ -61,6 +61,20 @@ async function populateFieldsBadges(id) {
   peopleBadges = [...container.querySelectorAll(".person-pill")];
 }
 
+// builds the "Filter by Person" buttons from peopleBadges, so this list stays
+// in sync with the db instead of being hand-written in the html
+function populatePersonFilters() {
+  const resetBtn = document.getElementById("resetFilter");
+  peopleBadges.forEach((badge) => {
+    const filterBtn = `<button
+      class="btn btn-sm rounded-full person-pill"
+      data-name="${badge.dataset.name}"
+      style="background: ${badge.style.backgroundColor}; color: ${badge.style.color}; border: none"
+    >${badge.dataset.name}</button>`;
+    resetBtn.insertAdjacentHTML("beforebegin", filterBtn);
+  });
+}
+
 //funtion that set up the modal using the info of people retrieved from the db
 async function setUpModal() {
   await Promise.all([
@@ -70,10 +84,23 @@ async function setUpModal() {
   highlightBadges("debt-payer");
   highlightBadges("exp-payer");
   initAllBadge("debt-payer");
+  populatePersonFilters();
   await initTable();
 }
 
+// shown in each refreshing section while setUpPage's data fetches are in flight -
+// cleared automatically once the section's own render function replaces innerHTML
+function showSectionLoading() {
+  const spinner = `<div class="col-span-full flex justify-center py-6"><span class="loading loading-spinner loading-md" style="color: #534ab7"></span></div>`;
+  document.getElementById("totalSpent").innerHTML = spinner;
+  document.getElementById("debtBreakdown").innerHTML = spinner;
+  document.getElementById("simplify-rows").innerHTML = spinner;
+}
+
+// refreshes debt breakdown, spending stats, and settle suggestions from the db -
+// called on initial load and again after every add/delete/settle/reset
 function setUpPage() {
+  showSectionLoading();
   return renderDebtBreakdown().then(async () => {
     initSettleToggles();
     const netted = netAmountCalc();
@@ -1277,7 +1304,7 @@ function renderSpending(results, netted) {
             class="collapse collapse-plus shadow-sm relative"
             style="background: #eeedfe" 
           >
-            <input type="checkbox" class="focus:outline-none" />
+            <input type="checkbox" class="appearance-none focus:outline-none" />
             <span
               class="absolute top-1 right-1 h-3 w-3 rounded-full border-2 border-white"
               style="background: ${isSettled ? "#16a34a" : "#dc2626"}"

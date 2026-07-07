@@ -27,6 +27,9 @@
          instead of growing the grid row and pushing everything else down */
       #totalSpent .collapse {
         transition: transform 0.2s ease, box-shadow 0.2s ease;
+        /* neutralize daisyUI's --border var just for these cards, instead of
+           disabling it globally at :root */
+        --border: 0;
       }
       /* daisyUI animates its own grid-template-rows to reveal collapse-content,
          which fights our absolute-positioning override below (briefly grows
@@ -222,41 +225,7 @@
         <div>
           <h1 class="text-lg font-light mb-4">Filter by Person</h1>
           <div class="flex flex-wrap gap-2 mb-4" id="person-filters">
-            <button
-              class="btn btn-sm rounded-full person-pill"
-              data-name="Saba"
-              style="background: #eeedfe; color: #534ab7; border: none"
-            >
-              Saba
-            </button>
-            <button
-              class="btn btn-sm rounded-full person-pill"
-              data-name="Sina"
-              style="background: #dbeafe; color: #1d4ed8; border: none"
-            >
-              Sina
-            </button>
-            <button
-              class="btn btn-sm rounded-full person-pill"
-              data-name="Soroush"
-              style="background: #dcfce7; color: #15803d; border: none"
-            >
-              Soroush
-            </button>
-            <button
-              class="btn btn-sm rounded-full person-pill"
-              data-name="Hassan"
-              style="background: #ffedd5; color: #c2410c; border: none"
-            >
-              Hassan
-            </button>
-            <button
-              class="btn btn-sm rounded-full person-pill"
-              data-name="Shohreh"
-              style="background: #fce7f3; color: #be185d; border: none"
-            >
-              Shohreh
-            </button>
+            <!-- per-person buttons are inserted here by populatePersonFilters() -->
             <button
               id="resetFilter"
               class="btn btn-sm rounded-full hidden"
