@@ -78,6 +78,9 @@ function setUpPage() {
     initSettleToggles();
     const results = await calculateSpending();
     renderSpending(results);
+    const netted = netAmountCalc();
+    const transactions = simplestSettle(netted);
+    displaySimplestSettle(transactions);
   });
 }
 
@@ -1271,9 +1274,9 @@ function simplestSettle(netted) {
     // Descending order (highest to lowest) - biggest creditor would be at index 0 and the biggest debtor would be at last
     // netted would be mutated in place
     netted.sort((a, b) => b.net - a.net);
-    // cap at whichever side is smaller, so we never pay the creditor more than they're owed 
+    // cap at whichever side is smaller, so we never pay the creditor more than they're owed
     // totals sum to zero, but one debtor can still owe more than any single creditor is due (e.g. A:30, D:30, B:-60)
-    const amount = Math.min(netted[0].net, -(netted[netted.length - 1].net));
+    const amount = Math.min(netted[0].net, -netted[netted.length - 1].net);
     transactions.push({
       to: netted[0].id,
       from: netted[netted.length - 1].id,
@@ -1286,4 +1289,39 @@ function simplestSettle(netted) {
     continue;
   }
   return transactions;
+}
+
+// wire up the simplestSettle with the UI
+function displaySimplestSettle(transactions) {
+  const container = document.getElementById("simplify-rows");
+  container.innerHTML = "";
+
+  transactions.forEach((transaction) => {
+    const owedBadge = peopleBadges.find(
+      (badge) => badge.dataset.id === transaction.to,
+    );
+    const owesBadge = peopleBadges.find(
+      (badge) => badge.dataset.id === transaction.from,
+    );
+    let element = `<div class="flex items-center gap-2">
+                ${owesBadge.outerHTML}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-base-content/30"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+                ${owedBadge.outerHTML}
+                <span class="ml-auto font-medium">$<span>${transaction.amount}</span></span>
+              </div>`;
+    container.insertAdjacentHTML("beforeend", element);
+  });
 }
