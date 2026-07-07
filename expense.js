@@ -427,8 +427,8 @@ function updateTable(selectedBadges, expenseTitle, costAmount, expenseId) {
   let newTableRow = "";
   newTableRow = `  <tr data-id="${expenseId}">
     <td class="font-medium " contenteditable="true">${expenseTitle}</td>
-    <td contenteditable="true"><span>$</span><span class="tableAmounts">${costAmount}</span></td>
-    <td><div class="flex flex-wrap gap-1 badgePlaceHolder"></div></td>
+    <td class="text-center" contenteditable="true"><span>$</span><span class="tableAmounts">${costAmount}</span></td>
+    <td><div class="flex flex-wrap justify-center items-center gap-1 badgePlaceHolder"></div></td>
     <td > <button
                       class="btn btn-ghost btn-xs text-error remove"
                     >
@@ -548,48 +548,51 @@ document
     }
   });
 
-// wiping every expense and settlement for the trip - destructive, so gate it behind a confirm
-document.getElementById("resetTrip").addEventListener("click", async () => {
-  const btn = document.getElementById("resetTrip");
-  if (btn.dataset.loading === "true") return; // guard against double-click
-  if (
-    !confirm(
-      "This will permanently delete every expense and settlement for this trip. Continue?",
-    )
-  )
-    return;
-
-  const originalContent = btn.innerHTML;
-  btn.dataset.loading = "true";
-  btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
-
-  const resetError = document.getElementById("resetError");
-  resetError.classList.add("hidden");
-
-  const response = await fetch("/resetTrip/6a445ee01781d2a29c611442", {
-    method: "DELETE",
-  });
-
-  if (response.ok) {
-    document.querySelector("#my_table tbody").innerHTML =
-      `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`;
-    document.getElementById("total").innerHTML = "0";
-
-    // close out any open person filter, since there's nothing left to filter
-    currentFilterPerson = null;
-    document.getElementById("filterCard").innerHTML = "";
-    document.getElementById("filter-result").classList.add("hidden");
-    document.getElementById("resetFilter").classList.add("hidden");
-
-    await setUpPage();
-  } else {
-    resetError.textContent = "Failed to reset trip. Please try again.";
-    resetError.classList.remove("hidden");
-  }
-
-  btn.dataset.loading = "false";
-  btn.innerHTML = originalContent;
+// destructive, so gate it behind a confirmation modal instead of firing right away
+document.getElementById("resetTrip").addEventListener("click", () => {
+  document.getElementById("resetConfirmModal").showModal();
 });
+
+// wiping every expense and settlement for the trip, once the user confirms in the modal
+document
+  .getElementById("confirmResetTrip")
+  .addEventListener("click", async () => {
+    document.getElementById("resetConfirmModal").close();
+
+    const btn = document.getElementById("resetTrip");
+    if (btn.dataset.loading === "true") return; // guard against double-click
+
+    const originalContent = btn.innerHTML;
+    btn.dataset.loading = "true";
+    btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+    const resetError = document.getElementById("resetError");
+    resetError.classList.add("hidden");
+
+    const response = await fetch("/resetTrip/6a445ee01781d2a29c611442", {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      document.querySelector("#my_table tbody").innerHTML =
+        `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`;
+      document.getElementById("total").innerHTML = "0";
+
+      // close out any open person filter, since there's nothing left to filter
+      currentFilterPerson = null;
+      document.getElementById("filterCard").innerHTML = "";
+      document.getElementById("filter-result").classList.add("hidden");
+      document.getElementById("resetFilter").classList.add("hidden");
+
+      await setUpPage();
+    } else {
+      resetError.textContent = "Failed to reset trip. Please try again.";
+      resetError.classList.remove("hidden");
+    }
+
+    btn.dataset.loading = "false";
+    btn.innerHTML = originalContent;
+  });
 
 // send the added expense to the db
 async function sendExpenseToDB(title, cost, paidBy, owes) {
@@ -1443,12 +1446,14 @@ function displaySimplestSettle(transactions) {
   }
 
   transactions.forEach((transaction) => {
-    const owedBadge = peopleBadges.find(
-      (badge) => badge.dataset.id === transaction.to,
-    );
-    const owesBadge = peopleBadges.find(
-      (badge) => badge.dataset.id === transaction.from,
-    );
+    const owedBadge = peopleBadges
+      .find((badge) => badge.dataset.id === transaction.to)
+      .cloneNode(true);
+    owedBadge.classList.remove("border-2");
+    const owesBadge = peopleBadges
+      .find((badge) => badge.dataset.id === transaction.from)
+      .cloneNode(true);
+    owesBadge.classList.remove("border-2");
     let element = `<div class="flex items-center gap-2">
                 ${owesBadge.outerHTML}
                 <svg

@@ -55,6 +55,7 @@
         left: 0;
         width: 100%;
         background: #e0dbfb !important;
+        border-top: 1px dashed #534ab7;
       }
     </style>
   </head>
@@ -144,8 +145,8 @@
                   class="text-base-content/50 text-xs uppercase tracking-wide"
                 >
                   <th>Title</th>
-                  <th>Amount</th>
-                  <th>Paid By</th>
+                  <th class="text-center">Amount</th>
+                  <th class="text-center">Paid By</th>
                   <th class="w-px"></th>
                 </tr>
               </thead>
@@ -154,8 +155,10 @@
               <tfoot>
                 <tr class="border-t-2 border-base-200 font-semibold">
                   <td colspan="1" class="text-base-content/50">Total</td>
-                  <td  colspan="3"><span>$</span><span id="total">0</span>
+                  <td colspan="1" class="text-center"><span>$</span><span id="total">0</span>
                     </td>
+                    <td></td>
+                    <td></td>
                 </tr>
               </tfoot>
             </table>
@@ -365,6 +368,28 @@
         </div>
 
         <!-- click outside to close -->
+        <form method="dialog" class="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+
+      <!-- confirmation modal for the destructive trip reset -->
+      <dialog id="resetConfirmModal" class="modal">
+        <div class="modal-box flex flex-col gap-4">
+          <h3 class="text-lg font-semibold text-error">Reset Everything?</h3>
+          <p class="text-sm text-base-content/70">
+            This will permanently delete every expense and settlement for
+            this trip. This cannot be undone.
+          </p>
+          <div class="flex justify-end gap-2">
+            <form method="dialog">
+              <button class="btn btn-ghost">Cancel</button>
+            </form>
+            <button id="confirmResetTrip" class="btn btn-error">
+              Reset Everything
+            </button>
+          </div>
+        </div>
         <form method="dialog" class="modal-backdrop">
           <button>close</button>
         </form>
