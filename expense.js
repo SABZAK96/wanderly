@@ -70,9 +70,8 @@ async function setUpModal() {
   highlightBadges("debt-payer");
   highlightBadges("exp-payer");
   initAllBadge("debt-payer");
-  initTable();
+  await initTable();
 }
-setUpModal();
 
 function setUpPage() {
   return renderDebtBreakdown().then(async () => {
@@ -81,7 +80,13 @@ function setUpPage() {
     renderSpending(results);
   });
 }
-setUpPage();
+
+// hide the page-level loading overlay once the initial data load finishes,
+// whether it succeeded or failed - a stuck spinner is worse than a broken page
+// .finally ensures that a specific block of code runs after a process completes, regardless of whether it succeeded or failed
+Promise.all([setUpModal(), setUpPage()]).finally(() => {
+  document.getElementById("pageLoading").classList.add("hidden");
+});
 
 // pre-select All badge in the who owes the payer section
 function initAllBadge(id) {

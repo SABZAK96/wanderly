@@ -25,6 +25,14 @@
     </style>
   </head>
   <body class="bg-base-200 min-h-screen flex flex-col">
+    <!-- page-level loading overlay, shown until the initial data load finishes -->
+    <div
+      id="pageLoading"
+      class="fixed inset-0 z-10 flex items-center justify-center bg-base-200"
+    >
+      <span class="loading loading-spinner loading-lg" style="color: #534ab7"></span>
+    </div>
+
     <!-- navbar -->
     <div
       class="navbar bg-base-100 shadow-sm sticky top-0 z-20 px-4 lg:px-8"
