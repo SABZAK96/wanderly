@@ -365,6 +365,14 @@ async function initTable() {
     await fetch("/getExpenses/6a445ee01781d2a29c611442")
   ).json();
 
+  if (response.length === 0) {
+    document.querySelector("#my_table tbody").insertAdjacentHTML(
+      "beforeend",
+      `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`,
+    );
+    return;
+  }
+
   response.forEach((expense) => {
     //preparing badges
     const selectedBadges = expense.paidBy.map((item) =>
@@ -387,6 +395,7 @@ async function initTable() {
 
 function updateTable(selectedBadges, expenseTitle, costAmount, expenseId) {
   const tableBody = document.querySelector("#my_table tbody");
+  document.getElementById("emptyTableRow")?.remove();
   let newTableRow = "";
   newTableRow = `  <tr data-id="${expenseId}">
     <td class="font-medium " contenteditable="true">${expenseTitle}</td>
@@ -496,6 +505,12 @@ document
 
     if (response.ok) {
       row.remove(); // only remove from the page once the server confirms it's gone
+      if (document.querySelectorAll("#my_table tbody tr").length === 0) {
+        document.querySelector("#my_table tbody").insertAdjacentHTML(
+          "beforeend",
+          `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`,
+        );
+      }
       setUpPage().then(refreshFilterCard);
     } else {
       btn.dataset.loading = "false";
@@ -1037,6 +1052,10 @@ async function renderDebtBreakdown() {
       container.insertAdjacentHTML("beforeend", element);
     }
   });
+
+  if (container.innerHTML.trim() === "") {
+    container.innerHTML = `<p class="text-sm text-base-content/40 text-center py-6">Nobody owes anybody right now</p>`;
+  }
 }
 
 // ========================================================================================
@@ -1270,6 +1289,8 @@ function netAmountCalc() {
 function simplestSettle(netted) {
   let transactions = [];
   // netted is an array of obj for each person where net > 0 shows the person is owed and net < 0 shows the person owes sth
+  // drop anyone who's already settled, so we don't manufacture a $0 transaction between two zero-net people
+  netted = netted.filter((entry) => Math.abs(entry.net) > 0.01);
   while (netted.length > 1) {
     // Descending order (highest to lowest) - biggest creditor would be at index 0 and the biggest debtor would be at last
     // netted would be mutated in place
@@ -1295,6 +1316,11 @@ function simplestSettle(netted) {
 function displaySimplestSettle(transactions) {
   const container = document.getElementById("simplify-rows");
   container.innerHTML = "";
+
+  if (transactions.length === 0) {
+    container.innerHTML = `<p class="text-sm text-base-content text-center py-6">Everyone's settled up! 🎉</p>`;
+    return;
+  }
 
   transactions.forEach((transaction) => {
     const owedBadge = peopleBadges.find(
