@@ -196,6 +196,7 @@ function populateRows(myArray, id) {
     row.className = "flex flex-row items-center justify-between customInputRow";
 
     const badgeClone = element.cloneNode(true);
+    badgeClone.classList.remove("border-2");
 
     const input = document.createElement("input");
     input.type = "number";
@@ -387,7 +388,9 @@ function updateTable(selectedBadges, expenseTitle, costAmount, expenseId) {
 
   // cloneNode(true) so original badges stay in the modal for next time
   selectedBadges.forEach((badge) => {
-    badgePlaceholder.appendChild(badge.cloneNode(true));
+    const badgeClone = badge.cloneNode(true);
+    badgeClone.classList.remove("border-2");
+    badgePlaceholder.appendChild(badgeClone);
   });
 
   // update the total amount in the table
