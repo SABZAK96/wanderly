@@ -426,11 +426,31 @@ function updateTable(selectedBadges, expenseTitle, costAmount, expenseId) {
   document.getElementById("emptyTableRow")?.remove();
   let newTableRow = "";
   newTableRow = `  <tr data-id="${expenseId}">
-    <td class="font-medium " contenteditable="true">${expenseTitle}</td>
-    <td class="text-center" contenteditable="true"><span>$</span><span class="tableAmounts">${costAmount}</span></td>
+    <td class="font-medium ">${expenseTitle}</td>
+    <td class="text-center"><span>$</span><span class="tableAmounts">${costAmount}</span></td>
     <td><div class="flex flex-wrap justify-center items-center gap-1 badgePlaceHolder"></div></td>
-    <td > <button
-                      class="btn btn-ghost btn-xs text-error remove"
+    <td>
+      <div class="flex items-center justify-center gap-1">
+        <button
+                      class="btn btn-ghost btn-xs btn-square edit"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"
+                        />
+                      </svg>
+                    </button>
+        <button
+                      class="btn btn-ghost btn-xs btn-square text-error remove"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -446,7 +466,9 @@ function updateTable(selectedBadges, expenseTitle, costAmount, expenseId) {
                           d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
                         />
                       </svg>
-                    </button></td>
+                    </button>
+      </div>
+    </td>
   </tr>`;
 
   tableBody.insertAdjacentHTML("beforeend", newTableRow);
@@ -1454,11 +1476,13 @@ function displaySimplestSettle(transactions) {
       .find((badge) => badge.dataset.id === transaction.from)
       .cloneNode(true);
     owesBadge.classList.remove("border-2");
-    let element = `<div class="flex items-center gap-2">
-                ${owesBadge.outerHTML}
+    // "contents" so these children become the grid's actual columns,
+    // instead of each row laying itself out independently
+    let element = `<div class="contents">
+                <span class="justify-self-start">${owesBadge.outerHTML}</span>
                 <svg
+                  class="h-4 w-4 text-base-content/30 justify-self-center"
                   xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4 text-base-content/30"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -1470,8 +1494,8 @@ function displaySimplestSettle(transactions) {
                     d="M17 8l4 4m0 0l-4 4m4-4H3"
                   />
                 </svg>
-                ${owedBadge.outerHTML}
-                <span class="ml-auto font-medium">$<span>${transaction.amount}</span></span>
+                <span class="justify-self-end">${owedBadge.outerHTML}</span>
+                <span class="justify-self-end font-medium">$<span>${transaction.amount}</span></span>
               </div>`;
     container.insertAdjacentHTML("beforeend", element);
   });
