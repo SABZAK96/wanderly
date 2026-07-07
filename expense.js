@@ -75,7 +75,7 @@ async function setUpModal() {
 setUpModal();
 
 function setUpPage() {
-  renderDebtBreakdown().then(() => {
+  return renderDebtBreakdown().then(() => {
     initSettleToggles();
   });
 }
@@ -456,7 +456,7 @@ document
 
     if (response.ok) {
       row.remove(); // only remove from the page once the server confirms it's gone
-      setUpPage();
+      setUpPage().then(refreshFilterCard);
     }
   });
 
@@ -474,7 +474,7 @@ async function sendExpenseToDB(title, cost, paidBy, owes) {
       owedBy: owes,
     }),
   });
-  setUpPage();
+  setUpPage().then(refreshFilterCard);
   return data;
 }
 
@@ -891,7 +891,11 @@ document
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({to: creditorId, from: debtorId, amount: amount}),
+          body: JSON.stringify({
+            to: creditorId,
+            from: debtorId,
+            amount: amount,
+          }),
         });
         return markAsSettled(debtorId, creditorId);
       }),
@@ -899,7 +903,7 @@ document
 
     // re-render everything from the DB now that it reflects the settlement,
     // rather than hand-patching the DOM to guess what changed
-    setUpPage();
+    setUpPage().then(refreshFilterCard);
   });
 
 //========================================================================
@@ -982,25 +986,18 @@ async function renderDebtBreakdown() {
 // exists from page load - isOwedBreakdown/isDebtorBreakdown are re-queried
 // fresh on every click instead, since #debtBreakdown gets rebuilt whenever
 // renderDebtBreakdown() re-runs (e.g. after adding/deleting an expense)
-document.getElementById("person-filters").addEventListener("click", (event) => {
-  const btn = event.target.closest(".btn");
-  if (!btn) return;
 
+// tracks which person the filter card is currently showing, so
+// `refreshFilterCard` can re-render it with fresh data after an
+// add/delete/settle - null means the filter card is closed and there's
+// nothing to refresh
+let currentFilterPerson = null;
+
+// rebuilds #filterCard for the given person from the current #debtBreakdown DOM
+function renderFilterCard(personName) {
   const container = document.getElementById("filterCard");
-  const resetbtn = document.getElementById("resetFilter");
-
-  if (btn.id === "resetFilter") {
-    container.innerHTML = "";
-    document.getElementById("filter-result").classList.add("hidden");
-    resetbtn.classList.add("hidden");
-    return;
-  }
-
-  document.getElementById("filter-result").classList.remove("hidden");
-  resetbtn.classList.remove("hidden");
   let result = "";
   container.innerHTML = "";
-  const personName = btn.dataset.name;
 
   const isOwedBreakdown = document.querySelectorAll(
     "#debtBreakdown .collapse-title .person-pill",
@@ -1021,6 +1018,7 @@ document.getElementById("person-filters").addEventListener("click", (event) => {
   const personBadge = peopleBadges.find(
     (item) => item.dataset.name === personName,
   );
+  personBadge.classList.remove("border-2");
   if (hasDebts.length > 0 || isOwed) {
     result += `<div class="flex items-center justify-between">
                   ${personBadge.outerHTML}`;
@@ -1067,4 +1065,30 @@ document.getElementById("person-filters").addEventListener("click", (event) => {
     result += `</div>`;
   }
   container.insertAdjacentHTML("beforeend", result);
+}
+
+// re-renders the filter card with the currently selected person, if any -
+// call after setUpPage() so the open filter card doesn't stay stale
+function refreshFilterCard() {
+  if (currentFilterPerson) renderFilterCard(currentFilterPerson);
+}
+
+document.getElementById("person-filters").addEventListener("click", (event) => {
+  const btn = event.target.closest(".btn");
+  if (!btn) return;
+
+  const resetbtn = document.getElementById("resetFilter");
+
+  if (btn.id === "resetFilter") {
+    document.getElementById("filterCard").innerHTML = "";
+    document.getElementById("filter-result").classList.add("hidden");
+    resetbtn.classList.add("hidden");
+    currentFilterPerson = null;
+    return;
+  }
+
+  document.getElementById("filter-result").classList.remove("hidden");
+  resetbtn.classList.remove("hidden");
+  currentFilterPerson = btn.dataset.name;
+  renderFilterCard(currentFilterPerson);
 });
