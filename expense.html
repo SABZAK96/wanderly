@@ -22,6 +22,37 @@
         background: #eeedfe;
         color: #534ab7;
       }
+
+      /* Total Spent Per Person cards pop out over the layout when expanded,
+         instead of growing the grid row and pushing everything else down */
+      #totalSpent .collapse {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      /* daisyUI animates its own grid-template-rows to reveal collapse-content,
+         which fights our absolute-positioning override below (briefly grows
+         the box in flow, then snaps back) - make that reveal instant instead */
+      #totalSpent .collapse-content {
+        transition: none !important;
+      }
+      /* collpase has an input that is checked */
+      #totalSpent .collapse:has(> input:checked) {
+        transform: scale(1.05);
+        z-index: 30;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+        background: #e0dbfb !important;
+        /* the popped-out content below has square top corners - flatten
+           the title's bottom corners too so they join flush, no curved gap */
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      #totalSpent .collapse:has(> input:checked) .collapse-content {
+        /* take the element out of normal flow when its clicked so the parent div doesnt expand */
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: #e0dbfb !important;
+      }
     </style>
   </head>
   <body class="bg-base-200 min-h-screen flex flex-col">
@@ -35,7 +66,7 @@
 
     <!-- navbar -->
     <div
-      class="navbar bg-base-100 shadow-sm sticky top-0 z-20 px-4 lg:px-8"
+      class="navbar bg-base-100 shadow-sm sticky top-0 z-50 px-4 lg:px-8"
       style="background-color: #534ab7; color: white"
     >
       <div class="navbar-start">
@@ -98,7 +129,7 @@
         <h1 class="text-2xl font-light mb-4">Total Spent Per Person</h1>
         <div
           id="totalSpent"
-          class="grid grid-cols-3 lg:grid-cols-5 gap-3 mb-8"
+          class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8 items-start"
         ></div>
 
         <h1 class="text-2xl font-light mb-6">Shared Expenses</h1>
@@ -249,6 +280,17 @@
         <p id="settleError" class="text-sm text-red-500 mt-2 hidden"></p>
         </div> <!-- end right column -->
       </div> <!-- end grid -->
+
+      <!-- destructive, trip-wide reset - kept apart from the normal add/delete actions -->
+      <div class="w-full max-w-[1600px] flex flex-col items-end mt-2">
+        <button
+          id="resetTrip"
+          class="btn btn-sm btn-outline btn-error"
+        >
+          Reset Everything
+        </button>
+        <p id="resetError" class="text-sm text-red-500 mt-2 hidden"></p>
+      </div>
       <!-- modal for inserting expense -->
       <dialog id="my_modal_expense" class="modal">
         <div class="modal-box flex flex-col gap-4">

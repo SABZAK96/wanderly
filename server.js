@@ -158,6 +158,20 @@ app.delete("/deleteExpense/:tripId/:expenseId", async (req, res) => {
   }
 });
 
+// wipe every expense and settlement record for a trip - full reset
+app.delete("/resetTrip/:tripId", async (req, res) => {
+  try {
+    const trip = await tripModel.findByIdAndUpdate(
+      req.params.tripId,
+      { $set: { expenses: [], payments: [] } },
+      { new: true },
+    );
+    res.json(trip);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
 // update the owedBy array based on the payments that are made
 app.put("/markSettled/:tripId", async (req, res) => {
   try {

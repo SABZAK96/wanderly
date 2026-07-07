@@ -76,9 +76,10 @@ async function setUpModal() {
 function setUpPage() {
   return renderDebtBreakdown().then(async () => {
     initSettleToggles();
-    const results = await calculateSpending();
-    renderSpending(results);
     const netted = netAmountCalc();
+    const results = await calculateSpending();
+    // renderSpending reads netted before simplestSettle mutates it below
+    renderSpending(results, netted);
     const transactions = simplestSettle(netted);
     displaySimplestSettle(transactions);
   });
@@ -519,6 +520,49 @@ document
       deleteError.classList.remove("hidden");
     }
   });
+
+// wiping every expense and settlement for the trip - destructive, so gate it behind a confirm
+document.getElementById("resetTrip").addEventListener("click", async () => {
+  const btn = document.getElementById("resetTrip");
+  if (btn.dataset.loading === "true") return; // guard against double-click
+  if (
+    !confirm(
+      "This will permanently delete every expense and settlement for this trip. Continue?",
+    )
+  )
+    return;
+
+  const originalContent = btn.innerHTML;
+  btn.dataset.loading = "true";
+  btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+  const resetError = document.getElementById("resetError");
+  resetError.classList.add("hidden");
+
+  const response = await fetch("/resetTrip/6a445ee01781d2a29c611442", {
+    method: "DELETE",
+  });
+
+  if (response.ok) {
+    document.querySelector("#my_table tbody").innerHTML =
+      `<tr id="emptyTableRow"><td colspan="4" class="text-center text-base-content/40 py-6">No expenses yet</td></tr>`;
+    document.getElementById("total").innerHTML = "0";
+
+    // close out any open person filter, since there's nothing left to filter
+    currentFilterPerson = null;
+    document.getElementById("filterCard").innerHTML = "";
+    document.getElementById("filter-result").classList.add("hidden");
+    document.getElementById("resetFilter").classList.add("hidden");
+
+    await setUpPage();
+  } else {
+    resetError.textContent = "Failed to reset trip. Please try again.";
+    resetError.classList.remove("hidden");
+  }
+
+  btn.dataset.loading = "false";
+  btn.innerHTML = originalContent;
+});
 
 // send the added expense to the db
 async function sendExpenseToDB(title, cost, paidBy, owes) {
@@ -1190,8 +1234,19 @@ async function calculateSpending() {
   return results;
 }
 
+// closes an open Total Spent Per Person card when clicking outside of it
+document.addEventListener("click", (event) => {
+  const openCheckbox = document.querySelector(
+    "#totalSpent .collapse input:checked",
+  );
+  if (!openCheckbox) return;
+  if (!openCheckbox.closest(".collapse").contains(event.target)) {
+    openCheckbox.checked = false;
+  }
+});
+
 // render the results
-function renderSpending(results) {
+function renderSpending(results, netted) {
   const container = document.getElementById("totalSpent");
   container.innerHTML = "";
   results.forEach((element) => {
@@ -1199,17 +1254,55 @@ function renderSpending(results) {
       (person) => person.dataset.id === element.id,
     ).dataset.name;
     const totalSpent = Number(element.expenses) + Number(element.payments);
+
+    // net > 0 means they're still owed money, net < 0 means they still owe money
+    const net = netted.find((item) => item.id === element.id)?.net ?? 0;
+    const isSettled = Math.abs(net) < 0.01;
+    let stillOwedLabel, stillOwedAmount, stillOwedColor;
+    if (isSettled) {
+      stillOwedLabel = "All settled";
+      stillOwedAmount = "";
+      stillOwedColor = "#16a34a";
+    } else if (net > 0) {
+      stillOwedLabel = "Still owed";
+      stillOwedAmount = `$${net}`;
+      stillOwedColor = "#16a34a";
+    } else {
+      stillOwedLabel = "Still owes";
+      stillOwedAmount = `$${-net}`;
+      stillOwedColor = "#dc2626";
+    }
+
     let stat = ` <div
-            class="stats shadow-sm border border-base-200"
-            style="background: #eeedfe"
+            class="collapse collapse-plus shadow-sm relative"
+            style="background: #eeedfe" 
           >
-            <div class="stat py-2 px-4 place-items-center text-center">
-              <div class="stat-title text-xs font-medium" style="color: #534ab7">
+            <input type="checkbox" class="focus:outline-none" />
+            <span
+              class="absolute top-1 right-1 h-3 w-3 rounded-full border-2 border-white"
+              style="background: ${isSettled ? "#16a34a" : "#dc2626"}"
+              title="${isSettled ? "All settled" : "Not settled"}"
+            ></span>
+            <div class="collapse-title stat py-2 pl-4 pr-8 place-items-center text-center">
+              <div class="stat-title text-xs font-medium" style="color: #534ab7 ">
                 ${personName}
               </div>
               <div class="stat-value text-lg" style="color: #534ab7"><span>$</span>${totalSpent}</div>
             </div>
-
+            <div class="collapse-content flex flex-col gap-1.5 text-xs shadow-sm rounded-b-box" style="background: #eeedfe">
+              <div class="flex items-center justify-between pt-2">
+                <span style="color: #534ab7; opacity: 0.65">Expenses share</span>
+                <span class="font-semibold" style="color: #534ab7">$${element.expenses}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span style="color: #534ab7; opacity: 0.65">Already settled</span>
+                <span class="font-semibold" style="color: #534ab7">$${element.payments}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="font-medium" style="color: ${stillOwedColor}">${stillOwedLabel}</span>
+                <span class="font-semibold" style="color: ${stillOwedColor}">${stillOwedAmount}</span>
+              </div>
+            </div>
           </div>`;
     container.insertAdjacentHTML("beforeend", stat);
   });
