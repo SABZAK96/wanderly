@@ -854,7 +854,7 @@ async function calculateSplitAmounts(cost, selectedBadgesDebts) {
       });
     } else {
       const numberOfBadges = selectedBadgesDebts.length;
-      const costPerPerson = cost / numberOfBadges;
+      const costPerPerson = (cost / numberOfBadges).toFixed(2);
       selectedBadgesDebts.map((element) => {
         splitAmounts.push({
           person: element.dataset.id,
@@ -1482,6 +1482,18 @@ document.addEventListener("click", (event) => {
   }
 });
 
+// only one Total Spent Per Person card should be open at a time - opening
+// another one closes whichever was already open, so their popped-out
+// collapse-content panels never overlap
+document.getElementById("totalSpent").addEventListener("change", (event) => {
+  if (!event.target.matches('input[type="checkbox"]') || !event.target.checked) return;
+  document
+    .querySelectorAll("#totalSpent .collapse input:checked")
+    .forEach((checkbox) => {
+      if (checkbox !== event.target) checkbox.checked = false;
+    });
+});
+
 // render the results
 function renderSpending(results, netted) {
   const container = document.getElementById("totalSpent");
@@ -1680,7 +1692,7 @@ function displaySimplestSettle(transactions) {
                   />
                 </svg>
                 <span class="justify-self-end">${owedBadge.outerHTML}</span>
-                <span class="justify-self-end font-medium">$<span>${transaction.amount}</span></span>
+                <span class="justify-self-end font-medium">$<span>${transaction.amount.toFixed(1)}</span></span>
               </div>`;
     container.insertAdjacentHTML("beforeend", element);
   });
