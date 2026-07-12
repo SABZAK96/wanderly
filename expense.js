@@ -847,18 +847,27 @@ async function calculateSplitAmounts(cost, selectedBadgesDebts) {
       selectedBadgesDebts.length === 1 &&
       selectedBadgesDebts[0].dataset.name === "All"
     ) {
-      const sharedAmount = (cost / numberOfPeople).toFixed(2);
-      people.map((person) => {
-        splitAmounts.push({ person: person._id, amount: sharedAmount });
+      // split in whole cents so the shares always add back up to the total
+      // cost - dividing then rounding each share independently can drift the
+      // sum off by a cent or more (e.g. 3.68 / 5)
+      const totalCents = Math.round(cost * 100);
+      const baseCents = Math.floor(totalCents / numberOfPeople);
+      const remainderCents = totalCents - baseCents * numberOfPeople;
+      people.map((person, index) => {
+        const cents = baseCents + (index < remainderCents ? 1 : 0);
+        splitAmounts.push({ person: person._id, amount: (cents / 100).toFixed(2) });
         console.log(splitAmounts);
       });
     } else {
       const numberOfBadges = selectedBadgesDebts.length;
-      const costPerPerson = (cost / numberOfBadges).toFixed(2);
-      selectedBadgesDebts.map((element) => {
+      const totalCents = Math.round(cost * 100);
+      const baseCents = Math.floor(totalCents / numberOfBadges);
+      const remainderCents = totalCents - baseCents * numberOfBadges;
+      selectedBadgesDebts.map((element, index) => {
+        const cents = baseCents + (index < remainderCents ? 1 : 0);
         splitAmounts.push({
           person: element.dataset.id,
-          amount: costPerPerson,
+          amount: (cents / 100).toFixed(2),
         });
         console.log(splitAmounts);
       });
@@ -1295,7 +1304,7 @@ async function renderDebtBreakdown() {
           <span class="text-sm text-base-content/50"
             >is owed
             <span class="font-semibold text-base-content">$</span
-            ><span class="font-semibold text-base-content owed">${sum}</span
+            ><span class="font-semibold text-base-content owed">${sum.toFixed(2)}</span
             ></span
           >
         </div>
@@ -1316,7 +1325,7 @@ async function renderDebtBreakdown() {
             >${debtor.name}</span
           >
           <div class="flex items-center text-sm font-thin">
-            $<div class="flex flex-row gap-1 justify-center items-center "><span class="amount">${debt.amount}</span>
+            $<div class="flex flex-row gap-1 justify-center items-center "><span class="amount">${debt.amount.toFixed(2)}</span>
             <input type="checkbox" class="checkbox checkbox-success" />
             </div>
           </div>
@@ -1514,11 +1523,11 @@ function renderSpending(results, netted) {
       stillOwedColor = "#16a34a";
     } else if (net > 0) {
       stillOwedLabel = "Still owed";
-      stillOwedAmount = `$${net}`;
+      stillOwedAmount = `$${net.toFixed(2)}`;
       stillOwedColor = "#16a34a";
     } else {
       stillOwedLabel = "Still owes";
-      stillOwedAmount = `$${-net}`;
+      stillOwedAmount = `$${(-net).toFixed(2)}`;
       stillOwedColor = "#dc2626";
     }
 
@@ -1536,16 +1545,16 @@ function renderSpending(results, netted) {
               <div class="stat-title text-xs font-medium" style="color: #534ab7 ">
                 ${personName}
               </div>
-              <div class="stat-value text-lg" style="color: #534ab7"><span>$</span>${totalSpent}</div>
+              <div class="stat-value text-lg" style="color: #534ab7"><span>$</span>${totalSpent.toFixed(2)}</div>
             </div>
             <div class="collapse-content flex flex-col gap-1.5 text-xs shadow-sm rounded-b-box" style="background: #eeedfe">
               <div class="flex items-center justify-between pt-2">
                 <span style="color: #534ab7; opacity: 0.65">Expenses share</span>
-                <span class="font-semibold" style="color: #534ab7">$${element.expenses}</span>
+                <span class="font-semibold" style="color: #534ab7">$${Number(element.expenses).toFixed(2)}</span>
               </div>
               <div class="flex items-center justify-between">
                 <span style="color: #534ab7; opacity: 0.65">Already settled</span>
-                <span class="font-semibold" style="color: #534ab7">$${element.payments}</span>
+                <span class="font-semibold" style="color: #534ab7">$${Number(element.payments).toFixed(2)}</span>
               </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium" style="color: ${stillOwedColor}">${stillOwedLabel}</span>
@@ -1692,7 +1701,7 @@ function displaySimplestSettle(transactions) {
                   />
                 </svg>
                 <span class="justify-self-end">${owedBadge.outerHTML}</span>
-                <span class="justify-self-end font-medium">$<span>${transaction.amount.toFixed(1)}</span></span>
+                <span class="justify-self-end font-medium">$<span>${transaction.amount.toFixed(2)}</span></span>
               </div>`;
     container.insertAdjacentHTML("beforeend", element);
   });
