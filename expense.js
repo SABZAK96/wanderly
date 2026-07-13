@@ -590,12 +590,25 @@ function expenseInputValidator(cost, owes, owed) {
 }
 
 // removing a row from db
+let pendingDeleteBtn = null; // which delete button the confirmation modal is currently for
+
 document
   .querySelector("#my_table tbody")
   .addEventListener("click", async (event) => {
     const btn = event.target.closest(".remove");
     if (!btn) return; // click wasn't on (or inside) a delete button
     if (btn.dataset.loading === "true") return; // guard against double-click
+
+    pendingDeleteBtn = btn;
+    document.getElementById("deleteConfirmModal").showModal();
+  });
+
+// attaching the listener once, so repeated opens of the modal don't stack up handlers
+document
+  .getElementById("confirmDeleteExpense")
+  .addEventListener("click", async () => {
+    const btn = pendingDeleteBtn;
+    if (!btn) return;
 
     const row = btn.closest("tr");
     const id = row.dataset.id;
@@ -631,6 +644,8 @@ document
       deleteError.textContent = "Failed to delete expense. Please try again.";
       deleteError.classList.remove("hidden");
     }
+
+    pendingDeleteBtn = null;
   });
 
 // edit the table
@@ -1752,4 +1767,4 @@ function paymentScrolll() {
 
 // attaching listeners for activating scrolls
 document.getElementById("scrollExp").addEventListener("click", expenseScrolll);
-document.getElementById("scrollPay").addEventListener("click", paymentScrolll)
+document.getElementById("scrollPay").addEventListener("click", paymentScrolll);
