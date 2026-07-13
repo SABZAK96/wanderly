@@ -59,6 +59,20 @@
         background: #e0dbfb !important;
         border-top: 1px dashed #534ab7;
       }
+      .highlight-flash {
+        animation: flashEffect 3s ease-in-out;
+      }
+
+      @keyframes flashEffect {
+        0% {
+          border-color: #eeedfe; /* Initial highlight color */
+          box-shadow: 0 0 0 8px #eeedfe;
+        }
+        100% {
+          border-color: transparent; /* Smooth fade out back to normal */
+          box-shadow: none;
+        }
+      }
     </style>
   </head>
   <body class="bg-base-200 min-h-screen flex flex-col">
@@ -411,8 +425,8 @@
         </form>
       </dialog>
 
-      <!-- shortcut button -->
-      <div class="fab">
+      <!-- shortcut button hidden on big screen -->
+      <div class="fab md:hidden visible">
         <!-- a focusable div with tabindex is necessary to work on all browsers. role="button" is necessary for accessibility -->
         <div
           tabindex="0"
@@ -438,10 +452,10 @@
         </div>
 
         <!-- buttons that show up when FAB is open -->
-        <button class="btn" style="background-color: #e0dbfb; color: #534ab7">
+        <button id="scrollExp" class="btn" style="background-color: #e0dbfb; color: #534ab7">
           Add an Expense
         </button>
-        <button class="btn" style="background-color: #e0dbfb; color: #534ab7">
+        <button id="scrollPay" class="btn" style="background-color: #e0dbfb; color: #534ab7">
           Settle a Payment
         </button>
       </div>

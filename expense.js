@@ -634,9 +634,11 @@ document
   });
 
 // edit the table
-document.querySelector("#my_table tbody").addEventListener("click", async (event) => {
-  const editBtn = event.target.closest(".edit");
-     if (!editBtn) return; // click wasn't on (or inside) a delete button
+document
+  .querySelector("#my_table tbody")
+  .addEventListener("click", async (event) => {
+    const editBtn = event.target.closest(".edit");
+    if (!editBtn) return; // click wasn't on (or inside) a delete button
 
     const row = editBtn.closest("tr");
     const id = row.dataset.id;
@@ -733,7 +735,7 @@ document.querySelector("#my_table tbody").addEventListener("click", async (event
     submitBtn.dataset.loading = "false";
     submitBtn.disabled = false;
     submitBtn.textContent = "Save";
-})
+  });
 // destructive, so gate it behind a confirmation modal instead of firing right away
 document.getElementById("resetTrip").addEventListener("click", () => {
   document.getElementById("resetConfirmModal").showModal();
@@ -855,7 +857,10 @@ async function calculateSplitAmounts(cost, selectedBadgesDebts) {
       const remainderCents = totalCents - baseCents * numberOfPeople;
       people.map((person, index) => {
         const cents = baseCents + (index < remainderCents ? 1 : 0);
-        splitAmounts.push({ person: person._id, amount: (cents / 100).toFixed(2) });
+        splitAmounts.push({
+          person: person._id,
+          amount: (cents / 100).toFixed(2),
+        });
         console.log(splitAmounts);
       });
     } else {
@@ -1495,7 +1500,8 @@ document.addEventListener("click", (event) => {
 // another one closes whichever was already open, so their popped-out
 // collapse-content panels never overlap
 document.getElementById("totalSpent").addEventListener("change", (event) => {
-  if (!event.target.matches('input[type="checkbox"]') || !event.target.checked) return;
+  if (!event.target.matches('input[type="checkbox"]') || !event.target.checked)
+    return;
   document
     .querySelectorAll("#totalSpent .collapse input:checked")
     .forEach((checkbox) => {
@@ -1706,3 +1712,44 @@ function displaySimplestSettle(transactions) {
     container.insertAdjacentHTML("beforeend", element);
   });
 }
+
+// ========================================================
+// scrolling for shortcuts
+// ========================================================
+function expenseScrolll() {
+  const targetBtn = document.getElementById("addExp");
+
+  if (targetBtn) {
+    // if targetBtn is clicked smoothly scroll to that section
+    targetBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // add CSS class
+    targetBtn.classList.add("highlight-flash");
+
+    // remove the CSS class after 3 sec
+    setTimeout(() => {
+      targetBtn.classList.remove("highlight-flash");
+    }, 3000);
+  }
+}
+
+function paymentScrolll() {
+  const targetBtn = document.getElementById("debtBreakdown");
+
+  if (targetBtn) {
+    // if targetBtn is clicked smoothly scroll to that section
+    targetBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // add CSS class
+    targetBtn.classList.add("highlight-flash");
+
+    // remove the CSS class after 2 sec
+    setTimeout(() => {
+      targetBtn.classList.remove("highlight-flash");
+    }, 3000);
+  }
+}
+
+// attaching listeners for activating scrolls
+document.getElementById("scrollExp").addEventListener("click", expenseScrolll);
+document.getElementById("scrollPay").addEventListener("click", paymentScrolll)
