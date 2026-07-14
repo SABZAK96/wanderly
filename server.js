@@ -136,7 +136,8 @@ const userSchema = new mongoose.Schema({
 // schema for trip
 const tripSchema = new mongoose.Schema({
   destination: String,
-  date: Date,
+  startDate: Date,
+  endDate: Date,
   people: [String], // user ids of people in the trip
   expenses: [
     {
@@ -175,6 +176,30 @@ async function main() {
       console.error("MongoDB connection failed:", err);
     });
 }
+
+// add a trip
+app.post("/addTrip", async (req, res) => {
+  try {
+    // create the trip and put the creator in people list
+    const trip = await tripModel.create({
+      destination: req.body.destination,
+      startDate: req.body.startDate,
+      endDate: req.body.endDate,
+      people: [req.session.userId],
+      expenses: [],
+      payments: [],
+    });
+
+    // update the user model and add the trip to their info 
+    
+    await userModel.findByIdAndUpdate(req.session.userId, {
+      $push: { trips: trip._id },
+    });
+    res.json(trip._id);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
 
 //getting people information related to each specific trip with id
 app.get("/people/:id", async (req, res) => {
