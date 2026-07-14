@@ -22,43 +22,41 @@
     <!-- navbar end -->
 
     <section
-      class="flex-1 flex items-center justify-center p-4 py-10"
+      class="flex-1 flex flex-col items-center justify-center p-4 py-10 gap-6"
       style="background: #eeedfe"
     >
-      <div
-        class="relative w-full max-w-md md:max-w-2xl flex flex-col items-center gap-6 md:aspect-[897/966]"
-      >
+      <!-- title + description - own space, always above the overlay region
+           below, so a taller Signup form never grows into it -->
+      <div class="flex flex-col items-center gap-2 text-center">
+        <div
+          class="w-12 h-12 rounded-full flex items-center justify-center"
+          style="background: #534ab7"
+        >
+          <span class="text-white text-xl font-bold leading-none">W</span>
+        </div>
+        <h1 class="text-2xl font-semibold" style="color: #3c3489">Wanderly</h1>
+        <p class="text-sm text-base-content/60 max-w-xs">
+          Build the itinerary, split expenses, and keep everyone in sync in
+          one place.
+        </p>
+      </div>
+
+      <!-- image + form overlay region -->
+      <div class="relative w-full max-w-md md:max-w-lg md:aspect-[897/966]">
         <!-- desktop-only background image - overlay behind the form.
              wrapper's aspect-ratio matches the image's real aspect ratio
-             (897:966), so object-cover never has to crop it. -->
+             (897:966), so object-cover never has to crop it. narrower
+             max-width than before so the box (and the gap around a short
+             Login card) is proportionally smaller too. -->
         <img
           src="./images/hero-cropped.png"
           alt=""
           class="hidden md:block absolute inset-0 w-full h-full object-cover rounded-3xl z-0"
         />
 
-        <!-- title + description - no image on small screens -->
-        <div
-          class="flex flex-col items-center gap-2 text-center md:relative md:z-10"
-        >
-          <div
-            class="w-12 h-12 rounded-full flex items-center justify-center"
-            style="background: #534ab7"
-          >
-            <span class="text-white text-xl font-bold leading-none">W</span>
-          </div>
-          <h1 class="text-2xl font-semibold" style="color: #3c3489">
-            Wanderly
-          </h1>
-          <p class="text-sm text-base-content/60 max-w-xs">
-            Build the itinerary, split expenses, and keep everyone in sync in
-            one place.
-          </p>
-        </div>
-
         <!-- forms - normal flow on mobile, overlaid on the image on desktop -->
         <div
-          class="card bg-base-100 shadow-sm border border-base-200 w-full max-w-sm md:absolute md:inset-0 md:m-auto md:h-fit md:z-10"
+          class="card bg-base-100 shadow-sm border border-base-200 w-full max-w-sm mx-auto md:absolute md:inset-0 md:m-auto md:h-fit md:z-10"
         >
           <div class="card-body gap-4">
             <!-- log in / sign up switch -->
