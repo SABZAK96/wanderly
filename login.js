@@ -35,7 +35,7 @@ document.getElementById("login").addEventListener("click", async () => {
     if (input.type === "email") {
       info["email"] = input.value;
     } else if (input.type === "password") {
-      info["pass"] = input.value;
+      info["password"] = input.value;
     }
   });
 

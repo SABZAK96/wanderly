@@ -27,7 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 const userSchema = new mongoose.Schema({
   name: String,
   email: String,
-  // password: String,
+  password: String,
   badgeInfo: {
     bg: String, // comes from front-end
     color: String,
@@ -93,6 +93,44 @@ async function main() {
       console.error("MongoDB connection failed:", err);
     });
 }
+
+// home route
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "index.html");
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const user = await userModel.findOne({ email: req.body.email });
+
+    if (user) {
+      const passwordMatched = await bcrypt.compare(
+        req.body.password,
+        user.password,
+      );
+
+      // check if password matches
+      if (passwordMatched) {
+        // set up cookies
+        req.session.userId = user._id;
+
+        // we can keep the cookie if remember me checked for 2 weeks in milliseconds
+        req.session.cookie.maxAge = 14 * 24 * 3600 * 1000;
+        req.session.save(() => res.sendStatus(200));
+
+        // if password doesnt match
+      } else {
+        res.status(401).json({ error: "Invalid credentials" });
+      }
+    }
+    // if user email doesnt exist in the DB
+    else {
+      res.status(401).json({ error: "Invalid credentials" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Login failed" });
+  }
+});
 
 //getting people information related to each specific trip with id
 app.get("/people/:id", async (req, res) => {
@@ -265,7 +303,11 @@ app.get("/spentDetails/:tripId/:personId", async (req, res) => {
       (accum, element) => accum + element.amount,
       0,
     );
-    const response = {id: req.params.personId, expenses:totalExp, payments: totalPay}
+    const response = {
+      id: req.params.personId,
+      expenses: totalExp,
+      payments: totalPay,
+    };
     res.json(response);
   } catch (error) {
     res.status(500).send("Server Error!");
