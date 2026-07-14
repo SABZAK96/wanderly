@@ -21,3 +21,79 @@ document.getElementById("authTabSignup").addEventListener("click", () => {
 document.getElementById("authTabLogin").addEventListener("click", () => {
   toggleForms("loginForm", "signupForm", "authTabLogin", "authTabSignup");
 });
+const loginFormInputs = document.querySelectorAll("#loginForm input");
+const signUpFormInputs = document.querySelectorAll("#signupForm input");
+
+// collecting all the information from the login form to send it to the db
+
+const loginError = document.getElementById("loginError");
+
+document.getElementById("login").addEventListener("click", async () => {
+  loginError.hidden = true;
+  let info = {};
+  loginFormInputs.forEach((input) => {
+    if (input.type === "email") {
+      info["email"] = input.value;
+    } else if (input.type === "password") {
+      info["pass"] = input.value;
+    }
+  });
+
+  const response = await fetch("/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(info),
+  });
+  if(response.ok){
+        window.location.href = "/plan.html"
+    } else {
+        loginError.textContent = "Incorrect email or password.";
+        loginError.hidden = false;
+    }
+});
+
+// collecting all the information from the signup form to send it to the db
+
+const signupError = document.getElementById("signupError");
+
+document.getElementById("signup").addEventListener("click", async () => {
+  signupError.hidden = true;
+  let info = {};
+  signUpFormInputs.forEach((input) => {
+    if (input.type === "text") {
+      info["name"] = input.value;
+    } else if (input.type === "email") {
+      info["email"] = input.value;
+    } else if (input.id === "firstPass") {
+      info["firstPass"] = input.value;
+    } else if (input.id === "secondPass") {
+      info["secondPass"] = input.value;
+    }
+  });
+
+  // check if the password matches
+  if (info["firstPass"] === info["secondPass"]) {
+    const response = await fetch("/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: info["name"],
+        email: info["email"],
+        password: info["firstPass"],
+      }),
+    });
+    if(response.ok){
+        window.location.href = "/plan.html"
+    } else {
+        signupError.textContent = "Could not create account. Try again.";
+        signupError.hidden = false;
+    }
+  } else {
+    signupError.textContent = "Passwords don't match.";
+    signupError.hidden = false;
+  }
+});

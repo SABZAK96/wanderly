@@ -37,7 +37,7 @@
           class="card bg-base-100 shadow-sm border border-base-200 w-full max-w-sm lg:max-w-md xl:max-w-lg flex-shrink-0"
         >
           <div class="card-body gap-4">
-          <div class="flex flex-col items-center gap-1 mb-2">
+3          <div class="flex flex-col items-center gap-1 mb-2">
             <div
               class="w-10 h-10 rounded-full flex items-center justify-center"
               style="background: #534ab7"
@@ -84,13 +84,14 @@
                 class="input w-full"
               />
             </div>
-            <button
+            <button id="login"
               type="button"
               class="btn mt-1"
               style="background-color: #534ab7; color: white"
             >
               Log in
             </button>
+            <p id="loginError" class="text-sm text-red-500 mt-1 hidden"></p>
           </form>
 
           <!-- sign up form -->
@@ -109,19 +110,28 @@
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-sm text-base-content/60">Password</label>
-              <input
+              <input id="firstPass"
                 type="password"
                 placeholder="••••••••"
                 class="input w-full"
               />
             </div>
-            <button
+            <div class="flex flex-col gap-1">
+              <label class="text-sm text-base-content/60">Confirm Password</label>
+              <input id="secondPass"
+                type="password"
+                placeholder="••••••••"
+                class="input w-full"
+              />
+            </div>
+            <button id="signup"
               type="button"
               class="btn mt-1"
               style="background-color: #534ab7; color: white"
             >
               Create account
             </button>
+            <p id="signupError" class="text-sm text-red-500 mt-1 hidden"></p>
           </form>
 
           <p class="text-xs text-center text-base-content/40 mt-1">
