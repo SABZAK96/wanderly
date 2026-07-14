@@ -457,7 +457,7 @@
               <span>Tokyo</span
               ><span class="text-xs font-normal text-white/60">Jul 25-30</span>
             </div>
-            <button
+            <button id="addTrip"
               class="btn btn-sm btn-ghost text-white justify-start gap-1.5 mt-1 px-2.5"
             >
               <svg
@@ -568,6 +568,77 @@
       <!-- drawer-side end -->
     </div>
     <!-- drawer end -->
+
+    <!-- modal for inserting trip -->
+    <dialog id="my_modal_trip" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <!-- close button in its own form so it doesn't submit -->
+        <form method="dialog">
+          <button
+            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          >
+            ✕
+          </button>
+        </form>
+
+        <h3 id="tripTitle" class="text-lg font-semibold">Add a New Trip</h3>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-base-content/60">Destination</label>
+          <input
+            id="exp-title"
+            type="text"
+            placeholder="e.g. Tokyo, Japan"
+            class="input w-full"
+          />
+        </div>
+
+        <div class="flex gap-3">
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-sm text-base-content/60">Start Date</label>
+            <input type="date" class="input w-full" />
+          </div>
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-sm text-base-content/60">End Date</label>
+            <input type="date" class="input w-full" />
+          </div>
+        </div>
+
+        <div class="divider m-0"></div>
+
+        <!-- inviting people -->
+        <div class="flex flex-col gap-2">
+          <h2 class="text-sm text-base-content/60">Invite people</h2>
+          <p class="text-base-content/60 text-sm">
+            Share this link — opening it logs someone in (or signs them up) and
+            adds them to this trip automatically.
+          </p>
+          <div class="join w-full">
+            <input type="text" readonly value="https://wanderly.app/join.html?trip=6a445ee0..." class="input join-item w-full text-xs">
+            <button
+              class="btn join-item"
+              style="background-color: #534ab7; color: white"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-action mt-0">
+          <form method="dialog">
+            <button class="btn btn-ghost">Cancel</button>
+          </form>
+          <button class="btn" style="background-color: #534ab7; color: white">
+            Create Trip
+          </button>
+        </div>
+      </div>
+
+      <!-- click outside to close -->
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
     <script src="code.js"></script>
   </body>
 </html>
