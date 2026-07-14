@@ -18,47 +18,6 @@ const app = express();
 const mongoose = require("mongoose");
 
 app.use(express.json({ limit: "50mb" }));
-app.use(express.static("src"));
-app.use(express.static("."));
-app.use(cors());
-app.use(express.urlencoded({ extended: true }));
-
-// schema for users
-const userSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  password: String,
-  badgeInfo: {
-    bg: String, // comes from front-end
-    color: String,
-    border: String,
-  },
-  trips: [String], // trip ids
-});
-
-// schema for trip
-const tripSchema = new mongoose.Schema({
-  destination: String,
-  date: Date,
-  people: [String], // user ids of people in the trip
-  expenses: [
-    {
-      title: String,
-      amount: Number,
-      paidBy: [{ person: String, amount: Number }], // user ids for co-payers and the amount they paid
-      owedBy: [{ person: String, amount: Number }], // people splitting the cost with their share
-    },
-  ],
-  payments: [
-    {
-      payer: String, // user id of person paying back
-      payee: String, // user id of person being paid back
-      amount: Number,
-    },
-  ],
-});
-const userModel = mongoose.model("users", userSchema);
-const tripModel = mongoose.model("trips", tripSchema);
 
 // setting up session
 app.use(
@@ -75,29 +34,17 @@ app.use(
   }),
 );
 
-main().catch((err) => console.log(err));
-
-async function main() {
-  mongoose
-    .connect(db)
-    .then(async () => {
-      console.log("Connected to MongoDB!");
-      app.listen(port, () => console.log("Server running!"));
-
-      // update badge colors — delete after running once
-      // await userModel.updateOne({ name: "Soroush" }, { $set: { badgeInfo: { bg: "#fef9c3", color: "#a16207", border: "#a16207" } } });
-      // await userModel.updateOne({ name: "Shohreh" }, { $set: { badgeInfo: { bg: "#cffafe", color: "#0e7490", border: "#0e7490" } } });
-      // console.log("Badge colors updated");
-    })
-    .catch((err) => {
-      console.error("MongoDB connection failed:", err);
-    });
-}
-
-// home route
+// =========================================================
+// public - accessible before login: index page + what it needs to render,
+// plus the login/signup routes themselves
+// =========================================================
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "index.html");
+  res.sendFile(__dirname + "/public/index.html");
 });
+app.get("/scripts/login.js", (req, res) => {
+  res.sendFile(__dirname + "/public/scripts/login.js");
+});
+app.use("/images", express.static(__dirname + "/public/images"));
 
 // login route
 app.post("/login", async (req, res) => {
@@ -158,6 +105,76 @@ app.post("/signup", async (req, res) => {
     res.status(500).json({ error: "Sign Up failed." });
   }
 });
+
+// =========================================================
+// everything below requires login
+// =========================================================
+function isAuthenticated(req, res, next) {
+  // if the session exists proceed, else get the login which is index
+  if (req.session.userId) next();
+  else res.redirect("/");
+}
+app.use(isAuthenticated);
+
+app.use(express.static("public"));
+app.use(cors());
+app.use(express.urlencoded({ extended: true }));
+
+// schema for users
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  password: String,
+  badgeInfo: {
+    bg: String, // comes from front-end
+    color: String,
+    border: String,
+  },
+  trips: [String], // trip ids
+});
+
+// schema for trip
+const tripSchema = new mongoose.Schema({
+  destination: String,
+  date: Date,
+  people: [String], // user ids of people in the trip
+  expenses: [
+    {
+      title: String,
+      amount: Number,
+      paidBy: [{ person: String, amount: Number }], // user ids for co-payers and the amount they paid
+      owedBy: [{ person: String, amount: Number }], // people splitting the cost with their share
+    },
+  ],
+  payments: [
+    {
+      payer: String, // user id of person paying back
+      payee: String, // user id of person being paid back
+      amount: Number,
+    },
+  ],
+});
+const userModel = mongoose.model("users", userSchema);
+const tripModel = mongoose.model("trips", tripSchema);
+
+main().catch((err) => console.log(err));
+
+async function main() {
+  mongoose
+    .connect(db)
+    .then(async () => {
+      console.log("Connected to MongoDB!");
+      app.listen(port, () => console.log("Server running!"));
+
+      // update badge colors — delete after running once
+      // await userModel.updateOne({ name: "Soroush" }, { $set: { badgeInfo: { bg: "#fef9c3", color: "#a16207", border: "#a16207" } } });
+      // await userModel.updateOne({ name: "Shohreh" }, { $set: { badgeInfo: { bg: "#cffafe", color: "#0e7490", border: "#0e7490" } } });
+      // console.log("Badge colors updated");
+    })
+    .catch((err) => {
+      console.error("MongoDB connection failed:", err);
+    });
+}
 
 //getting people information related to each specific trip with id
 app.get("/people/:id", async (req, res) => {
