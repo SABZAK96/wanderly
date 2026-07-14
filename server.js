@@ -99,6 +99,7 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "index.html");
 });
 
+// login route
 app.post("/login", async (req, res) => {
   try {
     const user = await userModel.findOne({ email: req.body.email });
@@ -120,15 +121,41 @@ app.post("/login", async (req, res) => {
 
         // if password doesnt match
       } else {
-        res.status(401).json({ error: "Invalid credentials" });
+        res.status(401).json({ error: "Invalid credentials." });
       }
     }
     // if user email doesnt exist in the DB
     else {
-      res.status(401).json({ error: "Invalid credentials" });
+      res.status(401).json({ error: "Invalid credentials." });
     }
   } catch (error) {
-    res.status(500).json({ error: "Login failed" });
+    res.status(500).json({ error: "Login failed." });
+  }
+});
+
+// signup route
+app.post("/signup", async (req, res) => {
+  try {
+    // check the email to be unique
+    const emailExists = await userModel.findOne({ email: req.body.email });
+    if (emailExists) {
+      res.status(409).json({ error: "This email already exists." });
+    } else {
+      const hashedPassword = await bcrypt.hash(req.body.password, SALT_ROUNDS);
+
+      const user = await userModel.create({
+        name: req.body.name,
+        password: hashedPassword,
+        email: req.body.email,
+        badgeInfo: {},
+        trips: [],
+      });
+      req.session.userId = user._id;
+      req.session.cookie.maxAge = 14 * 24 * 3600 * 1000;
+      req.session.save(() => res.sendStatus(200));
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Sign Up failed." });
   }
 });
 

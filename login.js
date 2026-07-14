@@ -46,12 +46,14 @@ document.getElementById("login").addEventListener("click", async () => {
     },
     body: JSON.stringify(info),
   });
-  if(response.ok){
-        window.location.href = "/plan.html"
-    } else {
-        loginError.textContent = "Incorrect email or password.";
-        loginError.classList.remove("hidden");
-    }
+  if (response.ok) {
+    window.location.href = "/plan.html";
+  } else {
+    const data = await response.json();
+    loginError.textContent = data.error;
+    loginError.classList.remove("hidden");
+    return;
+  }
 });
 
 // collecting all the information from the signup form to send it to the db
@@ -73,6 +75,27 @@ document.getElementById("signup").addEventListener("click", async () => {
     }
   });
 
+  // check the name to not be empty
+  if (info["name"].trim() === "") {
+    signupError.textContent = "Please Enter Your Name.";
+    signupError.classList.remove("hidden");
+    return;
+  }
+
+  // check the email to not be empty
+  if (info["email"].trim() === "") {
+    signupError.textContent = "Please Enter Your Email.";
+    signupError.classList.remove("hidden");
+    return;
+  }
+
+  // check the password to not be empty
+  if (info["firstPass"].trim() === "") {
+    signupError.textContent = "Please Enter A Password.";
+    signupError.classList.remove("hidden");
+    return;
+  }
+
   // check if the password matches
   if (info["firstPass"] === info["secondPass"]) {
     const response = await fetch("/signup", {
@@ -86,14 +109,17 @@ document.getElementById("signup").addEventListener("click", async () => {
         password: info["firstPass"],
       }),
     });
-    if(response.ok){
-        window.location.href = "/plan.html"
+    if (response.ok) {
+      window.location.href = "/plan.html";
     } else {
-        signupError.textContent = "Could not create account. Try again.";
-        signupError.classList.remove("hidden");
+      const data = await response.json();
+      signupError.textContent = data.error;
+      signupError.classList.remove("hidden");
+      return;
     }
   } else {
     signupError.textContent = "Passwords don't match.";
     signupError.classList.remove("hidden");
+    return;
   }
 });
