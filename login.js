@@ -29,7 +29,7 @@ const signUpFormInputs = document.querySelectorAll("#signupForm input");
 const loginError = document.getElementById("loginError");
 
 document.getElementById("login").addEventListener("click", async () => {
-  loginError.hidden = true;
+  loginError.classList.add("hidden");
   let info = {};
   loginFormInputs.forEach((input) => {
     if (input.type === "email") {
@@ -50,7 +50,7 @@ document.getElementById("login").addEventListener("click", async () => {
         window.location.href = "/plan.html"
     } else {
         loginError.textContent = "Incorrect email or password.";
-        loginError.hidden = false;
+        loginError.classList.remove("hidden");
     }
 });
 
@@ -59,7 +59,7 @@ document.getElementById("login").addEventListener("click", async () => {
 const signupError = document.getElementById("signupError");
 
 document.getElementById("signup").addEventListener("click", async () => {
-  signupError.hidden = true;
+  signupError.classList.add("hidden");
   let info = {};
   signUpFormInputs.forEach((input) => {
     if (input.type === "text") {
@@ -90,10 +90,10 @@ document.getElementById("signup").addEventListener("click", async () => {
         window.location.href = "/plan.html"
     } else {
         signupError.textContent = "Could not create account. Try again.";
-        signupError.hidden = false;
+        signupError.classList.remove("hidden");
     }
   } else {
     signupError.textContent = "Passwords don't match.";
-    signupError.hidden = false;
+    signupError.classList.remove("hidden");
   }
 });
