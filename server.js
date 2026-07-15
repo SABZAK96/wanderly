@@ -215,6 +215,16 @@ app.get("/allTrips", async (req, res) => {
   }
 });
 
+// get single trip info
+app.get("/singleTripDetails/:id", async (req, res) => {
+  try {
+    const trip = await tripModel.findById(req.params.id);
+    res.json(trip);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
 //getting people information related to each specific trip with id
 app.get("/people/:id", async (req, res) => {
   try {
