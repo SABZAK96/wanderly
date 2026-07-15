@@ -451,3 +451,12 @@ app.get("/spentDetails/:tripId/:personId", async (req, res) => {
     res.status(500).send("Server Error!");
   }
 });
+
+// logout route
+app.post("/logout", (req, res) => {
+  try {
+    req.session.destroy(() => res.sendStatus(200));
+  } catch (error) {
+    res.status(500).send("Could not log out.");
+  }
+});
