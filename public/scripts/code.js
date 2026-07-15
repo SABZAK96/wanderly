@@ -133,6 +133,7 @@ async function loadYourTrips() {
 
 loadYourTrips();
 
+// highlights the clicked trip in the sidebar and un-highlights the rest
 async function yourTripsStyle(event) {
   const element = event.target.closest(".trip");
   if (!element) return;
@@ -155,15 +156,17 @@ document
     await getSingleTripDetails(element);
   });
 
+// fetches the selected trip's details and renders them into #tripHeader
 async function getSingleTripDetails(element) {
   const tripId = element.id;
   const trip = await (await fetch(`/singleTripDetails/${tripId}`)).json();
   const container = document.getElementById("tripHeader");
+  container.dataset.tripId = tripId;
 
   const start = trip.startDate.slice(0, 10);
   const end = trip.endDate.slice(0, 10);
   const dateInfo = formatTripDates(start, end);
-  
+
   container.innerHTML = "";
   let addedElement = `<h2
                 class="flex flex-row items-baseline justify-between gap-2 text-base font-semibold text-white"
@@ -260,3 +263,50 @@ async function getSingleTripDetails(element) {
               </div>`;
   container.insertAdjacentHTML("beforeend", addedElement);
 }
+
+// sends the actual delete request for a trip id, called only after the user confirms
+async function deleteTrip(id) {
+  return fetch(`/deleteTrip/${id}`, { method: "DELETE" });
+}
+
+// clicking the trip header's delete icon opens the confirmation modal instead of
+// deleting right away - #deleteTrip only exists once a trip is rendered into
+// #tripHeader, so this listener has to live on the static #singleTripInfo container
+document.getElementById("singleTripInfo").addEventListener("click", (event) => {
+  if (!event.target.closest("#deleteTrip")) return;
+  document.getElementById("deleteTripError").classList.add("hidden");
+  document.getElementById("deleteTripConfirmModal").showModal();
+});
+
+// the modal's own delete button - this is what actually calls the delete route
+document
+  .getElementById("confirmDeleteTrip")
+  .addEventListener("click", async (event) => {
+    const btn = event.currentTarget;
+    if (btn.dataset.loading === "true") return; // guard against double-click
+
+    // swap the button label for a spinner while the request is in flight
+    const originalLabel = btn.innerHTML;
+    btn.dataset.loading = "true";
+    btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+    // the currently selected trip's id is stashed on #tripHeader when it's rendered
+    const tripId = document.getElementById("tripHeader").dataset.tripId;
+    const response = await deleteTrip(tripId);
+
+    if (response.ok) {
+      // close the modal and clear the now-deleted trip's header before
+      // refreshing the sidebar so nothing stale is left on screen
+      document.getElementById("deleteTripConfirmModal").close();
+      document.getElementById("tripHeader").innerHTML = "";
+      await loadYourTrips();
+    } else {
+      // leave the modal open on failure so the user can retry without re-confirming
+      const deleteTripError = document.getElementById("deleteTripError");
+      deleteTripError.textContent = "Failed to delete trip. Please try again.";
+      deleteTripError.classList.remove("hidden");
+    }
+
+    btn.dataset.loading = "false";
+    btn.innerHTML = originalLabel;
+  });

@@ -225,6 +225,31 @@ app.get("/singleTripDetails/:id", async (req, res) => {
   }
 });
 
+//delete a trip
+app.delete("/deleteTrip/:id", async (req, res) => {
+  try {
+
+    // remove that trip from user doc
+    await userModel.findByIdAndUpdate(req.session.userId, {
+      $pull: { trips:req.params.id },
+    });
+
+    // remove that person from that trip document
+    const trip = await tripModel.findByIdAndUpdate(
+      req.params.id,
+      { $pull: { people: req.session.userId } },
+      { new: true },
+    );
+
+    // delete the trip document if no person is in it
+    if (trip.people.length === 0) {
+      await tripModel.findByIdAndDelete(req.params.id);
+    }
+    res.sendStatus(200);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
 //getting people information related to each specific trip with id
 app.get("/people/:id", async (req, res) => {
   try {
