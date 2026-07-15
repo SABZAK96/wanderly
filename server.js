@@ -228,10 +228,9 @@ app.get("/singleTripDetails/:id", async (req, res) => {
 //delete a trip
 app.delete("/deleteTrip/:id", async (req, res) => {
   try {
-
     // remove that trip from user doc
     await userModel.findByIdAndUpdate(req.session.userId, {
-      $pull: { trips:req.params.id },
+      $pull: { trips: req.params.id },
     });
 
     // remove that person from that trip document
@@ -250,6 +249,27 @@ app.delete("/deleteTrip/:id", async (req, res) => {
     res.status(500).send("Server Error!");
   }
 });
+
+// edit a trip
+app.put("/editTrip/:id", async (req, res) => {
+  try {
+    const trip = await tripModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          destination: req.body.destination,
+          startDate: req.body.startDate,
+          endDate: req.body.endDate,
+        },
+      },
+      { new: true },
+    );
+    res.json(trip);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
 //getting people information related to each specific trip with id
 app.get("/people/:id", async (req, res) => {
   try {

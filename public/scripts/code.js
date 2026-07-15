@@ -1,74 +1,129 @@
 document.getElementById("addTrip").addEventListener("click", () => {
-  document.getElementById("my_modal_trip").showModal();
+  // clear any leftover edit state so this opens as a fresh "create" form
+  const modal = document.getElementById("my_modal_trip");
+  delete modal.dataset.editingTripId;
+  document.getElementById("tripTitle").textContent = "Add a New Trip";
+  document.getElementById("createTrip").textContent = "Create Trip";
+  document.getElementById("dest-title").value = "";
+  document.getElementById("startDate").value = "";
+  document.getElementById("endDate").value = "";
+  modal.showModal();
 });
 
-document.getElementById("singleTripInfo").addEventListener("click", (event) => {
+document.getElementById("tripHeader").addEventListener("click", (event) => {
   if (!event.target.closest("#inviteTrip")) return;
   document.getElementById("inviteModal").showModal();
 });
 
-// get the data from submitted modal
-document.getElementById("createTrip").addEventListener("click", async () => {
-  // validating inputs to be non empty
-  const destination = document.getElementById("dest-title").value;
-  const startDate = document.getElementById("startDate").value;
-  const endDate = document.getElementById("endDate").value;
-
+// checks destination/date inputs for create and edit trip forms, returns an
+// error message to show the user or null if everything's valid
+function validateTripDates(destination, startDate, endDate) {
   // get todays date in yyyy-mm-dd format
   const todayDate = new Date().toISOString().slice(0, 10);
 
-  const tripError = document.getElementById("tripError");
-  tripError.classList.add("hidden");
-
   if (destination.trim() === "") {
-    tripError.textContent = "Please Enter your destination.";
-    tripError.classList.remove("hidden");
-    return;
+    return "Please Enter your destination.";
   } else if (!startDate || !endDate) {
-    tripError.textContent = "Please select both a start and end date.";
-    tripError.classList.remove("hidden");
-    return;
+    return "Please select both a start and end date.";
   } else if (endDate <= startDate) {
-    tripError.textContent = "End date must be after the start date.";
-    tripError.classList.remove("hidden");
-    return;
+    return "End date must be after the start date.";
   } else if (startDate < todayDate) {
-    tripError.textContent = "Start date can't be in the past.";
-    tripError.classList.remove("hidden");
-    return;
+    return "Start date can't be in the past.";
   }
+  return null;
+}
 
-  // sending the info to db
-  const response = await fetch("/addTrip", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      destination: destination,
-      startDate: startDate,
-      endDate: endDate,
-    }),
+// get the data from submitted modal
+document
+  .getElementById("createTrip")
+  .addEventListener("click", async (event) => {
+    const destination = document.getElementById("dest-title").value;
+    const startDate = document.getElementById("startDate").value;
+    const endDate = document.getElementById("endDate").value;
+
+    const tripError = document.getElementById("tripError");
+    tripError.classList.add("hidden");
+
+    const errorMessage = validateTripDates(destination, startDate, endDate);
+    if (errorMessage) {
+      tripError.textContent = errorMessage;
+      tripError.classList.remove("hidden");
+      return;
+    }
+
+    const btn = event.currentTarget;
+    if (btn.dataset.loading === "true") return; // guard against double-click
+
+    const originalLabel = btn.innerHTML;
+    btn.dataset.loading = "true";
+    btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+    const modal = document.getElementById("my_modal_trip");
+    const editingTripId = modal.dataset.editingTripId;
+
+    if (editingTripId) {
+      // editing an existing trip
+      const response = await fetch(`/editTrip/${editingTripId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          destination: destination,
+          startDate: startDate,
+          endDate: endDate,
+        }),
+      });
+
+      if (response.ok) {
+        delete modal.dataset.editingTripId;
+        modal.close();
+        await getSingleTripDetails(editingTripId);
+        await loadYourTrips();
+      } else {
+        tripError.textContent = "Could not update the trip, please try again.";
+        tripError.classList.remove("hidden");
+      }
+
+      btn.dataset.loading = "false";
+      btn.innerHTML = originalLabel;
+      return;
+    }
+
+    // creating a new trip
+    const response = await fetch("/addTrip", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        destination: destination,
+        startDate: startDate,
+        endDate: endDate,
+      }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+
+      // clear the form so the next "+ New Trip" opens blank, not with this trip's info
+      document.getElementById("dest-title").value = "";
+      document.getElementById("startDate").value = "";
+      document.getElementById("endDate").value = "";
+
+      // close the previous modal
+      modal.close();
+      document.getElementById("inviteModal").showModal();
+      document.getElementById("link").value =
+        `${window.location.origin}/join.html?trip=${data}`;
+      loadYourTrips();
+    } else {
+      tripError.textContent = "Could not add the trip, please try again.";
+      tripError.classList.remove("hidden");
+    }
+
+    btn.dataset.loading = "false";
+    btn.innerHTML = originalLabel;
   });
-  if (response.ok) {
-    const data = await response.json();
-
-    // clear the form so the next "+ New Trip" opens blank, not with this trip's info
-    document.getElementById("dest-title").value = "";
-    document.getElementById("startDate").value = "";
-    document.getElementById("endDate").value = "";
-
-    // close the previous modal
-    document.getElementById("my_modal_trip").close();
-    document.getElementById("inviteModal").showModal();
-    document.getElementById("link").value =
-      `${window.location.origin}/join.html?trip=${data}`;
-    loadYourTrips();
-  } else {
-    tripError.textContent = "Could not add the trip, please try again.";
-    tripError.classList.remove("hidden");
-  }
-});
 
 // this function gets the start date and end date and provide formatted data that will be used to show dates of
 // the trips in the side bar
@@ -153,12 +208,11 @@ document
   .addEventListener("click", async (event) => {
     const element = await yourTripsStyle(event);
     if (!element) return;
-    await getSingleTripDetails(element);
+    await getSingleTripDetails(element.id);
   });
 
 // fetches the selected trip's details and renders them into #tripHeader
-async function getSingleTripDetails(element) {
-  const tripId = element.id;
+async function getSingleTripDetails(tripId) {
   const trip = await (await fetch(`/singleTripDetails/${tripId}`)).json();
   const container = document.getElementById("tripHeader");
   container.dataset.tripId = tripId;
@@ -309,4 +363,26 @@ document
 
     btn.dataset.loading = "false";
     btn.innerHTML = originalLabel;
+  });
+
+async function editTripSetup(id) {
+  const data = await (await fetch(`/singleTripDetails/${id}`)).json();
+
+  // show the my_modal_trip with some modification
+  document.getElementById("my_modal_trip").showModal();
+  document.getElementById("my_modal_trip").dataset.editingTripId = id;
+  document.getElementById("tripTitle").innerHTML = "Edit Trip";
+  document.getElementById("createTrip").innerHTML = "Confirm";
+  document.getElementById("dest-title").value = data.destination;
+  document.getElementById("startDate").value = data.startDate.slice(0, 10);
+  document.getElementById("endDate").value = data.endDate.slice(0, 10);
+}
+
+document
+  .getElementById("tripHeader")
+  .addEventListener("click", async (event) => {
+    const createBtn = event.target.closest("#editTrip");
+    if (!createBtn) return;
+    const id = createBtn.closest("#tripHeader").dataset.tripId;
+    await editTripSetup(id);
   });
