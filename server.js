@@ -474,6 +474,28 @@ app.put("/editUserInfo", async (req, res) => {
   }
 });
 
+// update password
+app.put("/changePassword", async (req, res) => {
+  try {
+    const user = await userModel.findById(req.session.userId);
+    const passwordMatched = await bcrypt.compare(
+      req.body.currentPassword,
+      user.password,
+    );
+
+    if (passwordMatched) {
+      const newPass = await bcrypt.hash(req.body.newPassword, SALT_ROUNDS);
+      user.password = newPass;
+      await user.save();
+      res.sendStatus(200);
+    } else {
+      res.status(401).json({ error: "your current password is incorrect." });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Could not change password." });
+  }
+});
+
 // logout route
 app.post("/logout", (req, res) => {
   try {
