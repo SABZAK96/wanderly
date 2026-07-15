@@ -97,6 +97,61 @@
       </div>
     </div>
     <!-- navbar end -->
-    
+    <section class="flex flex-col items-center px-4 py-8">
+      <div class="w-full max-w-[560px]">
+        <h1 class="text-2xl font-light mb-6">Settings</h1>
+
+        <div class="card bg-base-100 shadow-sm border border-base-200">
+          <div class="card-body gap-3">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm text-base-content/60"
+                >Current password</label
+              >
+              <input
+                id="current-password"
+                type="password"
+                placeholder="Enter your current password"
+                class="input w-full"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-sm text-base-content/60">New password</label>
+              <input
+                id="new-password"
+                type="password"
+                placeholder="Enter your new password"
+                class="input w-full"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-sm text-base-content/60"
+                >Confirm new password</label
+              >
+              <input
+                id="confirm-password"
+                type="password"
+                placeholder="Confirm your new password"
+                class="input w-full"
+              />
+            </div>
+
+            <p id="settingsError" class="text-sm text-red-500 hidden"></p>
+            <p id="settingsSuccess" class="text-sm text-green-600 hidden"></p>
+
+            <div class="flex justify-end mt-2">
+              <button
+                id="saveSettings"
+                class="btn"
+                style="background-color: #534ab7; color: white"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </body>
 </html>
