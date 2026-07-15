@@ -11,8 +11,12 @@ document.getElementById("addTrip").addEventListener("click", () => {
 });
 
 document.getElementById("tripHeader").addEventListener("click", (event) => {
-  if (!event.target.closest("#inviteTrip")) return;
+  const currentTrip = event.target.closest("#inviteTrip");
+  if (!currentTrip) return;
+  const currentTripId = currentTrip.closest("#tripHeader").dataset.tripId;
   document.getElementById("inviteModal").showModal();
+  document.getElementById("link").value =
+    `${window.location.origin}/join.html?trip=${currentTripId}`;
 });
 
 // checks destination/date inputs for create and edit trip forms, returns an
