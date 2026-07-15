@@ -452,6 +452,27 @@ app.get("/spentDetails/:tripId/:personId", async (req, res) => {
   }
 });
 
+// send over the user info for account page
+app.get("/userInfo", async (req, res) => {
+  try {
+    const user = await userModel.findById(req.session.userId);
+    res.json({ email: user.email, name: user.name });
+  } catch (error) {
+    res.status(500).send("could not get user Data.");
+  }
+});
+
+// update user account
+app.put("/editUserInfo", async (req, res) => {
+  try {
+    await userModel.findByIdAndUpdate(req.session.userId, {
+      $set: { name: req.body.name, email: req.body.email },
+    });
+    res.sendStatus(200);
+  } catch (error) {
+    res.status(500).send("Could not update the profile.");
+  }
+});
 // logout route
 app.post("/logout", (req, res) => {
   try {
