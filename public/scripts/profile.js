@@ -27,7 +27,37 @@ document.getElementById("saveAccount").addEventListener("click", async () => {
     document.getElementById("accountSavedModal").showModal();
   } else {
     // no toast - same contextual red-text pattern used everywhere else in the app
-    accountError.textContent = "Could not update your profile, please try again.";
+    accountError.textContent =
+      "Could not update your profile, please try again.";
     accountError.classList.remove("hidden");
   }
 });
+
+// delete the account
+document.getElementById("deleteAccount").addEventListener("click", () => {
+  document.getElementById("deleteAccountError").classList.add("hidden");
+  document.getElementById("deleteAccountConfirmModal").showModal();
+});
+
+document
+  .getElementById("confirmDeleteAccount")
+  .addEventListener("click", async (event) => {
+    const btn = event.currentTarget;
+    if (btn.dataset.loading === "true") return; // no double clicking
+
+    const originalLabel = btn.innerHTML;
+    btn.dataset.loading = true;
+    btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+    const response = await fetch("/deleteAccount", { method: "DELETE" });
+    if (response.ok) {
+      window.location.href = "/";
+    } else {
+      const deleteAccountError = document.getElementById("deleteAccountError");
+      deleteAccountError.textContent =
+        "Could not delete your account, please try again.";
+      deleteAccountError.classList.remove("hidden");
+      btn.dataset.loading = "false";
+      btn.innerHTML = originalLabel;
+    }
+  });

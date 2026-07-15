@@ -473,11 +473,38 @@ app.put("/editUserInfo", async (req, res) => {
     res.status(500).send("Could not update the profile.");
   }
 });
+
 // logout route
 app.post("/logout", (req, res) => {
   try {
     req.session.destroy(() => res.sendStatus(200));
   } catch (error) {
     res.status(500).send("Could not log out.");
+  }
+});
+
+// delete account route
+app.delete("/deleteAccount", async (req, res) => {
+  try {
+    const user = await userModel.findByIdAndDelete(req.session.userId);
+
+    // remove this user from every trip they were part of, deleting any
+    // trip that becomes empty as a result (same as the deleteTrip route)
+    await Promise.all(
+      user.trips.map(async (tripId) => {
+        const trip = await tripModel.findByIdAndUpdate(
+          tripId,
+          { $pull: { people: req.session.userId } },
+          { new: true },
+        );
+        if (trip.people.length === 0) {
+          await tripModel.findByIdAndDelete(tripId);
+        }
+      }),
+    );
+
+    req.session.destroy(() => res.sendStatus(200));
+  } catch (error) {
+    res.status(500).send("Could not delete account.");
   }
 });
