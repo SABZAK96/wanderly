@@ -190,12 +190,26 @@ app.post("/addTrip", async (req, res) => {
       payments: [],
     });
 
-    // update the user model and add the trip to their info 
-    
+    // update the user model and add the trip to their info
+
     await userModel.findByIdAndUpdate(req.session.userId, {
       $push: { trips: trip._id },
     });
     res.json(trip._id);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
+// send all the user trips
+app.get("/allTrips", async (req, res) => {
+  try {
+    const user = await userModel.findById(req.session.userId, { trips: 1 });
+    // the line above will return { _id, trips: [<tripId>, <tripId>, ...] } , trip info should be gotten from trip model
+    const userTrips = await Promise.all(
+      user.trips.map((id) => tripModel.findById(id)),
+    );
+    res.json(userTrips);
   } catch (error) {
     res.status(500).send("Server Error!");
   }
