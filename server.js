@@ -47,6 +47,12 @@ app.get("/scripts/login.js", (req, res) => {
 app.get("/scripts/dates.js", (req, res) => {
   res.sendFile(__dirname + "/public/scripts/dates.js");
 });
+app.get("/join.html", (req, res) => {
+  res.sendFile(__dirname + "/public/join.html");
+});
+app.get("/scripts/join.js", (req, res) => {
+  res.sendFile(__dirname + "/public/scripts/join.js");
+});
 app.use("/images", express.static(__dirname + "/public/images"));
 
 // login route
@@ -480,6 +486,31 @@ app.get("/joinTrip/:id", async (req, res) => {
         permission: true,
       });
     }
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
+// join a person to the trip
+app.post("/joinPerson", async (req, res) => {
+  try {
+    const trip = await tripModel.findById(req.body.tripId);
+    if (!trip) {
+      return res.status(404).send("Trip not found.");
+    }
+    if (trip.people.includes(req.session.userId)) {
+      return res.status(409).send("Already in this trip.");
+    }
+
+    await userModel.findByIdAndUpdate(req.session.userId, {
+      $push: { trips: req.body.tripId },
+    });
+
+    await tripModel.findByIdAndUpdate(req.body.tripId, {
+      $push: { people: req.session.userId },
+    });
+
+    res.sendStatus(200);
   } catch (error) {
     res.status(500).send("Server Error!");
   }
