@@ -25,7 +25,6 @@ app.use(
     store: new FileStore({
       path: "./sessions",
       secret: secret,
-      retries: 1,
     }),
     secret: secret,
     resave: false,

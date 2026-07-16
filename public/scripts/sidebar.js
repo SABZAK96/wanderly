@@ -186,6 +186,11 @@ document
     if (!element) return;
     highlightTrip(element);
     localStorage.setItem("selectedTripId", element.id);
+
+    // create a custom event and attach it globally so it can be listened on other files
+    document.dispatchEvent(
+      new CustomEvent("changeTrip", { detail: { tripId: element.id } }),
+    );
     await getSingleTripDetails(element.id);
   });
 

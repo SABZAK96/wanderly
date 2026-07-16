@@ -177,8 +177,18 @@
           Your Trips
         </label>
 
+    <!-- shown instead of the expense content when localStorage has no selectedTripId -->
+    <div
+      id="noTripSelected"
+      class="hidden flex-col items-center gap-2 px-4 py-20 text-center"
+    >
+      <p class="text-base-content/60">
+        No trip selected yet — pick one from the sidebar to see its expenses.
+      </p>
+    </div>
+
     <!-- container of expenses -->
-    <section class="flex flex-col items-center px-4 py-8">
+    <section id="expenseContent" class="flex flex-col items-center px-4 py-8">
       <div
         class="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4 md:gap-8 lg:gap-10 items-start"
       >

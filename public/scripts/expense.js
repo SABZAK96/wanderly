@@ -1,3 +1,9 @@
+let tripId = localStorage.getItem("selectedTripId");
+document.addEventListener("changeTrip", (e) => {
+  tripId = e.detail.tripId;
+  showExpenseContent();
+  Promise.all([setUpModal(), setUpPage()]);
+});
 // string badges and update them when they are build to update the table tags easily
 let peopleBadges = undefined;
 
@@ -51,7 +57,7 @@ document.getElementById("addExp").addEventListener("click", () => {
 // fetch all the badges from the db
 async function getPeople() {
   const response = await (
-    await fetch("/people/6a445ee01781d2a29c611442")
+    await fetch(`/people/${tripId}`)
   ).json();
   return response;
 }
@@ -123,12 +129,32 @@ function setUpPage() {
   });
 }
 
+// shows the "no trip selected" message instead of the expense content -
+// covers the case where localStorage has never had a trip picked yet
+function showNoTripSelected() {
+  document.getElementById("noTripSelected").classList.remove("hidden");
+  document.getElementById("noTripSelected").classList.add("flex");
+  document.getElementById("expenseContent").classList.add("hidden");
+}
+
+function showExpenseContent() {
+  document.getElementById("noTripSelected").classList.add("hidden");
+  document.getElementById("noTripSelected").classList.remove("flex");
+  document.getElementById("expenseContent").classList.remove("hidden");
+}
+
 // hide the page-level loading overlay once the initial data load finishes,
 // whether it succeeded or failed - a stuck spinner is worse than a broken page
 // .finally ensures that a specific block of code runs after a process completes, regardless of whether it succeeded or failed
-Promise.all([setUpModal(), setUpPage()]).finally(() => {
+if (!tripId) {
+  showNoTripSelected();
   document.getElementById("pageLoading").classList.add("hidden");
-});
+} else {
+  showExpenseContent();
+  Promise.all([setUpModal(), setUpPage()]).finally(() => {
+    document.getElementById("pageLoading").classList.add("hidden");
+  });
+}
 
 // pre-select All badge in the who owes the payer section
 function initAllBadge(id) {
@@ -415,7 +441,7 @@ async function initTable() {
   //response would be an array of expenses
 
   const response = await (
-    await fetch("/getExpenses/6a445ee01781d2a29c611442")
+    await fetch(`/getExpenses/${tripId}`)
   ).json();
 
   if (response.length === 0) {
@@ -620,7 +646,7 @@ document
     deleteError.classList.add("hidden");
 
     const response = await fetch(
-      `/deleteExpense/6a445ee01781d2a29c611442/${id}`,
+      `/deleteExpense/${tripId}/${id}`,
       {
         method: "DELETE",
       },
@@ -671,7 +697,7 @@ document
     submitBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
 
     const expenses = await (
-      await fetch("/getExpenses/6a445ee01781d2a29c611442")
+      await fetch(`/getExpenses/${tripId}`)
     ).json();
     const expense = expenses.find((item) => item._id === id);
 
@@ -772,7 +798,7 @@ document
     const resetError = document.getElementById("resetError");
     resetError.classList.add("hidden");
 
-    const response = await fetch("/resetTrip/6a445ee01781d2a29c611442", {
+    const response = await fetch(`/resetTrip/${tripId}`, {
       method: "DELETE",
     });
 
@@ -799,7 +825,7 @@ document
 
 // send the added expense to the db
 async function sendExpenseToDB(title, cost, paidBy, owes) {
-  const data = await fetch("/newExpense/6a445ee01781d2a29c611442", {
+  const data = await fetch(`/newExpense/${tripId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -818,7 +844,7 @@ async function sendExpenseToDB(title, cost, paidBy, owes) {
 // same shape as sendExpenseToDB, but PUTs to the existing expense instead of creating a new one
 async function sendExpenseUpdateToDB(expenseId, title, cost, paidBy, owes) {
   const data = await fetch(
-    `/updateExpense/6a445ee01781d2a29c611442/${expenseId}`,
+    `/updateExpense/${tripId}/${expenseId}`,
     {
       method: "PUT",
       headers: {
@@ -1149,7 +1175,7 @@ async function computeDebtBreakdown() {
   // response is an array of expenses, people is an array containing person ids -
   // fetched concurrently since neither depends on the other
   const [response, people] = await Promise.all([
-    fetch("/getExpenses/6a445ee01781d2a29c611442").then((res) => res.json()),
+    fetch(`/getExpenses/${tripId}`).then((res) => res.json()),
     getPeople(),
   ]);
 
@@ -1169,7 +1195,7 @@ async function computeDebtBreakdown() {
 
 async function markAsSettled(debtorId, creditorId) {
   const response = await (
-    await fetch("/getExpenses/6a445ee01781d2a29c611442")
+    await fetch(`/getExpenses/${tripId}`)
   ).json();
   // lets say soroush settled all his debts to sina
   // an array of objects like [{ expenseId: "hotel123", to: "sinaId", from: "soroushId", amount: 70 },
@@ -1226,7 +1252,7 @@ async function markAsSettled(debtorId, creditorId) {
     }
   });
 
-  await fetch("/markSettled/6a445ee01781d2a29c611442", {
+  await fetch(`/markSettled/${tripId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -1264,7 +1290,7 @@ document
       checkedRows.map(async (row) => {
         const debtorId = row.querySelector(".person-pill").dataset.id;
         const amount = Number(row.querySelector(".amount").textContent);
-        const response = await fetch("/payment/6a445ee01781d2a29c611442", {
+        const response = await fetch(`/payment/${tripId}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1492,7 +1518,7 @@ async function calculateSpending() {
   const personsIds = people.map((person) => person._id);
   const results = await Promise.all(
     personsIds.map((id) =>
-      fetch(`/spentDetails/6a445ee01781d2a29c611442/${id}`).then((res) =>
+      fetch(`/spentDetails/${tripId}/${id}`).then((res) =>
         res.json(),
       ),
     ),
@@ -1528,6 +1554,12 @@ document.getElementById("totalSpent").addEventListener("change", (event) => {
 function renderSpending(results, netted) {
   const container = document.getElementById("totalSpent");
   container.innerHTML = "";
+
+  if (results.length === 0) {
+    container.innerHTML = `<p class="col-span-full text-sm text-base-content/40 text-center py-6">No spending to show yet</p>`;
+    return;
+  }
+
   results.forEach((element) => {
     const personName = peopleBadges.find(
       (person) => person.dataset.id === element.id,
