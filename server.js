@@ -55,6 +55,13 @@ app.get("/scripts/join.js", (req, res) => {
 });
 app.use("/images", express.static(__dirname + "/public/images"));
 
+// lets client-side JS check for a session without tripping isAuthenticated's
+// redirect - everything below isAuthenticated returns a redirect, not a
+// clean 401, so it can't be used to detect "logged out" from a fetch call
+app.get("/checkSession", (req, res) => {
+  res.json({ loggedIn: Boolean(req.session.userId) });
+});
+
 // login route
 app.post("/login", async (req, res) => {
   try {

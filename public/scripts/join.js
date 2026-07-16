@@ -1,3 +1,9 @@
+// page-load check, if the user is already logged in and their session exist, we can skip the login/sign up form stuff
+async function checkUserSession() {
+  const response = await (await fetch("/checkSession")).json();
+  if (response.loggedIn === true) handleInviteLogin();
+}
+
 // get the trip id from the url in the current window
 function getInfoFromUrl() {
   // URLSearchParams is a js class for pasring and creating the query strings (the part of url after ?)
@@ -5,6 +11,11 @@ function getInfoFromUrl() {
   const tripId = searchparams.get("trip");
   const inviter = searchparams.get("from");
   return { tripId, inviter };
+}
+
+// only bother checking the session if this is actually an invite link
+if (getInfoFromUrl().tripId) {
+  checkUserSession();
 }
 
 // find out which modal to show based on the server response
@@ -15,25 +26,24 @@ async function handleInviteLogin() {
 
   if (res.ok) {
     if (response.permission === true) {
-      document.getElementById("confirmJoinModal").showModal();
-
       const start = response.startDate.slice(0, 10);
       const end = response.endDate.slice(0, 10);
       const date = formatTripDates(start, end);
 
-      document.getElementById("tripDestination").textContent =
-        response.destination;
-      document.getElementById("tripDates").textContent = date.full;
-
       // resolve the inviter's id (from the "from" query param) to their name
       const people = await (await fetch(`/people/${urlInfo.tripId}`)).json();
       const inviter = people.find((person) => person._id === urlInfo.inviter);
-      
+
+      document.getElementById("tripDestination").textContent =
+        response.destination;
+      document.getElementById("tripDates").textContent = date.full;
       // fallback for a stale link - the inviter left the trip or deleted their account since sharing it
       document.getElementById("tripInviter").textContent = inviter
         ? inviter.name
         : "a trip member";
 
+      // everything's filled in now, so the modal never shows a partial state
+      document.getElementById("confirmJoinModal").showModal();
     } else if (response.permission === false && !response.destination) {
       document.getElementById("invalidLinkModal").showModal();
     } else {
@@ -49,32 +59,34 @@ async function handleInviteLogin() {
   }
 }
 
-document.getElementById("joinTripBtn").addEventListener("click", async (event) => {
-  const btn = event.currentTarget;
-  if (btn.dataset.loading === "true") return; // guard against double-click
+document
+  .getElementById("joinTripBtn")
+  .addEventListener("click", async (event) => {
+    const btn = event.currentTarget;
+    if (btn.dataset.loading === "true") return; // guard against double-click
 
-  const joinError = document.getElementById("joinError");
-  joinError.classList.add("hidden");
+    const joinError = document.getElementById("joinError");
+    joinError.classList.add("hidden");
 
-  const originalLabel = btn.innerHTML;
-  btn.dataset.loading = "true";
-  btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+    const originalLabel = btn.innerHTML;
+    btn.dataset.loading = "true";
+    btn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
 
-  const tripId = getInfoFromUrl().tripId;
-  const response = await fetch("/joinPerson", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ tripId }),
+    const tripId = getInfoFromUrl().tripId;
+    const response = await fetch("/joinPerson", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ tripId }),
+    });
+
+    if (response.ok) {
+      window.location.href = "/plan.html";
+    } else {
+      joinError.textContent = "Could not join the trip. Please try again.";
+      joinError.classList.remove("hidden");
+      btn.dataset.loading = "false";
+      btn.innerHTML = originalLabel;
+    }
   });
-
-  if (response.ok) {
-    window.location.href = "/plan.html";
-  } else {
-    joinError.textContent = "Could not join the trip. Please try again.";
-    joinError.classList.remove("hidden");
-    btn.dataset.loading = "false";
-    btn.innerHTML = originalLabel;
-  }
-});
