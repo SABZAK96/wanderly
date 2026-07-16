@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wanderly — Join Trip</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@5"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="bg-base-200 min-h-screen flex flex-col">
+    <!-- navbar: same centered-brand treatment as index.html's login screen -->
+    <div
+      class="navbar bg-base-100 shadow-sm sticky top-0 z-20 px-4 lg:px-8 justify-center"
+      style="background-color: #534ab7; color: white"
+    >
+      <span class="text-xl font-semibold">Wanderly</span>
+    </div>
+    <!-- navbar end -->
+
+    <!-- ============================================================
+         default content: same login/signup card as index.html.
+         shown when whoever opened the invite link doesn't have a
+         session yet. once logged in/signed up, this should be hidden
+         and #confirmJoinModal opened (or #alreadyMemberModal /
+         #invalidLinkModal, depending on what the trip lookup returns).
+         ============================================================ -->
+    <section
+      id="authSection"
+      class="flex-1 flex flex-col items-center justify-center p-4 py-10 gap-6"
+      style="background: #eeedfe"
+    >
+      <div class="flex flex-col items-center gap-2 text-center">
+        <div
+          class="w-12 h-12 rounded-full flex items-center justify-center"
+          style="background: #534ab7"
+        >
+          <span class="text-white text-xl font-bold leading-none">W</span>
+        </div>
+        <h1 class="text-2xl font-semibold" style="color: #3c3489">Wanderly</h1>
+        <p class="text-sm text-base-content/60 max-w-xs">
+          Build the itinerary, split expenses, and keep everyone in sync in
+          one place.
+        </p>
+      </div>
+
+      <div class="relative w-full max-w-md md:max-w-lg md:aspect-[897/966]">
+        <img
+          src="./images/hero-cropped.png"
+          alt=""
+          class="hidden md:block absolute inset-0 w-full h-full object-cover rounded-3xl z-0"
+        />
+
+        <div
+          class="card bg-base-100 shadow-sm border border-base-200 w-full max-w-sm mx-auto md:absolute md:inset-0 md:m-auto md:h-fit md:z-10"
+        >
+          <div class="card-body gap-4">
+            <div
+              class="rounded-xl px-3 py-2 text-sm text-center"
+              style="background: #eeedfe; color: #3c3489"
+            >
+              You've been invited to a trip. Log in or sign up to continue.
+            </div>
+
+            <!-- log in / sign up switch -->
+            <div class="flex text-sm font-medium border-b border-base-200">
+              <button
+                id="authTabLogin"
+                class="flex-1 pb-2 border-b-2"
+                style="border-color: #534ab7; color: #534ab7"
+              >
+                Log in
+              </button>
+              <button
+                id="authTabSignup"
+                class="flex-1 pb-2 border-b-2 border-transparent text-base-content/50"
+              >
+                Sign up
+              </button>
+            </div>
+
+            <!-- log in form -->
+            <form id="loginForm" class="flex flex-col gap-3">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Email</label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  class="input w-full"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  class="input w-full"
+                />
+              </div>
+              <button
+                id="login"
+                type="button"
+                class="btn mt-1"
+                style="background-color: #534ab7; color: white"
+              >
+                Log in
+              </button>
+              <p id="loginError" class="text-sm text-red-500 mt-1 hidden"></p>
+            </form>
+
+            <!-- sign up form -->
+            <form id="signupForm" class="flex flex-col gap-3" hidden>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Name</label>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  class="input w-full"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Email</label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  class="input w-full"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Password</label>
+                <input
+                  id="firstPass"
+                  type="password"
+                  placeholder="••••••••"
+                  class="input w-full"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60"
+                  >Confirm Password</label
+                >
+                <input
+                  id="secondPass"
+                  type="password"
+                  placeholder="••••••••"
+                  class="input w-full"
+                />
+              </div>
+              <button
+                id="signup"
+                type="button"
+                class="btn mt-1"
+                style="background-color: #534ab7; color: white"
+              >
+                Create account
+              </button>
+              <p id="signupError" class="text-sm text-red-500 mt-1 hidden"></p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         confirm join modal — open this once there's a session and
+         the trip id from the URL resolves to a real trip the user
+         isn't already in. nothing should add the user to the trip's
+         people array until "Join trip" is clicked.
+         ============================================================ -->
+    <dialog id="confirmJoinModal" class="modal">
+      <div class="modal-box flex flex-col gap-4 items-center text-center">
+        <div
+          class="w-12 h-12 rounded-full flex items-center justify-center"
+          style="background: #534ab7"
+        >
+          <span class="text-white text-2xl font-bold leading-none">✈</span>
+        </div>
+
+        <div>
+          <h3 id="tripDestination" class="text-lg font-semibold" style="color: #3c3489">
+            You're invited to a trip
+          </h3>
+          <p class="text-sm text-base-content/60 mt-1">
+            <span id="tripDates">Trip dates</span> · invited by
+            <span id="tripInviter" class="font-medium">someone</span>
+          </p>
+        </div>
+
+        <div
+          class="rounded-xl px-3 py-2 text-xs w-full text-left"
+          style="background: #eeedfe; color: #3c3489"
+        >
+          Joining lets you see and add expenses, itinerary items, and packing
+          lists for this trip.
+        </div>
+
+        <p id="joinError" class="text-sm text-red-500 hidden"></p>
+
+        <div class="flex flex-col gap-2 w-full mt-1">
+          <button
+            id="joinTripBtn"
+            class="btn w-full"
+            style="background-color: #534ab7; color: white"
+          >
+            Join trip
+          </button>
+          <a
+            id="declineJoinLink"
+            href="/plan.html"
+            class="btn btn-ghost btn-sm w-full text-base-content/50"
+          >
+            No thanks, take me to my trips
+          </a>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- ============================================================
+         already a member modal — the invite link was opened again
+         after the user already joined this trip. no re-join call,
+         just a way back in.
+         ============================================================ -->
+    <dialog id="alreadyMemberModal" class="modal">
+      <div class="modal-box flex flex-col gap-4 items-center text-center">
+        <div
+          class="w-12 h-12 rounded-full flex items-center justify-center"
+          style="background: #534ab7"
+        >
+          <span class="text-white text-2xl font-bold leading-none">✓</span>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold" style="color: #3c3489">
+            You're already in this trip
+          </h3>
+          <p id="alreadyMemberTrip" class="text-sm text-base-content/60 mt-1">
+            Trip name · dates
+          </p>
+        </div>
+        <a
+          id="goToTripLink"
+          href="/plan.html"
+          class="btn w-full mt-1"
+          style="background-color: #534ab7; color: white"
+        >
+          Go to trip
+        </a>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- ============================================================
+         invalid / expired link modal — trip id from the URL doesn't
+         resolve to a real trip (deleted, malformed, etc).
+         ============================================================ -->
+    <dialog id="invalidLinkModal" class="modal">
+      <div class="modal-box flex flex-col gap-4 items-center text-center">
+        <div
+          class="w-12 h-12 rounded-full flex items-center justify-center bg-error/10"
+        >
+          <span class="text-error text-2xl font-bold leading-none">!</span>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold" style="color: #3c3489">
+            This invite link doesn't work
+          </h3>
+          <p class="text-sm text-base-content/60 mt-1">
+            The trip may have been deleted, or the link is incorrect.
+          </p>
+        </div>
+        <a
+          id="backToTripsLink"
+          href="/plan.html"
+          class="btn btn-ghost w-full mt-1"
+          style="color: #534ab7"
+        >
+          Go to my trips
+        </a>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <script src="scripts/login.js"></script>
+    <script src="scripts/join.js"></script>
+  </body>
+</html>
