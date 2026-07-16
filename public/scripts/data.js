@@ -12,3 +12,5 @@ const colorPalette = [
   { bg: "#ffedd5", color: "#c2410c", border: "#c2410c" }, // orange
   { bg: "#ede9fe", color: "#6d28d9", border: "#6d28d9" }, // deep violet
 ];
+
+module.exports = colorPalette;

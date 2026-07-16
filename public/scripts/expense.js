@@ -54,6 +54,14 @@ document.getElementById("addExp").addEventListener("click", () => {
   resetExpenseModal();
 });
 
+// falls back to a neutral gray for anyone missing badgeInfo (e.g. old data
+// predating badge assignment), instead of crashing whatever tried to render them
+function getBadgeColors(person) {
+  return person.badgeInfo?.bg
+    ? person.badgeInfo
+    : { bg: "#e5e7eb", color: "#374151", border: "#374151" };
+}
+
 // fetch all the badges from the db
 async function getPeople() {
   const response = await (
@@ -67,11 +75,12 @@ async function populateFieldsBadges(id) {
   const response = await getPeople();
   const container = document.getElementById(id);
   response.forEach((person) => {
+    const badge = getBadgeColors(person);
     const badgeSpan = `<span
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill cursor-pointer payer-option border-0 border-[${person.badgeInfo.border}]"
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill cursor-pointer payer-option border-0 border-[${badge.border}]"
                 data-name="${person.name}"
                 data-id="${person._id}"
-                style="background: ${person.badgeInfo.bg}; color: ${person.badgeInfo.color}"
+                style="background: ${badge.bg}; color: ${badge.color}"
                 >${person.name}</span>`;
     container.insertAdjacentHTML("beforeend", badgeSpan);
   });
@@ -1336,6 +1345,7 @@ async function renderDebtBreakdown() {
         sum += netPerPerson[i].amount;
       }
 
+      const personBadge = getBadgeColors(person);
       let element = `<div class="collapse collapse-plus border-b border-base-200">
       <input type="checkbox" />
       <div class="collapse-title">
@@ -1344,7 +1354,7 @@ async function renderDebtBreakdown() {
             class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill"
             data-name="${person.name}"
             data-id="${person._id}"
-            style="background: ${person.badgeInfo.bg}; color: ${person.badgeInfo.color}; border: none"
+            style="background: ${personBadge.bg}; color: ${personBadge.color}; border: none"
             >${person.name}</span
           >
           <span class="text-sm text-base-content/50"
@@ -1361,13 +1371,14 @@ async function renderDebtBreakdown() {
         const debtor = people.find(
           (individual) => individual._id === debt.from,
         );
+        const debtorBadge = getBadgeColors(debtor);
         element += `
         <div class="flex items-center justify-between debtor">
           <span
             class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill"
             data-name="${debtor.name}"
             data-id="${debtor._id}"
-            style="background: ${debtor.badgeInfo.bg}; color: ${debtor.badgeInfo.color}; border: none"
+            style="background: ${debtorBadge.bg}; color: ${debtorBadge.color}; border: none"
             >${debtor.name}</span
           >
           <div class="flex items-center text-sm font-thin">

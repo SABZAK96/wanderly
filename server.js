@@ -16,6 +16,7 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const mongoose = require("mongoose");
+const colorPalette = require("./public/scripts/data.js");
 
 app.use(express.json({ limit: "50mb" }));
 
@@ -141,7 +142,7 @@ const userSchema = new mongoose.Schema({
   email: String,
   password: String,
   badgeInfo: {
-    bg: String, // comes from front-end
+    bg: String, 
     color: String,
     border: String,
   },
@@ -173,6 +174,30 @@ const tripSchema = new mongoose.Schema({
 const userModel = mongoose.model("users", userSchema);
 const tripModel = mongoose.model("trips", tripSchema);
 
+// gives userId a badge color if they don't already have one, picking a color
+// not already used by anyone currently in existingPeopleIds (their trip-mates) -
+// colors only need to be unique within one trip, not across the whole app
+async function assignBadgeIfNeeded(userId, existingPeopleIds) {
+  const user = await userModel.findById(userId);
+  if (user.badgeInfo && user.badgeInfo.bg) return; // already has one, keep it
+
+  const tripMates = await Promise.all(
+    existingPeopleIds.map((id) => userModel.findById(id)),
+  );
+  const usedColors = tripMates
+    .filter((person) => person && person.badgeInfo && person.badgeInfo.bg)
+    .map((person) => person.badgeInfo.bg);
+
+  const available = colorPalette.filter(
+    (color) => !usedColors.includes(color.bg),
+  );
+  // fall back to the full palette (colors may repeat) if the trip somehow has
+  // more people than the palette has colors
+  const chosen = available.length > 0 ? available[0] : colorPalette[0];
+
+  await userModel.findByIdAndUpdate(userId, { badgeInfo: chosen });
+}
+
 main().catch((err) => console.log(err));
 
 async function main() {
@@ -186,6 +211,18 @@ async function main() {
       // await userModel.updateOne({ name: "Soroush" }, { $set: { badgeInfo: { bg: "#fef9c3", color: "#a16207", border: "#a16207" } } });
       // await userModel.updateOne({ name: "Shohreh" }, { $set: { badgeInfo: { bg: "#cffafe", color: "#0e7490", border: "#0e7490" } } });
       // console.log("Badge colors updated");
+
+      // one-time backfill for people who predate badge assignment - delete after running once
+      // const allTrips = await tripModel.find({});
+      // for (const t of allTrips) {
+      //   for (const personId of t.people) {
+      //     await assignBadgeIfNeeded(
+      //       personId,
+      //       t.people.filter((id) => id !== personId),
+      //     );
+      //   }
+      // }
+      // console.log("Badge backfill complete");
     })
     .catch((err) => {
       console.error("MongoDB connection failed:", err);
@@ -210,6 +247,10 @@ app.post("/addTrip", async (req, res) => {
     await userModel.findByIdAndUpdate(req.session.userId, {
       $push: { trips: trip._id },
     });
+
+    // the creator is the first person in the trip, so there's no one else to avoid a color clash with
+    await assignBadgeIfNeeded(req.session.userId, []);
+
     res.json(trip._id);
   } catch (error) {
     res.status(500).send("Server Error!");
@@ -515,6 +556,10 @@ app.post("/joinPerson", async (req, res) => {
     await tripModel.findByIdAndUpdate(req.body.tripId, {
       $push: { people: req.session.userId },
     });
+
+    // trip.people here is everyone already in the trip, before this join -
+    // exactly who the new person's color needs to avoid clashing with
+    await assignBadgeIfNeeded(req.session.userId, trip.people);
 
     res.sendStatus(200);
   } catch (error) {
