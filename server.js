@@ -44,6 +44,9 @@ app.get("/", (req, res) => {
 app.get("/scripts/login.js", (req, res) => {
   res.sendFile(__dirname + "/public/scripts/login.js");
 });
+app.get("/scripts/dates.js", (req, res) => {
+  res.sendFile(__dirname + "/public/scripts/dates.js");
+});
 app.use("/images", express.static(__dirname + "/public/images"));
 
 // login route
@@ -452,11 +455,41 @@ app.get("/spentDetails/:tripId/:personId", async (req, res) => {
   }
 });
 
+// joinTrip route for handling invitations
+app.get("/joinTrip/:id", async (req, res) => {
+  try {
+    const trip = await tripModel.findById(req.params.id);
+    if (!trip) {
+      res.json({
+        permission: false,
+        msg: "The trip may have been deleted, or the link is incorrect",
+      });
+    } else if (trip.people.includes(req.session.userId)) {
+      res.json({
+        destination: trip.destination,
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        permission: false,
+        msg: "you are already in this Trip",
+      });
+    } else {
+      res.json({
+        destination: trip.destination,
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        permission: true,
+      });
+    }
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
 // send over the user info for account page
 app.get("/userInfo", async (req, res) => {
   try {
     const user = await userModel.findById(req.session.userId);
-    res.json({id:req.session.userId, email: user.email, name: user.name });
+    res.json({ id: req.session.userId, email: user.email, name: user.name });
   } catch (error) {
     res.status(500).send("could not get user Data.");
   }

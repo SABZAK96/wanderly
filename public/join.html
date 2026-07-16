@@ -180,12 +180,12 @@
         </div>
 
         <div>
-          <h3 id="tripDestination" class="text-lg font-semibold" style="color: #3c3489">
-            You're invited to a trip
+          <h3  class="text-lg font-semibold" style="color: #3c3489">
+            You're invited to <span id="tripDestination"></span> trip
           </h3>
           <p class="text-sm text-base-content/60 mt-1">
-            <span id="tripDates">Trip dates</span> · invited by
-            <span id="tripInviter" class="font-medium">someone</span>
+            <span id="tripDates"></span> · invited by
+            <span id="tripInviter" class="font-medium"></span>
           </p>
         </div>
 
@@ -239,7 +239,7 @@
             You're already in this trip
           </h3>
           <p id="alreadyMemberTrip" class="text-sm text-base-content/60 mt-1">
-            Trip name · dates
+            <span id="nameTrip"></span> · <span id="dateTrip"></span>
           </p>
         </div>
         <a
@@ -290,6 +290,7 @@
     </dialog>
 
     <script src="scripts/login.js"></script>
+    <script src="scripts/dates.js"></script>
     <script src="scripts/join.js"></script>
   </body>
 </html>

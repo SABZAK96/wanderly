@@ -47,7 +47,13 @@ document.getElementById("login").addEventListener("click", async () => {
     body: JSON.stringify(info),
   });
   if (response.ok) {
-    window.location.href = "/plan.html";
+    // login.js is used in another html file , upon successful login we should do different stuff - this part hanldes normal flow withouth invitation
+    if (!location.search.includes("trip=")) {
+      window.location.href = "/plan.html";
+    // hand over to join.js
+    } else {
+      handleInviteLogin();
+    }
   } else {
     const data = await response.json();
     loginError.textContent = data.error;
@@ -110,7 +116,11 @@ document.getElementById("signup").addEventListener("click", async () => {
       }),
     });
     if (response.ok) {
-      window.location.href = "/plan.html";
+      if (!location.search.includes("trip=")) {
+        window.location.href = "/plan.html";
+      } else {
+        handleInviteLogin();
+      }
     } else {
       const data = await response.json();
       signupError.textContent = data.error;
