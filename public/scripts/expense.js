@@ -74,6 +74,13 @@ async function getPeople() {
 async function populateFieldsBadges(id) {
   const response = await getPeople();
   const container = document.getElementById(id);
+  // clear the previous trip's badges first, otherwise switching trips just
+  // keeps appending on top of the old ones - #allBadge is #debt-payer's own
+  // static "All" option, not something this function ever added, so it has
+  // to stay (container.innerHTML = "" would wipe it out for good)
+  container
+    .querySelectorAll(".person-pill:not(#allBadge)")
+    .forEach((badge) => badge.remove());
   response.forEach((person) => {
     const badge = getBadgeColors(person);
     const badgeSpan = `<span
@@ -91,6 +98,14 @@ async function populateFieldsBadges(id) {
 // in sync with the db instead of being hand-written in the html
 function populatePersonFilters() {
   const resetBtn = document.getElementById("resetFilter");
+  // clear the previous trip's filter buttons first, otherwise switching
+  // trips just keeps appending on top of the old ones - #resetFilter itself
+  // doesn't have the person-pill class, so it's untouched by this
+  document
+    .getElementById("person-filters")
+    .querySelectorAll(".person-pill")
+    .forEach((btn) => btn.remove());
+    
   peopleBadges.forEach((badge) => {
     const filterBtn = `<button
       class="btn btn-sm rounded-full person-pill"
@@ -448,6 +463,10 @@ document
 // init table
 async function initTable() {
   //response would be an array of expenses
+
+  // clear whatever the previously selected trip rendered here, otherwise
+  // switching trips just keeps appending on top of the old rows
+  document.querySelector("#my_table tbody").innerHTML = "";
 
   const response = await (
     await fetch(`/getExpenses/${tripId}`)
@@ -1597,7 +1616,7 @@ function renderSpending(results, netted) {
 
     let stat = ` <div
             class="collapse collapse-plus shadow-sm relative"
-            style="background: #eeedfe" 
+            style="background: #e0dbfb" 
           >
             <input type="checkbox" class="appearance-none focus:outline-none" />
             <span
