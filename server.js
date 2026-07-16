@@ -456,7 +456,7 @@ app.get("/spentDetails/:tripId/:personId", async (req, res) => {
 app.get("/userInfo", async (req, res) => {
   try {
     const user = await userModel.findById(req.session.userId);
-    res.json({ email: user.email, name: user.name });
+    res.json({id:req.session.userId, email: user.email, name: user.name });
   } catch (error) {
     res.status(500).send("could not get user Data.");
   }

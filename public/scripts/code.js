@@ -1,3 +1,13 @@
+// fetching the user info for their Id to build peronalized invitation links
+let myId;
+async function getMyId() {
+  if (!myId) {
+    const me = await (await fetch("/userInfo")).json();
+    myId = me.id;
+  }
+  return myId;
+}
+
 document.getElementById("addTrip").addEventListener("click", () => {
   // clear any leftover edit state so this opens as a fresh "create" form
   const modal = document.getElementById("my_modal_trip");
@@ -11,14 +21,16 @@ document.getElementById("addTrip").addEventListener("click", () => {
 });
 
 // invitation logic for the button that appears next to each single trip
-document.getElementById("tripHeader").addEventListener("click", (event) => {
-  const currentTrip = event.target.closest("#inviteTrip");
-  if (!currentTrip) return;
-  const currentTripId = currentTrip.closest("#tripHeader").dataset.tripId;
-  document.getElementById("inviteModal").showModal();
-  document.getElementById("link").value =
-    `${window.location.origin}/join.html?trip=${currentTripId}`;
-});
+document
+  .getElementById("tripHeader")
+  .addEventListener("click", async (event) => {
+    const currentTrip = event.target.closest("#inviteTrip");
+    if (!currentTrip) return;
+    const currentTripId = currentTrip.closest("#tripHeader").dataset.tripId;
+    document.getElementById("inviteModal").showModal();
+    document.getElementById("link").value =
+      `${window.location.origin}/join.html?trip=${currentTripId}&from=${await getMyId()}`;
+  });
 
 // checks destination/date inputs for create and edit trip forms, returns an
 // error message to show the user or null if everything's valid
@@ -120,7 +132,7 @@ document
       // show the invite link after trip was submitted successfully
       document.getElementById("inviteModal").showModal();
       document.getElementById("link").value =
-        `${window.location.origin}/join.html?trip=${data}`;
+        `${window.location.origin}/join.html?trip=${data}&from=${await getMyId()}`;
       loadYourTrips();
     } else {
       tripError.textContent = "Could not add the trip, please try again.";
@@ -135,7 +147,6 @@ document
 document
   .getElementById("inviteModal")
   .addEventListener("click", async (event) => {
-
     const copyBtn = event.target.closest("#joinBtn");
     const linkElement = document.getElementById("link");
 
@@ -145,7 +156,7 @@ document
     const text = linkElement.value;
 
     try {
-      // navigator.clipboard.writeText is the async Clipboard API 
+      // navigator.clipboard.writeText is the async Clipboard API
       await navigator.clipboard.writeText(text);
       copyBtn.textContent = "Copied!";
       setTimeout(() => (copyBtn.textContent = "Copy"), 1500);
