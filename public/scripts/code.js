@@ -10,6 +10,7 @@ document.getElementById("addTrip").addEventListener("click", () => {
   modal.showModal();
 });
 
+// invitation logic for the button that appears next to each single trip
 document.getElementById("tripHeader").addEventListener("click", (event) => {
   const currentTrip = event.target.closest("#inviteTrip");
   if (!currentTrip) return;
@@ -116,6 +117,7 @@ document
 
       // close the previous modal
       modal.close();
+      // show the invite link after trip was submitted successfully
       document.getElementById("inviteModal").showModal();
       document.getElementById("link").value =
         `${window.location.origin}/join.html?trip=${data}`;
@@ -127,6 +129,30 @@ document
 
     btn.dataset.loading = "false";
     btn.innerHTML = originalLabel;
+  });
+
+// add functionality to copy button in the modal
+document
+  .getElementById("inviteModal")
+  .addEventListener("click", async (event) => {
+
+    const copyBtn = event.target.closest("#joinBtn");
+    const linkElement = document.getElementById("link");
+
+    const errorMsg = document.getElementById("errorInvite");
+    errorMsg.classList.add("hidden");
+
+    const text = linkElement.value;
+
+    try {
+      // navigator.clipboard.writeText is the async Clipboard API 
+      await navigator.clipboard.writeText(text);
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => (copyBtn.textContent = "Copy"), 1500);
+    } catch (error) {
+      errorMsg.textContent = "Could not copy the link. try again.";
+      errorMsg.classList.remove("hidden");
+    }
   });
 
 // this function gets the start date and end date and provide formatted data that will be used to show dates of
