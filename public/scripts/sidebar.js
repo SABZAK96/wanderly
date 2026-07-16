@@ -1,3 +1,7 @@
+// restore the last-selected trip (if any) so switching pages doesn't lose it
+const storedTripId = localStorage.getItem("selectedTripId");
+if (storedTripId) getSingleTripDetails(storedTripId);
+
 // fetching the user info for their Id to build peronalized invitation links
 let myId;
 async function getMyId() {
@@ -157,28 +161,31 @@ async function loadYourTrips() {
   });
 }
 
-loadYourTrips();
+loadYourTrips().then(() => {
+  // re-apply the highlight for the restored trip once the list is actually rendered
+  if (storedTripId) {
+    const element = document.querySelector(`#yourTrips [id="${storedTripId}"]`);
+    if (element) highlightTrip(element);
+  }
+});
 
-// highlights the clicked trip in the sidebar and un-highlights the rest
-async function yourTripsStyle(event) {
-  const element = event.target.closest(".trip");
-  if (!element) return;
-
+// highlights the given trip element in the sidebar and un-highlights the rest
+function highlightTrip(element) {
   // clear the style of bg of other elements if they exist
   const otherElements = [
     ...element.closest("#yourTrips").querySelectorAll(".trip"),
   ];
-  otherElements.map((element) => (element.style.background = "transparent"));
+  otherElements.map((el) => (el.style.background = "transparent"));
   // add a bg color to selected trip
   element.style.background = "rgba(255, 255, 255, 0.16)";
-
-  return element;
 }
 document
   .getElementById("yourTrips")
   .addEventListener("click", async (event) => {
-    const element = await yourTripsStyle(event);
+    const element = event.target.closest(".trip");
     if (!element) return;
+    highlightTrip(element);
+    localStorage.setItem("selectedTripId", element.id);
     await getSingleTripDetails(element.id);
   });
 
