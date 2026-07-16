@@ -97,6 +97,24 @@
       </div>
     </div>
     <!-- navbar end -->
+
+    <!-- drawer wraps the page content so the sidebar can push/overlay it -->
+    <div
+      class="drawer drawer-end lg:drawer-open min-h-screen"
+      style="background: #eeedfe"
+    >
+      <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
+
+      <!-- drawer-content = main panel -->
+      <div class="drawer-content flex flex-col flex-1">
+        <!-- toggle button visible only on small screens -->
+        <label
+          for="my-drawer-3"
+          class="btn drawer-button rounded-full self-start mb-4 mx-4 mt-4 lg:hidden"
+        >
+          Your Trips
+        </label>
+
     <section class="flex flex-col items-center px-4 py-8">
       <div class="w-full max-w-[560px]">
         <h1 class="text-2xl font-light mb-6">Profile</h1>
@@ -173,6 +191,134 @@
         </div>
       </div>
     </section>
+      </div>
+      <!-- drawer-content end -->
+
+      <!-- sidebar -->
+      <div
+        class="drawer-side lg:pt-0 pt-20 flex flex-col items-center justify-center"
+        style="background-color: #534ab7"
+      >
+        <!-- invisible backdrop — clicking outside the sidebar closes it -->
+        <label
+          for="my-drawer-3"
+          aria-label="close sidebar"
+          class="drawer-overlay"
+        ></label>
+        <div class="min-h-full w-80 p-4">
+          <!-- close button inside sidebar, only on mobile -->
+          <label
+            for="my-drawer-3"
+            class="btn btn-circle btn-sm btn-ghost lg:hidden mb-4"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </label>
+          <!-- container of all the trips -->
+          <div class="flex flex-col gap-1 mb-5">
+            <!-- one trip with name -->
+            <h2
+              class="text-xs uppercase tracking-wide text-white/60 px-2 mb-1"
+            >
+              Your Trips
+            </h2>
+            <div id="yourTrips"></div>
+            <button
+              id="addTrip"
+              class="btn btn-sm btn-ghost text-white justify-start gap-1.5 mt-1 px-2.5"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add a New Trip
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- drawer-side end -->
+    </div>
+    <!-- drawer end -->
+
+    <!-- modal for inserting trip -->
+    <dialog id="my_modal_trip" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <!-- close button in its own form so it doesn't submit -->
+        <form method="dialog">
+          <button
+            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          >
+            ✕
+          </button>
+        </form>
+
+        <h3 id="tripTitle" class="text-lg font-semibold">Add a New Trip</h3>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-base-content/60">Destination</label>
+          <input
+            id="dest-title"
+            type="text"
+            placeholder="e.g. Tokyo, Japan"
+            class="input w-full"
+          />
+        </div>
+
+        <div class="flex gap-3">
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-sm text-base-content/60"
+              >Start Date</label
+            >
+            <input id="startDate" type="date" class="input w-full" />
+          </div>
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-sm text-base-content/60">End Date</label>
+            <input id="endDate" type="date" class="input w-full" />
+          </div>
+        </div>
+        <p id="tripError" class="text-sm text-red-500 mt-1 hidden"></p>
+
+        <div class="modal-action mt-0">
+          <form method="dialog">
+            <button class="btn btn-ghost">Cancel</button>
+          </form>
+          <button
+            id="createTrip"
+            class="btn"
+            style="background-color: #534ab7; color: white"
+          >
+            Create Trip
+          </button>
+        </div>
+      </div>
+
+      <!-- click outside to close -->
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
 
     <!-- confirmation modal shown after a successful profile save -->
     <dialog id="accountSavedModal" class="modal">
@@ -219,6 +365,8 @@
       </form>
     </dialog>
     <script src="./scripts/navbar.js"></script>
+    <script src="./scripts/dates.js"></script>
+    <script src="./scripts/sidebar.js"></script>
     <script src="./scripts/profile.js"></script>
   </body>
 </html>
