@@ -142,11 +142,12 @@ const userSchema = new mongoose.Schema({
   email: String,
   password: String,
   badgeInfo: {
-    bg: String, 
+    bg: String,
     color: String,
     border: String,
   },
   trips: [String], // trip ids
+  isPlaceholder: { type: Boolean, default: false }, // for names added in the expense tab to track expenses for those who dont have an account
 });
 
 // schema for trip
@@ -336,6 +337,31 @@ app.get("/people/:id", async (req, res) => {
       data.people.map((id) => userModel.findById(id)),
     );
     res.json(result);
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+});
+
+// add a placeholder (no-account) person to a trip, for tracking expenses
+// of someone who doesn't have their own account
+app.post("/addGhostMember/:id", async (req, res) => {
+  try {
+    const ghost = await userModel.create({
+      name: req.body.name,
+      badgeInfo: {},
+      trips: [req.params.id],
+      isPlaceholder: true,
+    });
+
+    const trip = await tripModel.findByIdAndUpdate(
+      req.params.id,
+      { $push: { people: ghost._id } },
+      { new: true },
+    );
+
+    await assignBadgeIfNeeded(ghost._id, trip.people);
+
+    res.json(ghost);
   } catch (error) {
     res.status(500).send("Server Error!");
   }
@@ -577,6 +603,30 @@ app.get("/userInfo", async (req, res) => {
   }
 });
 
+// add a ghost member route
+app.post("/addGhostMember/:id", async (req, res) => {
+  try {
+    // create returns the document that is just created
+    const ghostUser = await userModel.create({
+      name: req.body.name,
+      badgeInfo: {},
+      trips: [req.params.id],
+      isPlaceholder: true,
+    });
+
+    // update tripModel
+    const trip = await tripModel.findByIdAndUpdate(
+      req.params.id,
+      { $push: { people: ghostUser._id } },
+      { new: true },
+    );
+
+    await assignBadgeIfNeeded(ghostUser._id, trip.people);
+    res.json(ghostUser);
+  } catch (error) {
+    res.status(500).send("Could not add the ghost user to the database.");
+  }
+});
 // update user account
 app.put("/editUserInfo", async (req, res) => {
   try {

@@ -1,6 +1,6 @@
 // color palette for badges to assign to people randomly
 const colorPalette = [
-  { bg: "#eeedfe", color: "#534ab7", border: "#534ab7" }, // purple (primary)
+  { bg: "#ded9fc", color: "#534ab7", border: "#534ab7" }, // purple (primary)
   { bg: "#dbeafe", color: "#1d4ed8", border: "#1d4ed8" }, // blue
   { bg: "#e0e7ff", color: "#4338ca", border: "#4338ca" }, // indigo
   { bg: "#f3e8ff", color: "#7c3aed", border: "#7c3aed" }, // violet

@@ -177,354 +177,446 @@
           Your Trips
         </label>
 
-    <!-- shown instead of the expense content when localStorage has no selectedTripId -->
-    <div
-      id="noTripSelected"
-      class="hidden flex-col items-center gap-2 px-4 py-20 text-center"
-    >
-      <p class="text-base-content/60">
-        No trip selected yet — pick one from the sidebar to see its expenses.
-      </p>
-    </div>
-
-    <!-- container of expenses -->
-    <section id="expenseContent" class="flex flex-col items-center px-4 py-8">
-      <div
-        class="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4 md:gap-8 lg:gap-10 items-start"
-      >
-        <!-- left column: expense table and spent per person container -->
-        <div>
-          <!-- total spent per person -->
-          <h1 class="text-2xl font-light mb-4">Total Spent Per Person</h1>
-          <div
-            id="totalSpent"
-            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8 items-start"
-          ></div>
-
-          <h1 class="text-2xl font-light mb-6">Shared Expenses</h1>
-          <div class="card bg-base-100 shadow-sm border border-base-200">
-            <div class="flex flex-col items-center">
-              <table id="my_table" class="table w-full">
-                <thead>
-                  <tr
-                    class="text-base-content/50 text-xs uppercase tracking-wide"
-                  >
-                    <th>Title</th>
-                    <th class="text-center">Amount</th>
-                    <th class="text-center">Paid By</th>
-                    <th class="text-center w-px">Actions</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-                <tfoot>
-                  <tr class="border-t-2 border-base-200 font-semibold">
-                    <td colspan="1" class="text-base-content/50">Total</td>
-                    <td colspan="1" class="text-center">
-                      <span>$</span><span id="total">0</span>
-                    </td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
-
-              <!-- insert a row to the table -->
-              <button
-                id="addExp"
-                class="btn my-4"
-                style="background-color: #534ab7; color: white"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Add an Expense
-              </button>
-            </div>
-          </div>
-          <p id="deleteError" class="text-sm text-red-500 mt-2 hidden"></p>
+        <!-- shown instead of the expense content when localStorage has no selectedTripId -->
+        <div
+          id="noTripSelected"
+          class="hidden flex-col items-center gap-2 px-4 py-20 text-center"
+        >
+          <p class="text-base-content/60">
+            No trip selected yet — pick one from the sidebar to see its
+            expenses.
+          </p>
         </div>
-        <!-- end left column -->
 
-        <!-- right column: settle + debt breakdown -->
-        <div class="flex flex-col md:gap-8 gap-4">
-          <!-- simplest way to settle -->
-          <div>
-            <h1 class="text-2xl font-light mb-4">Simplest Way to Settle</h1>
-            <div class="card bg-base-100 shadow-sm border border-base-200">
-              <div class="card-body gap-3">
+        <!-- container of expenses -->
+        <section
+          id="expenseContent"
+          class="flex flex-col items-center px-4 py-8"
+        >
+          <div
+            class="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4 md:gap-8 lg:gap-10 items-start"
+          >
+            <!-- left column: expense table and spent per person container -->
+            <div>
+              <!-- total spent per person -->
+              <div class="flex items-center justify-start gap-2 mb-4">
+                <h1 class="text-2xl font-light">Total Spent Per Person</h1>
                 <div
-                  class="flex items-center gap-2 text-sm text-base-content/50"
+                  id="addGhost"
+                  class="rounded-full gap-1 hover:cursor-pointer"
+                  style="background-color: #534ab7; color: white"
                 >
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    style="color: #534ab7"
-                    fill="none"
+                    class="size-6"
+                    width="24"
+                    height="24"
                     viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
+                      d="M12 4V20M4 12H20"
+                      stroke="currentColor"
+                      stroke-width="2"
                       stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
                     />
                   </svg>
-                  Minimum payments needed to clear all debts
                 </div>
+              </div>
+              <div
+                id="totalSpent"
+                class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8 items-start"
+              ></div>
+
+              <h1 class="text-2xl font-light mb-6">Shared Expenses</h1>
+              <div class="card bg-base-100 shadow-sm border border-base-200">
+                <div class="flex flex-col items-center">
+                  <table id="my_table" class="table w-full">
+                    <thead>
+                      <tr
+                        class="text-base-content/50 text-xs uppercase tracking-wide"
+                      >
+                        <th>Title</th>
+                        <th class="text-center">Amount</th>
+                        <th class="text-center">Paid By</th>
+                        <th class="text-center w-px">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                      <tr class="border-t-2 border-base-200 font-semibold">
+                        <td colspan="1" class="text-base-content/50">Total</td>
+                        <td colspan="1" class="text-center">
+                          <span>$</span><span id="total">0</span>
+                        </td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+
+                  <!-- insert a row to the table -->
+                  <button
+                    id="addExp"
+                    class="btn my-4"
+                    style="background-color: #534ab7; color: white"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Add an Expense
+                  </button>
+                </div>
+              </div>
+              <p id="deleteError" class="text-sm text-red-500 mt-2 hidden"></p>
+            </div>
+            <!-- end left column -->
+
+            <!-- right column: settle + debt breakdown -->
+            <div class="flex flex-col md:gap-8 gap-4">
+              <!-- simplest way to settle -->
+              <div>
+                <h1 class="text-2xl font-light mb-4">Simplest Way to Settle</h1>
+                <div class="card bg-base-100 shadow-sm border border-base-200">
+                  <div class="card-body gap-3">
+                    <div
+                      class="flex items-center gap-2 text-sm text-base-content/50"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        style="color: #534ab7"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                      Minimum payments needed to clear all debts
+                    </div>
+                    <div
+                      class="grid grid-cols-[auto_auto_auto_1fr] items-center gap-x-3 gap-y-3"
+                      id="simplify-rows"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- who owes who -->
+              <div>
+                <h1 class="text-2xl font-light mb-2">Debt Breakdown</h1>
+                <!-- person filter -->
+                <h1 class="text-lg font-light mb-4">Filter by Person</h1>
+                <div class="flex flex-wrap gap-2 mb-4" id="person-filters">
+                  <!-- per-person buttons are inserted here by populatePersonFilters() -->
+                  <button
+                    id="resetFilter"
+                    class="btn btn-sm rounded-full hidden"
+                    style="background: #534ab7; color: white; border: none"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                <!-- filter result card -->
                 <div
-                  class="grid grid-cols-[auto_auto_auto_1fr] items-center gap-x-3 gap-y-3"
-                  id="simplify-rows"
-                ></div>
+                  id="filter-result"
+                  class="card bg-base-100 shadow-sm border border-base-300 mt-4 mb-4 hidden"
+                >
+                  <div id="filterCard" class="card-body gap-3"></div>
+                </div>
+              </div>
+              <div class="card bg-base-100 shadow-sm border border-base-200">
+                <div id="debtBreakdown" class="flex flex-col"></div>
+              </div>
+              <p id="settleError" class="text-sm text-red-500 mt-2 hidden"></p>
+
+              <!-- destructive, trip-wide reset - kept apart from the normal add/delete actions.
+               extra bottom margin on small screens so the fixed shortcut FAB doesn't cover it -->
+              <div class="flex flex-col items-end mt-3 mb-20 md:mb-0">
+                <button id="resetTrip" class="btn btn-sm btn-outline btn-error">
+                  Reset Everything
+                </button>
+                <p id="resetError" class="text-sm text-red-500 mt-2 hidden"></p>
               </div>
             </div>
+            <!-- end right column -->
           </div>
+          <!-- end grid -->
+          <!-- modal for inserting expense -->
+          <dialog id="my_modal_expense" class="modal">
+            <div class="modal-box flex flex-col gap-4">
+              <!-- close button in its own form so it doesn't submit -->
+              <form method="dialog">
+                <button
+                  class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                >
+                  ✕
+                </button>
+              </form>
 
-          <!-- who owes who -->
-          <div>
-            <h1 class="text-2xl font-light mb-2">Debt Breakdown</h1>
-            <!-- person filter -->
-            <h1 class="text-lg font-light mb-4">Filter by Person</h1>
-            <div class="flex flex-wrap gap-2 mb-4" id="person-filters">
-              <!-- per-person buttons are inserted here by populatePersonFilters() -->
-              <button
-                id="resetFilter"
-                class="btn btn-sm rounded-full hidden"
-                style="background: #534ab7; color: white; border: none"
-              >
-                Clear
-              </button>
-            </div>
+              <h3 id="expModalTitle" class="text-lg font-semibold">
+                Add an Expense
+              </h3>
 
-            <!-- filter result card -->
-            <div
-              id="filter-result"
-              class="card bg-base-100 shadow-sm border border-base-300 mt-4 mb-4 hidden"
-            >
-              <div id="filterCard" class="card-body gap-3"></div>
-            </div>
-          </div>
-          <div class="card bg-base-100 shadow-sm border border-base-200">
-            <div id="debtBreakdown" class="flex flex-col"></div>
-          </div>
-          <p id="settleError" class="text-sm text-red-500 mt-2 hidden"></p>
-
-          <!-- destructive, trip-wide reset - kept apart from the normal add/delete actions.
-               extra bottom margin on small screens so the fixed shortcut FAB doesn't cover it -->
-          <div class="flex flex-col items-end mt-3 mb-20 md:mb-0">
-            <button id="resetTrip" class="btn btn-sm btn-outline btn-error">
-              Reset Everything
-            </button>
-            <p id="resetError" class="text-sm text-red-500 mt-2 hidden"></p>
-          </div>
-        </div>
-        <!-- end right column -->
-      </div>
-      <!-- end grid -->
-      <!-- modal for inserting expense -->
-      <dialog id="my_modal_expense" class="modal">
-        <div class="modal-box flex flex-col gap-4">
-          <!-- close button in its own form so it doesn't submit -->
-          <form method="dialog">
-            <button
-              class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-            >
-              ✕
-            </button>
-          </form>
-
-          <h3 id="expModalTitle" class="text-lg font-semibold">
-            Add an Expense
-          </h3>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-base-content/60">Title</label>
-            <input
-              id="exp-title"
-              type="text"
-              placeholder="e.g. Hotel"
-              class="input input-bordered w-full"
-            />
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-base-content/60">Cost</label>
-            <input
-              id="exp-cost"
-              type="number"
-              placeholder="0"
-              min="0"
-              class="input input-bordered w-full"
-            />
-          </div>
-
-          <!-- who should payback section -->
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-base-content/60">Split Between</label>
-            <div id="debt-payer" class="flex flex-wrap gap-2 pt-1">
-              <span
-                id="allBadge"
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill cursor-pointer payer-option border-0 border-[#0f766e]"
-                data-name="All"
-                style="background: #ccfbf1; color: #0f766e"
-                >All</span
-              >
-            </div>
-          </div>
-
-          <!-- Split options -->
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-base-content/60">Split Method</label>
-            <div
-              class="flex flex-col md:justify-between items-start md:gap-0 gap-2"
-            >
-              <label class="label">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Title</label>
                 <input
-                  id="equalRadio"
-                  type="radio"
-                  name="radio-2"
-                  class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
-                  checked="checked"
+                  id="exp-title"
+                  type="text"
+                  placeholder="e.g. Hotel"
+                  class="input input-bordered w-full"
                 />
-                Equally
-              </label>
+              </div>
 
-              <label class="label">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Cost</label>
                 <input
-                  id="customRadio"
-                  type="radio"
-                  name="radio-2"
-                  class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
+                  id="exp-cost"
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  class="input input-bordered w-full"
                 />
+              </div>
 
-                Custom</label
-              >
+              <!-- who should payback section -->
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60"
+                  >Split Between</label
+                >
+                <div id="debt-payer" class="flex flex-wrap gap-2 pt-1">
+                  <span
+                    id="allBadge"
+                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill cursor-pointer payer-option border-0 border-[#0f766e]"
+                    data-name="All"
+                    style="background: #ccfbf1; color: #0f766e"
+                    >All</span
+                  >
+                </div>
+              </div>
 
-              <!-- selected persons in the previous section should pop up here with an input field -->
-              <div
-                id="customAmount"
-                class="flex flex-col gap-1 pl-3 w-full hidden"
-              ></div>
+              <!-- Split options -->
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Split Method</label>
+                <div
+                  class="flex flex-col md:justify-between items-start md:gap-0 gap-2"
+                >
+                  <label class="label">
+                    <input
+                      id="equalRadio"
+                      type="radio"
+                      name="radio-2"
+                      class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
+                      checked="checked"
+                    />
+                    Equally
+                  </label>
+
+                  <label class="label">
+                    <input
+                      id="customRadio"
+                      type="radio"
+                      name="radio-2"
+                      class="radio radio-xs bg-[#eeedfe] checked:border-1 checked:border-[#534ab7] checked:text-[#534ab7]"
+                    />
+
+                    Custom</label
+                  >
+
+                  <!-- selected persons in the previous section should pop up here with an input field -->
+                  <div
+                    id="customAmount"
+                    class="flex flex-col gap-1 pl-3 w-full hidden"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- paid by section -->
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Paid By</label>
+                <div id="exp-payer" class="flex flex-wrap gap-2 pt-1"></div>
+                <div
+                  id="coPayerAmount"
+                  class="flex flex-col gap-1 pl-3 w-full mt-2 hidden"
+                ></div>
+                <p
+                  id="errorMsg"
+                  class="mt-2 text-sm text-red-500/60 hidden"
+                ></p>
+              </div>
+
+              <div class="modal-action mt-0">
+                <button
+                  id="exp-submit"
+                  class="btn w-full"
+                  style="background-color: #534ab7; color: white"
+                >
+                  Add
+                </button>
+              </div>
             </div>
-          </div>
 
-          <!-- paid by section -->
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-base-content/60">Paid By</label>
-            <div id="exp-payer" class="flex flex-wrap gap-2 pt-1"></div>
+            <!-- click outside to close -->
+            <form method="dialog" class="modal-backdrop">
+              <button>close</button>
+            </form>
+          </dialog>
+
+          <!-- modal for adding a placeholder (no-account) person -->
+          <dialog id="addGhostModal" class="modal">
+            <div class="modal-box flex flex-col gap-4">
+              <!-- close button in its own form so it doesn't submit -->
+              <form method="dialog">
+                <button
+                  class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                >
+                  ✕
+                </button>
+              </form>
+
+              <h3 class="text-lg font-semibold">
+                Add Someone Without an Account
+              </h3>
+              <p class="text-sm text-base-content/60">
+                If someone in the trip doesn't have (or doesn't want) an
+                account, you can still track their expenses here — just add
+                their name below.
+              </p>
+
+              <div class="flex flex-col gap-1">
+                <label class="text-sm text-base-content/60">Name</label>
+                <input
+                  id="ghost-name"
+                  type="text"
+                  placeholder="e.g. Jordan"
+                  class="input input-bordered w-full"
+                />
+              </div>
+              <p id="ghostError" class="text-sm text-red-500 mt-2 hidden"></p>
+
+              <div class="modal-action mt-0">
+                <button
+                  id="ghost-submit"
+                  class="btn w-full"
+                  style="background-color: #534ab7; color: white"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <!-- click outside to close -->
+            <form method="dialog" class="modal-backdrop">
+              <button>close</button>
+            </form>
+          </dialog>
+
+          <!-- confirmation modal for the destructive trip reset -->
+          <dialog id="resetConfirmModal" class="modal">
+            <div class="modal-box flex flex-col gap-4">
+              <h3 class="text-lg font-semibold text-error">
+                Reset Everything?
+              </h3>
+              <p class="text-sm text-base-content/70">
+                This will permanently delete every expense and settlement for
+                this trip. This cannot be undone.
+              </p>
+              <div class="flex justify-end gap-2">
+                <form method="dialog">
+                  <button class="btn btn-ghost">Cancel</button>
+                </form>
+                <button id="confirmResetTrip" class="btn btn-error">
+                  Reset Everything
+                </button>
+              </div>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+              <button>close</button>
+            </form>
+          </dialog>
+
+          <!-- confirmation modal for deleting a single expense row -->
+          <dialog id="deleteConfirmModal" class="modal">
+            <div class="modal-box flex flex-col gap-4">
+              <h3 class="text-lg font-semibold text-error">Delete Expense?</h3>
+              <p class="text-sm text-base-content/70">
+                This will permanently delete this expense. This cannot be
+                undone.
+              </p>
+              <div class="flex justify-end gap-2">
+                <form method="dialog">
+                  <button class="btn btn-ghost">Cancel</button>
+                </form>
+                <button id="confirmDeleteExpense" class="btn btn-error">
+                  Delete
+                </button>
+              </div>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+              <button>close</button>
+            </form>
+          </dialog>
+
+          <!-- shortcut button hidden on big screen -->
+          <div class="fab md:hidden visible">
+            <!-- a focusable div with tabindex is necessary to work on all browsers. role="button" is necessary for accessibility -->
             <div
-              id="coPayerAmount"
-              class="flex flex-col gap-1 pl-3 w-full mt-2 hidden"
-            ></div>
-            <p id="errorMsg" class="mt-2 text-sm text-red-500/60 hidden"></p>
-          </div>
-
-          <div class="modal-action mt-0">
-            <button
-              id="exp-submit"
-              class="btn w-full"
+              tabindex="0"
+              role="button"
+              class="btn btn-lg btn-circle"
               style="background-color: #534ab7; color: white"
             >
-              Add
+              <svg
+                class="size-6"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 4V20M4 12H20"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+
+            <!-- buttons that show up when FAB is open -->
+            <button
+              id="scrollExp"
+              class="btn"
+              style="background-color: #e0dbfb; color: #534ab7"
+            >
+              Add an Expense
+            </button>
+            <button
+              id="scrollPay"
+              class="btn"
+              style="background-color: #e0dbfb; color: #534ab7"
+            >
+              Settle a Payment
             </button>
           </div>
-        </div>
-
-        <!-- click outside to close -->
-        <form method="dialog" class="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
-
-      <!-- confirmation modal for the destructive trip reset -->
-      <dialog id="resetConfirmModal" class="modal">
-        <div class="modal-box flex flex-col gap-4">
-          <h3 class="text-lg font-semibold text-error">Reset Everything?</h3>
-          <p class="text-sm text-base-content/70">
-            This will permanently delete every expense and settlement for this
-            trip. This cannot be undone.
-          </p>
-          <div class="flex justify-end gap-2">
-            <form method="dialog">
-              <button class="btn btn-ghost">Cancel</button>
-            </form>
-            <button id="confirmResetTrip" class="btn btn-error">
-              Reset Everything
-            </button>
-          </div>
-        </div>
-        <form method="dialog" class="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
-
-      <!-- confirmation modal for deleting a single expense row -->
-      <dialog id="deleteConfirmModal" class="modal">
-        <div class="modal-box flex flex-col gap-4">
-          <h3 class="text-lg font-semibold text-error">Delete Expense?</h3>
-          <p class="text-sm text-base-content/70">
-            This will permanently delete this expense. This cannot be undone.
-          </p>
-          <div class="flex justify-end gap-2">
-            <form method="dialog">
-              <button class="btn btn-ghost">Cancel</button>
-            </form>
-            <button id="confirmDeleteExpense" class="btn btn-error">
-              Delete
-            </button>
-          </div>
-        </div>
-        <form method="dialog" class="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
-
-      <!-- shortcut button hidden on big screen -->
-      <div class="fab md:hidden visible">
-        <!-- a focusable div with tabindex is necessary to work on all browsers. role="button" is necessary for accessibility -->
-        <div
-          tabindex="0"
-          role="button"
-          class="btn btn-lg btn-circle"
-          style="background-color: #534ab7; color: white"
-        >
-          <svg
-            class="size-6"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 4V20M4 12H20"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
-        </div>
-
-        <!-- buttons that show up when FAB is open -->
-        <button id="scrollExp" class="btn" style="background-color: #e0dbfb; color: #534ab7">
-          Add an Expense
-        </button>
-        <button id="scrollPay" class="btn" style="background-color: #e0dbfb; color: #534ab7">
-          Settle a Payment
-        </button>
-      </div>
-    </section>
+        </section>
       </div>
       <!-- drawer-content end -->
 
@@ -563,9 +655,7 @@
           <!-- container of all the trips -->
           <div class="flex flex-col gap-1 mb-5">
             <!-- one trip with name -->
-            <h2
-              class="text-xs uppercase tracking-wide text-white/60 px-2 mb-1"
-            >
+            <h2 class="text-xs uppercase tracking-wide text-white/60 px-2 mb-1">
               Your Trips
             </h2>
             <div id="yourTrips"></div>

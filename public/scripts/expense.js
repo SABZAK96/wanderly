@@ -54,6 +54,55 @@ document.getElementById("addExp").addEventListener("click", () => {
   resetExpenseModal();
 });
 
+document.getElementById("addGhost").addEventListener("click", () => {
+  document.getElementById("ghost-name").value = "";
+  document.getElementById("addGhostModal").showModal();
+});
+
+// collect the info of the "ghost" user and send it to the backend
+document
+  .getElementById("ghost-submit")
+  .addEventListener("click", async (event) => {
+    const btn = event.currentTarget;
+    const btnOriginalContent = btn.textContent;
+    const ghostInput = document.getElementById("ghost-name");
+    const errorMsg = document.getElementById("ghostError");
+    errorMsg.classList.add("hidden");
+    const ghostName = ghostInput.value.trim();
+
+    if (btn.dataset.loading === "true") return;
+
+    if (ghostName === "") {
+      errorMsg.textContent = "Please enter a Name.";
+      ghostInput.value = "";
+      errorMsg.classList.remove("hidden");
+      return;
+    }
+
+    btn.innerHTML = `<span class="loading loading-spinner loading-md" style="color: #534ab7"></span>`;
+    btn.dataset.loading = true;
+    const response = await fetch(`/addGhostMember/${tripId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: ghostName.charAt(0).toUpperCase() + ghostName.slice(1),
+      }),
+    });
+
+    btn.textContent = btnOriginalContent;
+    btn.dataset.loading = false;
+
+    if (response.ok) {
+      document.getElementById("addGhostModal").close();
+      await Promise.all([setUpModal(), setUpPage()]);
+    } else {
+      errorMsg.textContent = "Could not add the user. Please try again.";
+      errorMsg.classList.remove("hidden");
+    }
+  });
+
 // falls back to a neutral gray for anyone missing badgeInfo (e.g. old data
 // predating badge assignment), instead of crashing whatever tried to render them
 function getBadgeColors(person) {
@@ -62,11 +111,15 @@ function getBadgeColors(person) {
     : { bg: "#e5e7eb", color: "#374151", border: "#374151" };
 }
 
+// small marker appended next to a placeholder (no-account) person's name,
+// wherever their name/badge gets rendered
+function ghostMarker() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline align-middle ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>No account</title><path d="M9 10h.01" /><path d="M15 10h.01" /><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z" /></svg>`;
+}
+
 // fetch all the badges from the db
 async function getPeople() {
-  const response = await (
-    await fetch(`/people/${tripId}`)
-  ).json();
+  const response = await (await fetch(`/people/${tripId}`)).json();
   return response;
 }
 
@@ -87,8 +140,9 @@ async function populateFieldsBadges(id) {
                 class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium person-pill cursor-pointer payer-option border-0 border-[${badge.border}]"
                 data-name="${person.name}"
                 data-id="${person._id}"
+                data-placeholder="${!!person.isPlaceholder}"
                 style="background: ${badge.bg}; color: ${badge.color}"
-                >${person.name}</span>`;
+                >${person.name}${person.isPlaceholder ? ghostMarker() : ""}</span>`;
     container.insertAdjacentHTML("beforeend", badgeSpan);
   });
   peopleBadges = [...container.querySelectorAll(".person-pill")];
@@ -105,13 +159,14 @@ function populatePersonFilters() {
     .getElementById("person-filters")
     .querySelectorAll(".person-pill")
     .forEach((btn) => btn.remove());
-    
+
   peopleBadges.forEach((badge) => {
+    const isPlaceholder = badge.dataset.placeholder === "true";
     const filterBtn = `<button
       class="btn btn-sm rounded-full person-pill"
       data-name="${badge.dataset.name}"
       style="background: ${badge.style.backgroundColor}; color: ${badge.style.color}; border: none"
-    >${badge.dataset.name}</button>`;
+    >${badge.dataset.name}${isPlaceholder ? ghostMarker() : ""}</button>`;
     resetBtn.insertAdjacentHTML("beforebegin", filterBtn);
   });
 }
@@ -468,9 +523,7 @@ async function initTable() {
   // switching trips just keeps appending on top of the old rows
   document.querySelector("#my_table tbody").innerHTML = "";
 
-  const response = await (
-    await fetch(`/getExpenses/${tripId}`)
-  ).json();
+  const response = await (await fetch(`/getExpenses/${tripId}`)).json();
 
   if (response.length === 0) {
     document
@@ -673,12 +726,9 @@ document
     const deleteError = document.getElementById("deleteError");
     deleteError.classList.add("hidden");
 
-    const response = await fetch(
-      `/deleteExpense/${tripId}/${id}`,
-      {
-        method: "DELETE",
-      },
-    );
+    const response = await fetch(`/deleteExpense/${tripId}/${id}`, {
+      method: "DELETE",
+    });
 
     if (response.ok) {
       row.remove(); // only remove from the page once the server confirms it's gone
@@ -724,9 +774,7 @@ document
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
 
-    const expenses = await (
-      await fetch(`/getExpenses/${tripId}`)
-    ).json();
+    const expenses = await (await fetch(`/getExpenses/${tripId}`)).json();
     const expense = expenses.find((item) => item._id === id);
 
     editingExpenseId = id;
@@ -871,21 +919,18 @@ async function sendExpenseToDB(title, cost, paidBy, owes) {
 
 // same shape as sendExpenseToDB, but PUTs to the existing expense instead of creating a new one
 async function sendExpenseUpdateToDB(expenseId, title, cost, paidBy, owes) {
-  const data = await fetch(
-    `/updateExpense/${tripId}/${expenseId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title: title,
-        amount: cost,
-        paidBy: paidBy,
-        owedBy: owes,
-      }),
+  const data = await fetch(`/updateExpense/${tripId}/${expenseId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({
+      title: title,
+      amount: cost,
+      paidBy: paidBy,
+      owedBy: owes,
+    }),
+  });
   if (data.ok) setUpPage().then(refreshFilterCard);
   return data;
 }
@@ -1222,9 +1267,7 @@ async function computeDebtBreakdown() {
 }
 
 async function markAsSettled(debtorId, creditorId) {
-  const response = await (
-    await fetch(`/getExpenses/${tripId}`)
-  ).json();
+  const response = await (await fetch(`/getExpenses/${tripId}`)).json();
   // lets say soroush settled all his debts to sina
   // an array of objects like [{ expenseId: "hotel123", to: "sinaId", from: "soroushId", amount: 70 },
   // { expenseId: "hotel123", to: "hassanId", from: "soroushId", amount: 30 }, { expenseId: "car452", to: "sinaId", from: "soroushId", amount: 30 }]
@@ -1374,7 +1417,7 @@ async function renderDebtBreakdown() {
             data-name="${person.name}"
             data-id="${person._id}"
             style="background: ${personBadge.bg}; color: ${personBadge.color}; border: none"
-            >${person.name}</span
+            >${person.name}${person.isPlaceholder ? ghostMarker() : ""}</span
           >
           <span class="text-sm text-base-content/50"
             >is owed
@@ -1398,7 +1441,7 @@ async function renderDebtBreakdown() {
             data-name="${debtor.name}"
             data-id="${debtor._id}"
             style="background: ${debtorBadge.bg}; color: ${debtorBadge.color}; border: none"
-            >${debtor.name}</span
+            >${debtor.name}${debtor.isPlaceholder ? ghostMarker() : ""}</span
           >
           <div class="flex items-center text-sm font-thin">
             $<div class="flex flex-row gap-1 justify-center items-center "><span class="amount">${debt.amount.toFixed(2)}</span>
@@ -1548,9 +1591,7 @@ async function calculateSpending() {
   const personsIds = people.map((person) => person._id);
   const results = await Promise.all(
     personsIds.map((id) =>
-      fetch(`/spentDetails/${tripId}/${id}`).then((res) =>
-        res.json(),
-      ),
+      fetch(`/spentDetails/${tripId}/${id}`).then((res) => res.json()),
     ),
   );
   return results;
@@ -1591,9 +1632,11 @@ function renderSpending(results, netted) {
   }
 
   results.forEach((element) => {
-    const personName = peopleBadges.find(
+    const personBadge = peopleBadges.find(
       (person) => person.dataset.id === element.id,
-    ).dataset.name;
+    );
+    const personName = personBadge.dataset.name;
+    const isPlaceholder = personBadge.dataset.placeholder === "true";
     const totalSpent = Number(element.expenses) + Number(element.payments);
 
     // net > 0 means they're still owed money, net < 0 means they still owe money
@@ -1626,7 +1669,7 @@ function renderSpending(results, netted) {
             ></span>
             <div class="collapse-title stat py-2 pl-4 pr-8 place-items-center text-center">
               <div class="stat-title text-xs font-medium" style="color: #534ab7 ">
-                ${personName}
+                ${personName}${isPlaceholder ? ghostMarker() : ""}
               </div>
               <div class="stat-value text-lg" style="color: #534ab7"><span>$</span>${totalSpent.toFixed(2)}</div>
             </div>
