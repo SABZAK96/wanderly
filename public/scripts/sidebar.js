@@ -2,6 +2,13 @@
 const storedTripId = localStorage.getItem("selectedTripId");
 if (storedTripId) getSingleTripDetails(storedTripId);
 
+// expense.js (a module, so it can't call getSingleTripDetails directly) fires
+// this whenever a placeholder person is added/removed, so the sidebar's
+// people-count badge stays in sync without waiting for a trip re-select
+document.addEventListener("peopleChanged", (e) => {
+  getSingleTripDetails(e.detail.tripId);
+});
+
 // fetching the user info for their Id to build peronalized invitation links
 let myId;
 async function getMyId() {

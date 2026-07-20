@@ -54,12 +54,58 @@ document.getElementById("addExp").addEventListener("click", () => {
   resetExpenseModal();
 });
 
-document.getElementById("addGhost").addEventListener("click", () => {
+// the placeholder person currently being renamed, taken from the editGhost
+// button's own data-id - null means the modal is in "Add" mode, mirroring
+// editingExpenseId's role for the expense modal
+let editingGhostId = null;
+
+// resets the add/rename placeholder modal back to "Add" mode
+function resetGhostModal() {
   document.getElementById("ghost-name").value = "";
+  document.getElementById("ghostError").classList.add("hidden");
+  editingGhostId = null;
+  document.getElementById("ghostModalTitle").textContent =
+    "Add Someone Without an Account";
+  document.getElementById("ghostModalDesc").textContent =
+    "If someone in the trip doesn't have (or doesn't want) an account, you can still track their expenses here — just add their name below.";
+  document.getElementById("ghost-submit").textContent = "Add";
+}
+
+document.getElementById("addGhost").addEventListener("click", () => {
+  resetGhostModal();
   document.getElementById("addGhostModal").showModal();
 });
 
-// collect the info of the "ghost" user and send it to the backend
+// edit/remove buttons only exist on placeholder cards, and get rebuilt on
+// every renderSpending() call - delegate from the static container instead
+// of attaching listeners to elements that keep getting replaced
+document.getElementById("totalSpent").addEventListener("click", (event) => {
+  const editBtn = event.target.closest(".editGhost");
+  const removeBtn = event.target.closest(".removeGhost");
+
+  if (editBtn) {
+    editingGhostId = editBtn.dataset.id;
+    document.getElementById("ghostError").classList.add("hidden");
+    document.getElementById("ghost-name").value = editBtn.dataset.name;
+    document.getElementById("ghostModalTitle").textContent =
+      "Rename " + editBtn.dataset.name;
+    document.getElementById("ghostModalDesc").textContent =
+      "Update the name shown for this placeholder person.";
+    document.getElementById("ghost-submit").textContent = "Save";
+    document.getElementById("addGhostModal").showModal();
+  } else if (removeBtn) {
+    document.getElementById("removeGhostConfirmModal").dataset.id =
+      removeBtn.dataset.id;
+    document.getElementById("removeGhostName").textContent =
+      removeBtn.dataset.name;
+    document.getElementById("removeGhostError").classList.add("hidden");
+    document.getElementById("removeGhostConfirmModal").showModal();
+  }
+});
+
+// collect the info of the "ghost" user and send it to the backend -
+// branches on editingGhostId to either add a new placeholder or rename
+// an existing one, same pattern as the expense modal's add/edit branch
 document
   .getElementById("ghost-submit")
   .addEventListener("click", async (event) => {
@@ -79,17 +125,22 @@ document
       return;
     }
 
+    const preppedName = ghostName.charAt(0).toUpperCase() + ghostName.slice(1);
+
     btn.innerHTML = `<span class="loading loading-spinner loading-md" style="color: #534ab7"></span>`;
     btn.dataset.loading = true;
-    const response = await fetch(`/addGhostMember/${tripId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: ghostName.charAt(0).toUpperCase() + ghostName.slice(1),
-      }),
-    });
+
+    const response = editingGhostId
+      ? await fetch(`/addGhostMember/${editingGhostId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: preppedName }),
+        })
+      : await fetch(`/addGhostMember/${tripId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: preppedName }),
+        });
 
     btn.textContent = btnOriginalContent;
     btn.dataset.loading = false;
@@ -97,8 +148,47 @@ document
     if (response.ok) {
       document.getElementById("addGhostModal").close();
       await Promise.all([setUpModal(), setUpPage()]);
+      // renaming doesn't change the trip's people count - only tell the
+      // sidebar to refresh when a new placeholder was actually added
+      // !editingGhostId means we are adding and the sidebar needs to refresh
+      if (!editingGhostId) {
+        document.dispatchEvent(
+          new CustomEvent("peopleChanged", { detail: { tripId } }),
+        );
+      }
     } else {
-      errorMsg.textContent = "Could not add the user. Please try again.";
+      errorMsg.textContent = "Could not save. Please try again.";
+      errorMsg.classList.remove("hidden");
+    }
+  });
+
+// confirm-remove for a placeholder person
+document
+  .getElementById("confirmRemoveGhost")
+  .addEventListener("click", async (event) => {
+    const btn = event.currentTarget;
+    if (btn.dataset.loading === "true") return;
+
+    const modal = document.getElementById("removeGhostConfirmModal");
+    const ghostId = modal.dataset.id;
+    const errorMsg = document.getElementById("removeGhostError");
+    errorMsg.classList.add("hidden");
+
+    btn.dataset.loading = true;
+    const response = await fetch(`/addGhostMember/${tripId}/${ghostId}`, {
+      method: "DELETE",
+    });
+    btn.dataset.loading = false;
+
+    if (response.ok) {
+      modal.close();
+      await Promise.all([setUpModal(), setUpPage()]);
+      // sidebar needs to get refreshed when we remove the ghost person
+      document.dispatchEvent(
+        new CustomEvent("peopleChanged", { detail: { tripId } }),
+      );
+    } else {
+      errorMsg.textContent = "Could not remove them. Please try again.";
       errorMsg.classList.remove("hidden");
     }
   });
@@ -1659,7 +1749,7 @@ function renderSpending(results, netted) {
 
     let stat = ` <div
             class="collapse collapse-plus shadow-sm relative"
-            style="background: #e0dbfb" 
+            style="background: #e0dbfb"
           >
             <input type="checkbox" class="appearance-none focus:outline-none" />
             <span
@@ -1667,6 +1757,32 @@ function renderSpending(results, netted) {
               style="background: ${isSettled ? "#16a34a" : "#dc2626"}"
               title="${isSettled ? "All settled" : "Not settled"}"
             ></span>
+            ${
+              isPlaceholder
+                ? `<div class="absolute top-1 left-1 z-30 flex gap-0.5">
+                    <button
+                      class="btn btn-ghost btn-xs btn-square editGhost"
+                      data-id="${element.id}"
+                      data-name="${personName}"
+                      title="Rename"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                      </svg>
+                    </button>
+                    <button
+                      class="btn btn-ghost btn-xs btn-square text-error removeGhost"
+                      data-id="${element.id}"
+                      data-name="${personName}"
+                      title="Remove"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                      </svg>
+                    </button>
+                  </div>`
+                : ""
+            }
             <div class="collapse-title stat py-2 pl-4 pr-8 place-items-center text-center">
               <div class="stat-title text-xs font-medium" style="color: #534ab7 ">
                 ${personName}${isPlaceholder ? ghostMarker() : ""}

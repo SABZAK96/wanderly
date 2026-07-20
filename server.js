@@ -367,6 +367,33 @@ app.post("/addGhostMember/:id", async (req, res) => {
   }
 });
 
+// update the ghost user name
+app.put("/addGhostMember/:id", async (req, res) => {
+  try {
+    const ghostUser = await userModel.findByIdAndUpdate(
+      req.params.id,
+      { $set: { name: req.body.name } },
+      { new: true },
+    );
+    res.json(ghostUser);
+  } catch (error) {
+    res.status(500).send("Could not rename the ghost user.");
+  }
+});
+
+// delete the ghost user
+app.delete("/addGhostMember/:tripId/:ghostId", async (req, res) => {
+  try {
+    await userModel.findByIdAndDelete(req.params.ghostId);
+    await tripModel.findByIdAndUpdate(req.params.tripId, {
+      $pull: { people: req.params.ghostId },
+    });
+    res.sendStatus(200);
+  } catch (error) {
+    res.status(500).send("Could not delete the ghost user.");
+  }
+});
+
 //add new expense
 app.post("/newExpense/:id", async (req, res) => {
   try {
@@ -603,30 +630,6 @@ app.get("/userInfo", async (req, res) => {
   }
 });
 
-// add a ghost member route
-app.post("/addGhostMember/:id", async (req, res) => {
-  try {
-    // create returns the document that is just created
-    const ghostUser = await userModel.create({
-      name: req.body.name,
-      badgeInfo: {},
-      trips: [req.params.id],
-      isPlaceholder: true,
-    });
-
-    // update tripModel
-    const trip = await tripModel.findByIdAndUpdate(
-      req.params.id,
-      { $push: { people: ghostUser._id } },
-      { new: true },
-    );
-
-    await assignBadgeIfNeeded(ghostUser._id, trip.people);
-    res.json(ghostUser);
-  } catch (error) {
-    res.status(500).send("Could not add the ghost user to the database.");
-  }
-});
 // update user account
 app.put("/editUserInfo", async (req, res) => {
   try {
