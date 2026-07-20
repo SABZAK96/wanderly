@@ -199,6 +199,24 @@ async function assignBadgeIfNeeded(userId, existingPeopleIds) {
   await userModel.findByIdAndUpdate(userId, { badgeInfo: chosen });
 }
 
+// blocks a trip-scoped route unless the logged-in user is actually a member
+// of the trip named in the URL (:tripId or :id) - without this, any
+// authenticated user could read or mutate ANY trip just by knowing/guessing
+// its id, since isAuthenticated only checks "logged in", not "a member of
+// this trip"
+async function requireTripMember(req, res, next) {
+  try {
+    const tripId = req.params.tripId || req.params.id;
+    const trip = await tripModel.findById(tripId);
+    if (!trip || !trip.people.includes(req.session.userId)) {
+      return res.status(403).send("Not a member of this trip.");
+    }
+    next();
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+}
+
 main().catch((err) => console.log(err));
 
 async function main() {
@@ -273,7 +291,7 @@ app.get("/allTrips", async (req, res) => {
 });
 
 // get single trip info
-app.get("/singleTripDetails/:id", async (req, res) => {
+app.get("/singleTripDetails/:id", requireTripMember, async (req, res) => {
   try {
     const trip = await tripModel.findById(req.params.id);
     res.json(trip);
@@ -283,7 +301,7 @@ app.get("/singleTripDetails/:id", async (req, res) => {
 });
 
 //delete a trip
-app.delete("/deleteTrip/:id", async (req, res) => {
+app.delete("/deleteTrip/:id", requireTripMember, async (req, res) => {
   try {
     // remove that trip from user doc
     await userModel.findByIdAndUpdate(req.session.userId, {
@@ -308,7 +326,7 @@ app.delete("/deleteTrip/:id", async (req, res) => {
 });
 
 // edit a trip
-app.put("/editTrip/:id", async (req, res) => {
+app.put("/editTrip/:id", requireTripMember, async (req, res) => {
   try {
     const trip = await tripModel.findByIdAndUpdate(
       req.params.id,
@@ -328,7 +346,7 @@ app.put("/editTrip/:id", async (req, res) => {
 });
 
 //getting people information related to each specific trip with id
-app.get("/people/:id", async (req, res) => {
+app.get("/people/:id", requireTripMember, async (req, res) => {
   try {
     const data = await tripModel.findById(req.params.id);
 
@@ -344,7 +362,7 @@ app.get("/people/:id", async (req, res) => {
 
 // add a placeholder (no-account) person to a trip, for tracking expenses
 // of someone who doesn't have their own account
-app.post("/addGhostMember/:id", async (req, res) => {
+app.post("/addGhostMember/:id", requireTripMember, async (req, res) => {
   try {
     const ghost = await userModel.create({
       name: req.body.name,
@@ -367,9 +385,16 @@ app.post("/addGhostMember/:id", async (req, res) => {
   }
 });
 
-// update the ghost user name
+// update the ghost user name - :id here is the placeholder's own user id,
+// not a trip id, so requireTripMember doesn't apply - instead, find the
+// trip that actually contains this placeholder and check membership there
 app.put("/addGhostMember/:id", async (req, res) => {
   try {
+    const trip = await tripModel.findOne({ people: req.params.id });
+    if (!trip || !trip.people.includes(req.session.userId)) {
+      return res.status(403).send("Not a member of this trip.");
+    }
+
     const ghostUser = await userModel.findByIdAndUpdate(
       req.params.id,
       { $set: { name: req.body.name } },
@@ -382,20 +407,24 @@ app.put("/addGhostMember/:id", async (req, res) => {
 });
 
 // delete the ghost user
-app.delete("/addGhostMember/:tripId/:ghostId", async (req, res) => {
-  try {
-    await userModel.findByIdAndDelete(req.params.ghostId);
-    await tripModel.findByIdAndUpdate(req.params.tripId, {
-      $pull: { people: req.params.ghostId },
-    });
-    res.sendStatus(200);
-  } catch (error) {
-    res.status(500).send("Could not delete the ghost user.");
-  }
-});
+app.delete(
+  "/addGhostMember/:tripId/:ghostId",
+  requireTripMember,
+  async (req, res) => {
+    try {
+      await userModel.findByIdAndDelete(req.params.ghostId);
+      await tripModel.findByIdAndUpdate(req.params.tripId, {
+        $pull: { people: req.params.ghostId },
+      });
+      res.sendStatus(200);
+    } catch (error) {
+      res.status(500).send("Could not delete the ghost user.");
+    }
+  },
+);
 
 //add new expense
-app.post("/newExpense/:id", async (req, res) => {
+app.post("/newExpense/:id", requireTripMember, async (req, res) => {
   try {
     const { title, amount, paidBy, owedBy } = req.body;
 
@@ -417,30 +446,34 @@ app.post("/newExpense/:id", async (req, res) => {
 });
 
 // update an existing expense in place
-app.put("/updateExpense/:tripId/:expenseId", async (req, res) => {
-  try {
-    const { title, amount, paidBy, owedBy } = req.body;
-    const trip = await tripModel.findById(req.params.tripId);
+app.put(
+  "/updateExpense/:tripId/:expenseId",
+  requireTripMember,
+  async (req, res) => {
+    try {
+      const { title, amount, paidBy, owedBy } = req.body;
+      const trip = await tripModel.findById(req.params.tripId);
 
-    // find the specific expense inside the expenses array
-    const expense = trip.expenses.id(req.params.expenseId);
+      // find the specific expense inside the expenses array
+      const expense = trip.expenses.id(req.params.expenseId);
 
-    // mutate it directly, like a normal JS object
-    expense.title = title;
-    expense.amount = amount;
-    expense.paidBy = paidBy;
-    expense.owedBy = owedBy;
+      // mutate it directly, like a normal JS object
+      expense.title = title;
+      expense.amount = amount;
+      expense.paidBy = paidBy;
+      expense.owedBy = owedBy;
 
-    // persist the mutation
-    await trip.save();
-    res.json(expense);
-  } catch (error) {
-    res.status(500).send("Server Error!");
-  }
-});
+      // persist the mutation
+      await trip.save();
+      res.json(expense);
+    } catch (error) {
+      res.status(500).send("Server Error!");
+    }
+  },
+);
 
 //get all the expenses for a trip
-app.get("/getExpenses/:id", async (req, res) => {
+app.get("/getExpenses/:id", requireTripMember, async (req, res) => {
   try {
     const trip = await tripModel.findById(req.params.id);
 
@@ -453,21 +486,25 @@ app.get("/getExpenses/:id", async (req, res) => {
 });
 
 // delete a certain expense from the db
-app.delete("/deleteExpense/:tripId/:expenseId", async (req, res) => {
-  try {
-    const expense = await tripModel.findByIdAndUpdate(
-      req.params.tripId,
-      { $pull: { expenses: { _id: req.params.expenseId } } },
-      { new: true },
-    );
-    res.json(expense);
-  } catch (error) {
-    res.status(500).send("Server Error!");
-  }
-});
+app.delete(
+  "/deleteExpense/:tripId/:expenseId",
+  requireTripMember,
+  async (req, res) => {
+    try {
+      const expense = await tripModel.findByIdAndUpdate(
+        req.params.tripId,
+        { $pull: { expenses: { _id: req.params.expenseId } } },
+        { new: true },
+      );
+      res.json(expense);
+    } catch (error) {
+      res.status(500).send("Server Error!");
+    }
+  },
+);
 
 // wipe every expense and settlement record for a trip - full reset
-app.delete("/resetTrip/:tripId", async (req, res) => {
+app.delete("/resetTrip/:tripId", requireTripMember, async (req, res) => {
   try {
     const trip = await tripModel.findByIdAndUpdate(
       req.params.tripId,
@@ -481,7 +518,7 @@ app.delete("/resetTrip/:tripId", async (req, res) => {
 });
 
 // update the owedBy array based on the payments that are made
-app.put("/markSettled/:tripId", async (req, res) => {
+app.put("/markSettled/:tripId", requireTripMember, async (req, res) => {
   try {
     const body = req.body;
     const trip = await tripModel.findById(req.params.tripId);
@@ -513,7 +550,7 @@ app.put("/markSettled/:tripId", async (req, res) => {
 });
 
 // record the payments made in the db
-app.post("/payment/:tripId", async (req, res) => {
+app.post("/payment/:tripId", requireTripMember, async (req, res) => {
   try {
     const body = req.body;
     const trip = await tripModel.findByIdAndUpdate(
@@ -532,34 +569,38 @@ app.post("/payment/:tripId", async (req, res) => {
 });
 
 // route for sending all owedBy amounts and payments amounts for a specific id
-app.get("/spentDetails/:tripId/:personId", async (req, res) => {
-  try {
-    const trip = await tripModel.findById(req.params.tripId);
-    // resuly would be similar to [ {person:"a",amount:5}, {person:"b",amount:10}, {person:"a",amount:3} ]
-    const expenses = trip.expenses
-      .flatMap((expense) => expense.owedBy)
-      .filter((item) => item.person === req.params.personId);
-    const payments = trip.payments.filter(
-      (item) => item.payer === req.params.personId,
-    );
-    const totalExp = expenses.reduce(
-      (accum, element) => accum + element.amount,
-      0,
-    );
-    const totalPay = payments.reduce(
-      (accum, element) => accum + element.amount,
-      0,
-    );
-    const response = {
-      id: req.params.personId,
-      expenses: totalExp,
-      payments: totalPay,
-    };
-    res.json(response);
-  } catch (error) {
-    res.status(500).send("Server Error!");
-  }
-});
+app.get(
+  "/spentDetails/:tripId/:personId",
+  requireTripMember,
+  async (req, res) => {
+    try {
+      const trip = await tripModel.findById(req.params.tripId);
+      // resuly would be similar to [ {person:"a",amount:5}, {person:"b",amount:10}, {person:"a",amount:3} ]
+      const expenses = trip.expenses
+        .flatMap((expense) => expense.owedBy)
+        .filter((item) => item.person === req.params.personId);
+      const payments = trip.payments.filter(
+        (item) => item.payer === req.params.personId,
+      );
+      const totalExp = expenses.reduce(
+        (accum, element) => accum + element.amount,
+        0,
+      );
+      const totalPay = payments.reduce(
+        (accum, element) => accum + element.amount,
+        0,
+      );
+      const response = {
+        id: req.params.personId,
+        expenses: totalExp,
+        payments: totalPay,
+      };
+      res.json(response);
+    } catch (error) {
+      res.status(500).send("Server Error!");
+    }
+  },
+);
 
 // joinTrip route for handling invitations
 app.get("/joinTrip/:id", async (req, res) => {

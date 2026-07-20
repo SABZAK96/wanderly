@@ -1,9 +1,23 @@
 let tripId = localStorage.getItem("selectedTripId");
-document.addEventListener("changeTrip", (e) => {
+document.addEventListener("changeTrip", async (e) => {
   tripId = e.detail.tripId;
   showExpenseContent();
+  // settle checkboxes are disabled/enabled based on myId - make sure it's
+  // resolved before setUpPage() renders them, not just kicked off alongside
+  await getMyId();
   Promise.all([setUpModal(), setUpPage()]);
 });
+
+// getting the id of the user to disable clicking "mark as settled" for other person on their browser
+let myId;
+async function getMyId() {
+  if (!myId) {
+    const me = await (await fetch("/userInfo")).json();
+    myId = me.id;
+  }
+  return myId;
+}
+
 // string badges and update them when they are build to update the table tags easily
 let peopleBadges = undefined;
 
@@ -320,6 +334,10 @@ if (!tripId) {
   document.getElementById("pageLoading").classList.add("hidden");
 } else {
   showExpenseContent();
+  // top-level await works here since this file is loaded as a module -
+  // resolve myId before the initial render so settle checkboxes are
+  // correctly enabled/disabled on first paint, not just on the next re-render
+  await getMyId();
   Promise.all([setUpModal(), setUpPage()]).finally(() => {
     document.getElementById("pageLoading").classList.add("hidden");
   });
@@ -463,6 +481,12 @@ function initSettleToggles() {
   );
 
   settleInputs.forEach((field) => {
+    // only the debtor themselves can check off "I paid this" on their own
+    // browser - except placeholders, who have no browser of their own, so
+    // any trip member can settle on their behalf
+    if (field.dataset.id !== myId && field.dataset.placeholder !== "true") {
+      field.disabled = true;
+    }
     field.addEventListener("change", () => {
       //scoping to the currnt accordion only - get the parent of the field we are working through and put all the input fields under that parent in an array
       const allInputsAsArray = [
@@ -1535,7 +1559,7 @@ async function renderDebtBreakdown() {
           >
           <div class="flex items-center text-sm font-thin">
             $<div class="flex flex-row gap-1 justify-center items-center "><span class="amount">${debt.amount.toFixed(2)}</span>
-            <input type="checkbox" class="checkbox checkbox-success" />
+            <input type="checkbox" class="checkbox checkbox-success" data-id="${debt.from}" data-placeholder="${!!debtor.isPlaceholder}" title="${!debtor.isPlaceholder && debtor._id !== myId ? `Only ${debtor.name} can settle this` : ""}" />
             </div>
           </div>
         </div>`;
