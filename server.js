@@ -1,5 +1,5 @@
 // MONGO set up
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 const port = process.env.PORT || 5000;
 const db = process.env.MONGO_URI;
 const secret = process.env.SESSION_SECRET;
@@ -110,7 +110,6 @@ app.post("/signup", async (req, res) => {
         name: req.body.name,
         password: hashedPassword,
         email: req.body.email,
-        badgeInfo: {},
         trips: [],
       });
       req.session.userId = user._id;
@@ -141,11 +140,6 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: String,
-  badgeInfo: {
-    bg: String,
-    color: String,
-    border: String,
-  },
   trips: [String], // trip ids
   isPlaceholder: { type: Boolean, default: false }, // for names added in the expense tab to track expenses for those who dont have an account
 });
@@ -155,7 +149,16 @@ const tripSchema = new mongoose.Schema({
   destination: String,
   startDate: Date,
   endDate: Date,
-  people: [String], // user ids of people in the trip
+  people: [
+    {
+      person: String,
+      badgeInfo: {
+        bg: String,
+        color: String,
+        border: String,
+      },
+    },
+  ], // user ids of people in the trip
   expenses: [
     {
       title: String,
@@ -178,13 +181,12 @@ const tripModel = mongoose.model("trips", tripSchema);
 // gives userId a badge color if they don't already have one, picking a color
 // not already used by anyone currently in existingPeopleIds (their trip-mates) -
 // colors only need to be unique within one trip, not across the whole app
-async function assignBadgeIfNeeded(userId, existingPeopleIds) {
-  const user = await userModel.findById(userId);
-  if (user.badgeInfo && user.badgeInfo.bg) return; // already has one, keep it
+async function assignBadgeIfNeeded(userId, tripId) {
+  const trip = await tripModel.findById(tripId); // the current trip we are assigning badges in
+  const currentUser = trip.people.find((element) => element.person === userId); // find the current person in the trip doc
+  if (currentUser && currentUser.badgeInfo && currentUser.badgeInfo.bg) return; // people might leave or delete accounts, and some people in db dont have badgeInfo assigned. this gaurds from those kinda situation and see if they have a color assigned, skip assiging a new one to them
 
-  const tripMates = await Promise.all(
-    existingPeopleIds.map((id) => userModel.findById(id)),
-  );
+  const tripMates = trip.people.filter((element) => element.person !== userId);
   const usedColors = tripMates
     .filter((person) => person && person.badgeInfo && person.badgeInfo.bg)
     .map((person) => person.badgeInfo.bg);
@@ -192,11 +194,16 @@ async function assignBadgeIfNeeded(userId, existingPeopleIds) {
   const available = colorPalette.filter(
     (color) => !usedColors.includes(color.bg),
   );
-  // fall back to the full palette (colors may repeat) if the trip somehow has
-  // more people than the palette has colors
-  const chosen = available.length > 0 ? available[0] : colorPalette[0];
+  // fall back to cycling back through the full palette (colors may repeat)
+  // if the trip somehow has more people than the palette has colors, instead
+  // of always handing out the same first color to everyone past that point
+  const chosen =
+    available.length > 0
+      ? available[0]
+      : colorPalette[tripMates.length % colorPalette.length];
 
-  await userModel.findByIdAndUpdate(userId, { badgeInfo: chosen });
+  currentUser.badgeInfo = chosen;
+  await currentUser.save();
 }
 
 // blocks a trip-scoped route unless the logged-in user is actually a member
@@ -208,7 +215,10 @@ async function requireTripMember(req, res, next) {
   try {
     const tripId = req.params.tripId || req.params.id;
     const trip = await tripModel.findById(tripId);
-    if (!trip || !trip.people.includes(req.session.userId)) {
+    if (
+      !trip ||
+      !trip.people.some((p) => p.person === req.session.userId)
+    ) {
       return res.status(403).send("Not a member of this trip.");
     }
     next();
@@ -234,11 +244,8 @@ async function main() {
       // one-time backfill for people who predate badge assignment - delete after running once
       // const allTrips = await tripModel.find({});
       // for (const t of allTrips) {
-      //   for (const personId of t.people) {
-      //     await assignBadgeIfNeeded(
-      //       personId,
-      //       t.people.filter((id) => id !== personId),
-      //     );
+      //   for (const p of t.people) {
+      //     await assignBadgeIfNeeded(p.person, t._id);
       //   }
       // }
       // console.log("Badge backfill complete");
@@ -256,7 +263,7 @@ app.post("/addTrip", async (req, res) => {
       destination: req.body.destination,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
-      people: [req.session.userId],
+      people: [{ person: req.session.userId, badgeInfo: {} }],
       expenses: [],
       payments: [],
     });
@@ -268,7 +275,7 @@ app.post("/addTrip", async (req, res) => {
     });
 
     // the creator is the first person in the trip, so there's no one else to avoid a color clash with
-    await assignBadgeIfNeeded(req.session.userId, []);
+    await assignBadgeIfNeeded(req.session.userId, trip._id);
 
     res.json(trip._id);
   } catch (error) {
@@ -311,7 +318,7 @@ app.delete("/deleteTrip/:id", requireTripMember, async (req, res) => {
     // remove that person from that trip document
     const trip = await tripModel.findByIdAndUpdate(
       req.params.id,
-      { $pull: { people: req.session.userId } },
+      { $pull: { people: { person: req.session.userId } } },
       { new: true },
     );
 
@@ -352,9 +359,14 @@ app.get("/people/:id", requireTripMember, async (req, res) => {
 
     //should use promise all to fetch all the results and then send them to server
     const result = await Promise.all(
-      data.people.map((id) => userModel.findById(id)),
+      data.people.map(async (p) => {
+        const user = await userModel.findById(p.person);
+        // user may have deleted their account since joining the trip - skip them
+        if (!user) return null;
+        return { ...user.toObject(), badgeInfo: p.badgeInfo };
+      }),
     );
-    res.json(result);
+    res.json(result.filter(Boolean));
   } catch (error) {
     res.status(500).send("Server Error!");
   }
@@ -366,18 +378,17 @@ app.post("/addGhostMember/:id", requireTripMember, async (req, res) => {
   try {
     const ghost = await userModel.create({
       name: req.body.name,
-      badgeInfo: {},
       trips: [req.params.id],
       isPlaceholder: true,
     });
 
-    const trip = await tripModel.findByIdAndUpdate(
+    await tripModel.findByIdAndUpdate(
       req.params.id,
-      { $push: { people: ghost._id } },
+      { $push: { people: { person: ghost._id, badgeInfo: {} } } },
       { new: true },
     );
 
-    await assignBadgeIfNeeded(ghost._id, trip.people);
+    await assignBadgeIfNeeded(ghost._id, req.params.id);
 
     res.json(ghost);
   } catch (error) {
@@ -390,8 +401,11 @@ app.post("/addGhostMember/:id", requireTripMember, async (req, res) => {
 // trip that actually contains this placeholder and check membership there
 app.put("/addGhostMember/:id", async (req, res) => {
   try {
-    const trip = await tripModel.findOne({ people: req.params.id });
-    if (!trip || !trip.people.includes(req.session.userId)) {
+    const trip = await tripModel.findOne({ "people.person": req.params.id });
+    if (
+      !trip ||
+      !trip.people.some((p) => p.person === req.session.userId)
+    ) {
       return res.status(403).send("Not a member of this trip.");
     }
 
@@ -414,7 +428,7 @@ app.delete(
     try {
       await userModel.findByIdAndDelete(req.params.ghostId);
       await tripModel.findByIdAndUpdate(req.params.tripId, {
-        $pull: { people: req.params.ghostId },
+        $pull: { people: { person: req.params.ghostId } },
       });
       res.sendStatus(200);
     } catch (error) {
@@ -611,7 +625,7 @@ app.get("/joinTrip/:id", async (req, res) => {
         permission: false,
         msg: "The trip may have been deleted, or the link is incorrect",
       });
-    } else if (trip.people.includes(req.session.userId)) {
+    } else if (trip.people.some((p) => p.person === req.session.userId)) {
       res.json({
         destination: trip.destination,
         startDate: trip.startDate,
@@ -639,7 +653,7 @@ app.post("/joinPerson", async (req, res) => {
     if (!trip) {
       return res.status(404).send("Trip not found.");
     }
-    if (trip.people.includes(req.session.userId)) {
+    if (trip.people.some((p) => p.person === req.session.userId)) {
       return res.status(409).send("Already in this trip.");
     }
 
@@ -648,12 +662,10 @@ app.post("/joinPerson", async (req, res) => {
     });
 
     await tripModel.findByIdAndUpdate(req.body.tripId, {
-      $push: { people: req.session.userId },
+      $push: { people: { person: req.session.userId, badgeInfo: {} } },
     });
 
-    // trip.people here is everyone already in the trip, before this join -
-    // exactly who the new person's color needs to avoid clashing with
-    await assignBadgeIfNeeded(req.session.userId, trip.people);
+    await assignBadgeIfNeeded(req.session.userId, req.body.tripId);
 
     res.sendStatus(200);
   } catch (error) {
@@ -725,7 +737,7 @@ app.delete("/deleteAccount", async (req, res) => {
       user.trips.map(async (tripId) => {
         const trip = await tripModel.findByIdAndUpdate(
           tripId,
-          { $pull: { people: req.session.userId } },
+          { $pull: { people: { person: req.session.userId } } },
           { new: true },
         );
         if (trip.people.length === 0) {
