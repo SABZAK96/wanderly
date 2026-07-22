@@ -19,6 +19,19 @@ async function getMyId() {
   return myId;
 }
 
+// listen to the custom event created in plan.html for adding a new trip through suggestion modal
+document.addEventListener("addTripSuggest", (e) => {
+  getSingleTripDetails(e.detail.tripId);
+  const element = document.querySelector(
+    `#yourTrips [id="${e.detail.tripId}"]`,
+  );
+  // #yourTrips is populated by this file's own loadYourTrips(), separately
+  // from code.js's loadTrips() (which populates the suggest-modal's own
+  // list) - the two fetches aren't coordinated, so element can be null if
+  // loadYourTrips() hasn't resolved yet when this fires
+  if (element) highlightTrip(element);
+});
+
 document.getElementById("addTrip").addEventListener("click", () => {
   // clear any leftover edit state so this opens as a fresh "create" form
   const modal = document.getElementById("my_modal_trip");
@@ -53,7 +66,8 @@ function validateTripDates(destination, startDate, endDate) {
 document
   .getElementById("createTrip")
   .addEventListener("click", async (event) => {
-    const destination = document.getElementById("dest-title").dataset.destination;
+    const destination =
+      document.getElementById("dest-title").dataset.destination;
     const startDate = document.getElementById("startDate").value;
     const endDate = document.getElementById("endDate").value;
 
@@ -119,8 +133,9 @@ document
       }),
     });
     if (response.ok) {
-      const data = await response.json();
-
+      const data = await response.json(); // data is the trip._id coming back from the db
+      localStorage.setItem("selectedTripId", data);
+      await getSingleTripDetails(data);
       // clear the form so the next "+ New Trip" opens blank, not with this trip's info
       document.getElementById("dest-title").dataset.destination = "";
       document.getElementById("startDate").value = "";
@@ -136,7 +151,14 @@ document
         document.getElementById("link").value =
           `${window.location.origin}/join.html?trip=${data}&from=${await getMyId()}`;
       }
-      loadYourTrips();
+      // re-apply the highlight for the newly created (now selected) trip,
+      // same as the click handler below does - loadYourTrips() re-renders
+      // every card from scratch, so nothing stays highlighted otherwise
+      await loadYourTrips();
+      const newTripElement = document.querySelector(
+        `#yourTrips [id="${data}"]`,
+      );
+      if (newTripElement) highlightTrip(newTripElement);
     } else {
       tripError.textContent = "Could not add the trip, please try again.";
       tripError.classList.remove("hidden");
@@ -199,6 +221,7 @@ document
       new CustomEvent("changeTrip", { detail: { tripId: element.id } }),
     );
     await getSingleTripDetails(element.id);
+    await highlightTrip(element);
   });
 
 // fetches the selected trip's details and renders them into #tripHeader

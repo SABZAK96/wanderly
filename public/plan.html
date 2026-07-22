@@ -927,6 +927,71 @@
         <button>close</button>
       </form>
     </dialog>
+
+    <!-- modal for selecting a trip before using suggestion section -->
+    <dialog id="my_modal_suggest" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <!-- close button in its own form so it doesn't submit -->
+        <form method="dialog">
+          <button
+            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          >
+            ✕
+          </button>
+        </form>
+
+        <!-- icon and header -->
+        <div>
+          <div
+            class="w-12 h-12 rounded-full bg-[#eeedfe] flex items-center justify-center mx-auto mb-3"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="#534AB7"
+              class="size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+              />
+            </svg>
+          </div>
+
+          <h3 id="tripTitle" class="text-lg font-semibold text-center">
+            Pick a Trip First
+          </h3>
+        </div>
+
+        <div id="addedTrips" class="flex flex-col gap-3"></div>
+
+        <p id="selectError" class="text-sm text-red-500 mt-1 hidden"></p>
+
+        <div class="modal-action mt-0">
+          <button
+            id="createTripinPickModal"
+            class="btn flex-1"
+            style="background-color: #534ab7; color: white"
+          >
+            Create a New Trip
+          </button>
+        </div>
+      </div>
+
+      <!-- click outside to close -->
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
     <script src="scripts/navbar.js"></script>
     <script src="scripts/dates.js"></script>
     <script src="scripts/sidebar.js"></script>
