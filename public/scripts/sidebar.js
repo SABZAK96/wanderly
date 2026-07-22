@@ -25,7 +25,7 @@ document.getElementById("addTrip").addEventListener("click", () => {
   delete modal.dataset.editingTripId;
   document.getElementById("tripTitle").textContent = "Add a New Trip";
   document.getElementById("createTrip").textContent = "Create Trip";
-  document.getElementById("dest-title").value = "";
+  document.getElementById("dest-title").dataset.destination = "";
   document.getElementById("startDate").value = "";
   document.getElementById("endDate").value = "";
   modal.showModal();
@@ -53,7 +53,7 @@ function validateTripDates(destination, startDate, endDate) {
 document
   .getElementById("createTrip")
   .addEventListener("click", async (event) => {
-    const destination = document.getElementById("dest-title").value;
+    const destination = document.getElementById("dest-title").dataset.destination;
     const startDate = document.getElementById("startDate").value;
     const endDate = document.getElementById("endDate").value;
 
@@ -122,7 +122,7 @@ document
       const data = await response.json();
 
       // clear the form so the next "+ New Trip" opens blank, not with this trip's info
-      document.getElementById("dest-title").value = "";
+      document.getElementById("dest-title").dataset.destination = "";
       document.getElementById("startDate").value = "";
       document.getElementById("endDate").value = "";
 

@@ -1,3 +1,71 @@
+// =====================================================================================================
+// validate the city user enters as the destination using google places api autocomplete
+// this is for making sure that the data is correct for using it ion the suggestiuon section
+// =====================================================================================================
+
+// this function is to insert the script tag for using autocomplete feature in the googleplaces API - the intention of this is not to expose our api key and fetch it from the server instead
+async function loadPlacesLibrary() {
+  // const { key } = obj uses object destructuring to extract the key property from an object, which is shorthand for const key = obj.key;
+  const { key } = await (await fetch("/config/places-key")).json();
+  const script = document.createElement("script");
+  script.async = true;
+  // callback is the name of a global function to be called once the Maps JavaScript API loads completely - which is initAutocomplete
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&libraries=places&callback=initAutocomplete`;
+  document.head.appendChild(script);
+}
+
+loadPlacesLibrary();
+
+// function for making a call to google places api - source: google places documentation with some modification to integrate it with my codebase
+// no need to call this function since it would be called auromatically once the script tag from above loads
+async function initAutocomplete() {
+  // libraries=places in the script tag's URL already loaded the library,
+  // but it only exposes the class namespaced under google.maps.places -
+  // there's no bare global called PlaceAutocompleteElement on its own
+  // so const { PlaceAutocompleteElement } =
+  // await google.maps.importLibrary('places'); will be changed to the following lines
+  const { PlaceAutocompleteElement } = google.maps.places;
+
+  // Create the input HTML element, and append it.
+  const placeAutocomplete = new PlaceAutocompleteElement();
+  document.getElementById("dest-title").appendChild(placeAutocomplete);
+
+  // tracks the exact text of the last real selection, so the "input"
+  // listener below can tell "the user edited after selecting" apart from
+  // "this input event was fired by the selection itself" without relying
+  // on which of the two events happens to fire first internally
+  let lastConfirmedValue = "";
+
+  // Add the gmp-select listener
+  placeAutocomplete.addEventListener(
+    "gmp-select",
+    async ({ placePrediction }) => {
+      const place = placePrediction.toPlace();
+      await place.fetchFields({
+        fields: ["displayName", "formattedAddress", "location"],
+      });
+      lastConfirmedValue = place.formattedAddress;
+      document.getElementById("dest-title").dataset.destination =
+        place.formattedAddress;
+    },
+  );
+
+  // typing after a selection means that selection is no longer valid -
+  // clear dataset.destination so the existing "Please Enter your
+  // destination." check in validateTripDates (sidebar.js) blocks
+  // submitting an unselected/garbage destination, instead of silently
+  // reusing whatever place was selected before the user started editing.
+  // Compares against lastConfirmedValue rather than unconditionally
+  // clearing, since selecting a suggestion may itself fire "input" -
+  // only clear when the visible text has actually diverged from the last
+  // real selection
+  placeAutocomplete.addEventListener("input", () => {
+    if (placeAutocomplete.value !== lastConfirmedValue) {
+      document.getElementById("dest-title").dataset.destination = "";
+    }
+  });
+}
+
 // invitation logic for the button that appears next to each single trip
 document
   .getElementById("tripHeader")
@@ -88,7 +156,18 @@ async function editTripSetup(id) {
   document.getElementById("my_modal_trip").dataset.editingTripId = id;
   document.getElementById("tripTitle").innerHTML = "Edit Trip";
   document.getElementById("createTrip").innerHTML = "Confirm";
-  document.getElementById("dest-title").value = data.destination;
+  // #dest-title is a container div - the actual autocomplete widget inside
+  // it has its own `.value` property (confirmed via testing; the newer
+  // PlaceAutocompleteElement has no documented prefill API, but `.value`
+  // both reads and writes the displayed text correctly)
+  document.querySelector("#dest-title gmp-place-autocomplete").value =
+    data.destination;
+  // also set dataset.destination directly (not just the widget's visible
+  // text) - validateTripDates (sidebar.js) reads dataset.destination on
+  // submit, so without this an unchanged edit would incorrectly fail its
+  // "Please Enter your destination." check
+  document.getElementById("dest-title").dataset.destination =
+    data.destination;
   document.getElementById("startDate").value = data.startDate.slice(0, 10);
   document.getElementById("endDate").value = data.endDate.slice(0, 10);
 }

@@ -215,10 +215,7 @@ async function requireTripMember(req, res, next) {
   try {
     const tripId = req.params.tripId || req.params.id;
     const trip = await tripModel.findById(tripId);
-    if (
-      !trip ||
-      !trip.people.some((p) => p.person === req.session.userId)
-    ) {
+    if (!trip || !trip.people.some((p) => p.person === req.session.userId)) {
       return res.status(403).send("Not a member of this trip.");
     }
     next();
@@ -402,10 +399,7 @@ app.post("/addGhostMember/:id", requireTripMember, async (req, res) => {
 app.put("/addGhostMember/:id", async (req, res) => {
   try {
     const trip = await tripModel.findOne({ "people.person": req.params.id });
-    if (
-      !trip ||
-      !trip.people.some((p) => p.person === req.session.userId)
-    ) {
+    if (!trip || !trip.people.some((p) => p.person === req.session.userId)) {
       return res.status(403).send("Not a member of this trip.");
     }
 
@@ -750,4 +744,9 @@ app.delete("/deleteAccount", async (req, res) => {
   } catch (error) {
     res.status(500).send("Could not delete account.");
   }
+});
+
+// Sends the Google Places API key from the server's environment variables to the client
+app.get("/config/places-key", (req, res) => {
+  res.json({ key: process.env.GOOGLE_PLACES_API });
 });
