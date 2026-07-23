@@ -87,19 +87,13 @@ async function loadTrips() {
   });
 }
 
-loadTrips().then(() => document.getElementById("my_modal_suggest").showModal());
-// force the user to pick a trip first
+// force the user to pick a trip first - see notes/suggest-modal-trip-picker.md
 const suggestModal = document.getElementById("my_modal_suggest");
-// checked inline, not stored in a named variable, since sidebar.js (loaded
-// before this file, sharing the same global scope) already has its own
-// top-level `const storedTripId` - a second top-level `const`/`let` with
-// the same name in a different <script> tag on the same page throws
-// "Identifier has already been declared", not silent shadowing, since
-// classic scripts share one lexical environment for let/const
-if (!localStorage.getItem("selectedTripId")) {
-  loadTrips().then(() => suggestModal.showModal());
-}
-
+document.getElementById("mode-suggestions").addEventListener("change", () => {
+  if (!localStorage.getItem("selectedTripId")) {
+    loadTrips().then(() => suggestModal.showModal());
+  }
+});
 // open up the add a new trip modal once create a new trip button in modal_suggest is clicked
 suggestModal.addEventListener("click", (event) => {
   const btn = event.target.closest("#createTripinPickModal");

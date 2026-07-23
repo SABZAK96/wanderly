@@ -226,7 +226,16 @@ document
 
 // fetches the selected trip's details and renders them into #tripHeader
 async function getSingleTripDetails(tripId) {
-  const trip = await (await fetch(`/singleTripDetails/${tripId}`)).json();
+  const response = await fetch(`/singleTripDetails/${tripId}`);
+  // requireTripMember 403s (plain text, not JSON) when selectedTripId in
+  // localStorage is stale - the trip was deleted, or this user is no
+  // longer a member - so clear it here instead of leaving it stuck
+  // forever silently blocking anything that checks for a selected trip
+  if (!response.ok) {
+    localStorage.removeItem("selectedTripId");
+    return;
+  }
+  const trip = await response.json();
   const container = document.getElementById("tripHeader");
   container.dataset.tripId = tripId;
 
