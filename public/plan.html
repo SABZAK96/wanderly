@@ -192,7 +192,6 @@
             name="mode"
             id="mode-suggestions"
             class="hidden peer/sugg"
-            
           />
           <label
             for="mode-suggestions"
@@ -200,7 +199,13 @@
           >
             Suggestions
           </label>
-          <input type="radio" name="mode" id="mode-ai" class="hidden peer/ai" checked />
+          <input
+            type="radio"
+            name="mode"
+            id="mode-ai"
+            class="hidden peer/ai"
+            checked
+          />
           <label
             for="mode-ai"
             class="btn btn-sm rounded-full bg-[#eeedfe] text-[#534ab7] border border-[#d9d6f8] peer-checked/ai:bg-[#534ab7] peer-checked/ai:text-white peer-checked/ai:border-[#534ab7]"
@@ -214,6 +219,35 @@
           id="non-AI"
           class="hidden group-has-[#mode-suggestions:checked]:flex flex-col gap-4"
         >
+          <div class="join">
+            <input
+              id="suggestionSearch"
+              type="text"
+              class="input join-item"
+              placeholder="Search attractions, restaurants, activities..."
+            />
+            <div
+              class="join-item px-5 flex items-center justify-center"
+              style="background-color: #534ab7; color: white"
+            >
+              <!-- search icon -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="size-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                />
+              </svg>
+            </div>
+          </div>
+
           <!-- filters -->
           <div class="flex-1">
             <!-- container of filters -->
