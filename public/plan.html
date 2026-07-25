@@ -186,32 +186,40 @@
              `group` and the sections below react via group-has-[...]:,
              which reaches into any descendant of the group (any nesting
              depth), not just flat siblings like peer-checked required -->
-        <div class="flex gap-2 mb-4">
-          <input
-            type="radio"
-            name="mode"
-            id="mode-suggestions"
-            class="hidden peer/sugg"
-          />
-          <label
-            for="mode-suggestions"
-            class="btn btn-sm rounded-full bg-[#eeedfe] text-[#534ab7] border border-[#d9d6f8] peer-checked/sugg:bg-[#534ab7] peer-checked/sugg:text-white peer-checked/sugg:border-[#534ab7]"
+        <div
+          class="aura aura-holo flex flex-row w-2/3 border-0 mx-auto justify-center items-center text-center my-3 h-[50px]"
+        >
+          <div
+            class="card bg-base-100 flex flex-row w-full justify-center items-center text-cente border-0 has-checked:outline-none focus-visible:outline-none overflow-hidden h-full"
           >
-            Suggestions
-          </label>
-          <input
-            type="radio"
-            name="mode"
-            id="mode-ai"
-            class="hidden peer/ai"
-            checked
-          />
-          <label
-            for="mode-ai"
-            class="btn btn-sm rounded-full bg-[#eeedfe] text-[#534ab7] border border-[#d9d6f8] peer-checked/ai:bg-[#534ab7] peer-checked/ai:text-white peer-checked/ai:border-[#534ab7]"
-          >
-            Ask AI
-          </label>
+            <!-- aura test -->
+
+            <input
+              type="radio"
+              name="mode"
+              id="mode-ai"
+              class="hidden peer/ai"
+              checked
+            />
+            <label
+              for="mode-ai"
+              class="flex-1 w-1/2 bg-base-100 h-full flex items-center justify-center text-[#534ab7] peer-checked/ai:bg-[#eeedfe]"
+            >
+              Ask AI
+            </label>
+            <input
+              type="radio"
+              name="mode"
+              id="mode-suggestions"
+              class="hidden peer/sugg"
+            />
+            <label
+              for="mode-suggestions"
+              class="flex-1 w-1/2 bg-base-100 h-full flex items-center justify-center text-[#534ab7] peer-checked/sugg:bg-[#eeedfe]"
+            >
+              Suggestions
+            </label>
+          </div>
         </div>
 
         <!-- non-AI (suggestions) view -->
@@ -219,32 +227,51 @@
           id="non-AI"
           class="hidden group-has-[#mode-suggestions:checked]:flex flex-col gap-4"
         >
-          <div class="join">
-            <input
-              id="suggestionSearch"
-              type="text"
-              class="input join-item"
-              placeholder="Search attractions, restaurants, activities..."
-            />
-            <div
-              class="join-item px-5 flex items-center justify-center"
-              style="background-color: #534ab7; color: white"
-            >
-              <!-- search icon -->
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                class="size-4"
+          <div class="w-full aura aura-holo mx-auto">
+            <div class="join card bg-base-100 flex flex-row overflow-hidden">
+              <input
+                id="suggestionSearch"
+                type="text"
+                class="input join-item w-full placeholder:text-xs"
+                placeholder="Search attractions, restaurants, activities..."
+                style="
+                  --join-ss: 0;
+                  --join-se: 0;
+                  --join-ee: 0;
+                  --join-es: 0;
+                  border-width: 0;
+                  border-style:none;
+                "
+              />
+              <div
+                class="join-item px-5 flex items-center justify-center"
+                style="
+                  background-color: #eeedfe;
+                  color: #534ab7;
+                  --join-ss: 0;
+                  --join-se: 0;
+                  --join-ee: 0;
+                  --join-es: 0;
+                  border-width: 0;
+                  border-style:none;
+                "
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                />
-              </svg>
+                <!-- search icon -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -705,30 +732,30 @@
           </div>
 
           <!-- refine-with-ai composer -->
-          <label
-            class="input w-full rounded-3xl sticky bottom-4 mt-4 shadow-md"
-          >
-            <svg
-              class="h-[1em] opacity-50"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-            >
-              <g
-                stroke-linejoin="round"
-                stroke-linecap="round"
-                stroke-width="2.5"
-                fill="none"
-                stroke="currentColor"
+          <div class="w-full rounded-3xl aura aura-holo sticky bottom-4 mt-4">
+            <label class="input w-full rounded-3xl shadow-md">
+              <svg
+                class="h-[1em] opacity-50"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
               >
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.3-4.3"></path>
-              </g>
-            </svg>
-            <input
-              type="text"
-              placeholder="Ask AI to refine these results..."
-            />
-          </label>
+                <g
+                  stroke-linejoin="round"
+                  stroke-linecap="round"
+                  stroke-width="2.5"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.3-4.3"></path>
+                </g>
+              </svg>
+              <input
+                type="text"
+                placeholder="Ask AI to refine these results..."
+              />
+            </label>
+          </div>
         </section>
       </div>
       <!-- drawer-content end -->
