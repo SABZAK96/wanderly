@@ -22,6 +22,49 @@
         background: #eeedfe;
         color: #534ab7;
       }
+
+      /* the widget itself (host element) */
+      gmp-place-autocomplete {
+        width: 100%;
+        background-color: white;
+        color-scheme: light; /* prevents dark-mode auto-styling */
+        position: relative;
+        border: 1px solid #d1d5db;
+        z-index: 50; /* lifts the whole widget + its dropdown above siblings */
+      }
+
+      /* the input field */
+      gmp-place-autocomplete::part(input) {
+        background-color: white;
+        color: black;
+        padding: 10px 14px;
+      }
+
+      /* the dropdown */
+      gmp-place-autocomplete::part(prediction-list) {
+        background-color: white;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        border-radius: 8px;
+        margin-top: 4px;
+        z-index: 50;
+      }
+
+      /* each suggestion row */
+      gmp-place-autocomplete::part(prediction-item) {
+        background-color: white;
+        color: black;
+      }
+
+      /* the place name + bolded matched text — keep them black too */
+      gmp-place-autocomplete::part(prediction-item-main-text),
+      gmp-place-autocomplete::part(prediction-item-match) {
+        color: black;
+      }
+
+      /* hover/keyboard highlight so rows don't disappear into the white */
+      gmp-place-autocomplete::part(prediction-item-selected) {
+        background-color: #f3f4f6;
+      }
     </style>
   </head>
   <body class="bg-base-200 min-h-screen flex flex-col">
@@ -323,12 +366,7 @@
 
         <div class="flex flex-col gap-1">
           <label class="text-sm text-base-content/60">Destination</label>
-          <input
-            id="dest-title"
-            type="text"
-            placeholder="e.g. Tokyo, Japan"
-            class="input w-full"
-          />
+          <div id="dest-title"></div>
         </div>
 
         <div class="flex gap-3">
