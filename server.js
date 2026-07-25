@@ -762,7 +762,7 @@ app.post("/googleAPI", async(req,res)=>{
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key' : process.env.GOOGLE_PLACES_API,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.priceLevel, places.photos, places.regularOpeningHours, places.priceRange, places.rating,places.userRatingCount,places.editorialSummary '
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.priceLevel, places.photos, places.regularOpeningHours, places.priceRange, places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri '
       }
 
     })).json()

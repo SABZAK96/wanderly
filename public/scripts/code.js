@@ -97,6 +97,9 @@ suggestionInput.addEventListener("input", () => {
   msg.textContent = "";
 });
 
+// sends the constructed "<search term> in <destination>" query to our own
+// /googleAPI proxy, which forwards it to Google Places Text Search
+// (fetch function only - no DOM/rendering here)
 async function googleSuggestion(query) {
   const response = await fetch(`/googleAPI`, {
     method: "POST",
