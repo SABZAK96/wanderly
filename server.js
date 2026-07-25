@@ -203,7 +203,8 @@ async function assignBadgeIfNeeded(userId, tripId) {
       : colorPalette[tripMates.length % colorPalette.length];
 
   currentUser.badgeInfo = chosen;
-  await currentUser.save();
+  // save the parent doc
+  await trip.save();
 }
 
 // blocks a trip-scoped route unless the logged-in user is actually a member
@@ -385,7 +386,8 @@ app.post("/addGhostMember/:id", requireTripMember, async (req, res) => {
       { new: true },
     );
 
-    await assignBadgeIfNeeded(ghost._id, req.params.id);
+    // convert object id to string to update the db
+    await assignBadgeIfNeeded(ghost._id.toString(), req.params.id);
 
     res.json(ghost);
   } catch (error) {

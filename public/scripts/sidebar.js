@@ -32,6 +32,7 @@ async function initAutocomplete() {
 
   // Create the input HTML element, and append it.
   const placeAutocomplete = new PlaceAutocompleteElement();
+  placeAutocomplete.placeholder = "e.g. Tokyo, Japan";
   document.getElementById("dest-title").appendChild(placeAutocomplete);
 
   // tracks the exact text of the last real selection, so the "input"

@@ -242,34 +242,33 @@
             <!-- left column: expense table and spent per person container -->
             <div>
               <!-- total spent per person -->
-              <div class="flex items-center justify-start gap-2 mb-4">
-                <h1 class="text-2xl font-light">Total Spent Per Person</h1>
-                <div
-                  id="addGhost"
-                  class="rounded-full gap-1 hover:cursor-pointer"
-                  style="background-color: #534ab7; color: white"
-                >
-                  <svg
-                    class="size-6"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12 4V20M4 12H20"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                </div>
-              </div>
+              <h1 class="text-2xl font-light mb-4">Total Spent Per Person</h1>
               <div
                 id="totalSpent"
-                class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8 items-start"
+                class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4 items-start"
               ></div>
+              <button
+                id="addGhost"
+                class="btn mb-8"
+                style="background-color: #534ab7; color: white"
+              >
+                <svg
+                  class="h-4 w-4"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 4V20M4 12H20"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                Add a Guest Member
+              </button>
 
               <h1 class="text-2xl font-light mb-6">Shared Expenses</h1>
               <div class="card bg-base-100 shadow-sm border border-base-200">
