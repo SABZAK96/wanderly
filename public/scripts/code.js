@@ -27,10 +27,17 @@ document.getElementById("mode-suggestions").addEventListener("change", () => {
   }
 });
 
+// listen to the custom event created in the sidebar- so if the trip is deleted and the user is on the suggestion mode, ask for the modal again
 document.addEventListener("tripDeleted", () => {
-  if(document.getElementById("mode-suggestions") && document.getElementById("mode-suggestions").checked){
-  loadTrips().then(() => suggestModal.showModal());}
+  //these modes don't exist on all pages, we should check for the existance
+  if (
+    document.getElementById("mode-suggestions") &&
+    document.getElementById("mode-suggestions").checked
+  ) {
+    loadTrips().then(() => suggestModal.showModal());
+  }
 });
+
 // if the modal is closed and no trip is selected, switch back to ask AI
 suggestModal.addEventListener("close", () => {
   if (!localStorage.getItem("selectedTripId")) {
@@ -66,3 +73,36 @@ suggestModal.addEventListener("click", (event) => {
   );
   suggestModal.close();
 });
+
+// ==============================================================================
+// logic for connecting suggestion mode to the google places api
+// ==============================================================================
+const msg = document.getElementById("suggError");
+const suggestionInput = document.getElementById("suggestionSearch");
+document.getElementById("searchSuggest").addEventListener("click", async () => {
+  msg.textContent = "";
+  const query = suggestionInput.value;
+  if (query.trim() === "") {
+    msg.textContent = "* Please enter a search term.";
+    return;
+  } else {
+    const destination = document.getElementById("destName").textContent;
+    const finalQuery = query + " in " + destination;
+    await googleSuggestion(finalQuery);
+  }
+});
+
+// clear the error when user starts typing again
+suggestionInput.addEventListener("input", () => {
+  msg.textContent = "";
+});
+
+async function googleSuggestion(query) {
+  const response = await fetch(`/googleAPI`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ userQuery: query }),
+  });
+}

@@ -752,3 +752,23 @@ app.delete("/deleteAccount", async (req, res) => {
 app.get("/config/places-key", (req, res) => {
   res.json({ key: process.env.GOOGLE_PLACES_API });
 });
+
+//google API call for getting suggestions
+app.post("/googleAPI", async(req,res)=>{
+  try{
+    const apiCall = await (await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method:"POST",
+      body: JSON.stringify({ textQuery: req.body.userQuery }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key' : process.env.GOOGLE_PLACES_API,
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.priceLevel, places.photos, places.regularOpeningHours, places.priceRange, places.rating,places.userRatingCount,places.editorialSummary '
+      }
+
+    })).json()
+    res.json(apiCall);
+  }
+  catch(error){
+res.status(500).send("error connecting to the api.")
+  }
+})

@@ -240,11 +240,12 @@
                   --join-ee: 0;
                   --join-es: 0;
                   border-width: 0;
-                  border-style:none;
+                  border-style: none;
                 "
               />
               <div
-                class="join-item px-5 flex items-center justify-center"
+                id="searchSuggest"
+                class="join-item px-5 flex items-center justify-center hover:cursor-pointer"
                 style="
                   background-color: #e0dbfb;
                   color: #534ab7;
@@ -253,7 +254,7 @@
                   --join-ee: 0;
                   --join-es: 0;
                   border-width: 0;
-                  border-style:none;
+                  border-style: none;
                 "
               >
                 <!-- search icon -->
@@ -275,6 +276,8 @@
             </div>
           </div>
 
+          <p id="suggError" class="text-sm text-red-500 mt-1 text-center"></p>
+          
           <!-- filters -->
           <div class="flex-1">
             <!-- container of filters -->
