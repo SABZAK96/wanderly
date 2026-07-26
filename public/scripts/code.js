@@ -101,11 +101,255 @@ suggestionInput.addEventListener("input", () => {
 // /googleAPI proxy, which forwards it to Google Places Text Search
 // (fetch function only - no DOM/rendering here)
 async function googleSuggestion(query) {
+  const errorMsg = document.getElementById("suggError");
+  errorMsg.textContent = "";
+
   const response = await fetch(`/googleAPI`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ userQuery: query }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    await renderSuggestions(data);
+  } else {
+    errorMsg.textContent = "Could not Fetch Data. Try Again.";
+    errorMsg.classList.remove("hidden");
+  }
+}
+
+// this function renders the result that comes from the google API
+async function renderSuggestions(data) {
+  const container = document.getElementById("suggestionContainer");
+  container.innerHTML = "";
+
+  if (!data.places || data.places.length === 0) {
+    msg.textContent = "No results found. Try a different search.";
+    return;
+  }
+
+  // show the filters
+  const filters = document.getElementById("filterContainer");
+  filters.classList.contains("hidden") && filters.classList.remove("hidden");
+
+  // photos come back as a resource name, not a URL - need our own key
+  // (same one already used for the Autocomplete widget) to build the
+  // actual Photo media URL
+  const { key } = await (await fetch("/config/places-key")).json();
+
+  data.places.forEach((item) => {
+    const photoUrl =
+      item.photos && item.photos[0]
+        ? `https://places.googleapis.com/v1/${item.photos[0].name}/media?maxHeightPx=400&key=${key}`
+        : null;
+
+    let element = `<div class="card bg-base-100 shadow-sm border border-base-200">
+                ${
+                  photoUrl
+                    ? `<figure class="relative">
+                  <img
+                    src="${photoUrl}"
+                    alt="${item.displayName.text}"
+                    class="w-full h-44 object-cover"
+                  />
+
+                </figure>`
+                    : ""
+                }
+                <div class="card-body p-4 gap-2">
+                  <div class="flex items-start justify-between gap-2">
+                    <h2
+                      class="card-title text-sm font-medium leading-tight"
+                      style="color: #3c3489"
+                    >
+                      ${item.displayName.text}
+                    </h2>
+                    ${
+                      item.rating && item.userRatingCount
+                        ? `<div class="flex items-center gap-0.5 shrink-0">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="#854F0B"
+                        class="size-3.5"
+                      >
+                        <path
+                          d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                        />
+                      </svg>
+                      <div class="text-xs flex flex-row gap-1 items-center" style="color: #854f0b">
+                        <span >${item.rating}</span>/ (<span>${item.userRatingCount}</span>)
+                      </div>
+
+                    </div>`
+                        : ""
+                    }
+                  </div>
+                  ${
+                    item.editorialSummary
+                      ? `<p
+                    class="text-xs text-base-content/60 leading-relaxed line-clamp-2"
+                  >
+                    ${item.editorialSummary.text}
+                  </p>`
+                      : ""
+                  }
+                  <div class="flex flex-col gap-1.5 mt-1">
+                    ${
+                      item.priceRange
+                        ? `<div class="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="#534AB7"
+                        class="size-4 shrink-0"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M6 6h.008v.008H6V6Z"
+                        />
+                      </svg>
+                      <span class="text-xs text-base-content/70"
+                        >${item.priceRange.startPrice.currencyCode} ${item.priceRange.startPrice.units}-${item.priceRange.endPrice.units} / person</span
+                      >
+                    </div>`
+                        : ""
+                    }
+                    ${
+                      item.primaryType
+                        ? `<div class="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="#534AB7"
+                        class="size-4 shrink-0"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
+                        />
+                      </svg>
+                      <span class="text-xs text-base-content/70"
+                        >${item.primaryType}</span
+                      >
+                    </div>`
+                        : ""
+                    }
+                    <div class="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="#534AB7"
+                        class="size-4 shrink-0"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+                        />
+                      </svg>
+                      <span class="text-xs text-base-content/70"
+                        >${item.formattedAddress} · 30 min from LA</span
+                      >
+                    </div>
+                    ${
+                      item.regularOpeningHours
+                        ? `<div class="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="#534AB7"
+                        class="size-4 shrink-0"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                        />
+                      </svg>
+                      <span class="text-xs text-base-content/70"
+                        >${item.regularOpeningHours.openNow ? "Open Now" : "Closed"}</span
+                      >
+                    </div>`
+                        : ""
+                    }
+                    ${
+                      item.websiteUri
+                        ? `<div class="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="#534AB7"
+                        class="size-4 shrink-0"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"
+                        />
+                      </svg>
+                      <a
+                        href="${item.websiteUri}"
+                        target="_blank"
+                        class="text-xs text-base-content/70 truncate"
+                        style="color: #534ab7"
+                        >${item.websiteUri}</a
+                      >
+                    </div>`
+                        : ""
+                    }
+                  </div>
+                  <div class="card-actions justify-end mt-1">
+                    <button
+                      class=" addToCal btn btn-sm text-white text-xs font-medium gap-1.5"
+                      style="background: #534ab7; border: none"
+                      onmouseover="this.style.background = '#3C3489'"
+                      onmouseout="this.style.background = '#534AB7'"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="size-4"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
+                        />
+                      </svg>
+                      Add to calendar
+                    </button>
+                  </div>
+                </div>
+              </div>`;
+    container.insertAdjacentHTML("beforeend", element);
   });
 }
