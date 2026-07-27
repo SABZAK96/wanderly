@@ -357,6 +357,7 @@ async function renderSuggestions(data) {
 // attaching listener to all add to calendar buttons in suggestion section -using delegation
 const calModal = document.getElementById("my_modal_calendar");
 const title = document.getElementById("activityTitle");
+const calError = document.getElementById("addToCalError");
 document.getElementById("non-AI").addEventListener("click", (event) => {
   const btn = event.target.closest(".addToCal");
   if (!btn) return;
@@ -378,9 +379,8 @@ document.getElementById("non-AI").addEventListener("click", (event) => {
 
 // submitting the add to calendar
 document.getElementById("addToCal").addEventListener("click", async () => {
-  const calError = document.getElementById("addToCalError");
-  calError.classList.add("hidden");
   calError.textContent = "";
+  calError.classList.add("hidden");
   const time = document.getElementById("time").value;
   if (!time) {
     calError.textContent = "Please select a Time.";
@@ -409,8 +409,12 @@ document.getElementById("addToCal").addEventListener("click", async () => {
         location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
       }),
     });
+    if (!response.ok){
+      calError.textContent = await response.text();
+      calError.classList.remove("hidden");
+    }
   } else {
-    const data = await fetch(`/addToCalgrp/${tripId}`, {
+    const response = await fetch(`/addToCalgrp/${tripId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -423,5 +427,9 @@ document.getElementById("addToCal").addEventListener("click", async () => {
         location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
       }),
     });
+    if (!response.ok) {
+      calError.textContent = await response.text();
+      calError.classList.remove("hidden");
+    }
   }
 });

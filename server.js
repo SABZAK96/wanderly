@@ -799,3 +799,31 @@ app.post("/googleAPI", async (req, res) => {
     res.status(500).send("error connecting to the api.");
   }
 });
+
+// add to calendar routes- solo activities
+app.post("/addToCalSolo/:tripId", requireTripMember,  async (req, res) => {
+  try {
+    const user = await userModel.findByIdAndUpdate(
+      req.session.userId,
+      { $push: { soloActivities: req.body } },
+      { new: true },
+    );
+    res.json(user);
+  } catch (error) {
+    res.status(500).send("Could not add activity to your schedule.");
+  }
+});
+
+// add to calendar routes- grp activities
+app.post("/addToCalgrp/:tripId", requireTripMember,  async (req, res) => {
+  try {
+    const trip = await tripModel.findByIdAndUpdate(
+      req.params.tripId,
+      { $push: { activities: req.body } },
+      { new: true },
+    );
+    res.json(trip);
+  } catch (error) {
+    res.status(500).send("Could not add activity to the group schedule.");
+  }
+});
