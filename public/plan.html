@@ -277,11 +277,14 @@
           </div>
 
           <p id="suggError" class="text-sm text-red-500 mt-1 text-center"></p>
-          
+
           <!-- filters -->
           <div class="flex-1">
             <!-- container of filters -->
-            <div id="filterContainer" class="filter-pills flex flex-wrap gap-2 pt-8 pb-3 hidden">
+            <div
+              id="filterContainer"
+              class="filter-pills flex flex-wrap gap-2 pt-8 pb-3 hidden"
+            >
               <input
                 class="btn btn-xs rounded-full"
                 type="radio"
@@ -339,11 +342,10 @@
               />
             </div>
             <!-- container of the suggestions -->
-            <section id="suggestionContainer"
+            <section
+              id="suggestionContainer"
               class="grid grid-cols-1 md:px-0 px-10 md:grid-cols-2 xl:grid-cols-3 content-start items-start gap-5 py-1 w-full"
             >
-              
-
               <!-- sample cards -->
               <!-- sample cards end -->
             </section>
@@ -777,6 +779,88 @@
             style="background-color: #534ab7; color: white"
           >
             Create Trip
+          </button>
+        </div>
+      </div>
+
+      <!-- click outside to close -->
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- modal for inserting an activity to calendar -->
+    <dialog id="my_modal_calendar" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <!-- close button in its own form so it doesn't submit -->
+        <form method="dialog">
+          <button
+            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          >
+            ✕
+          </button>
+        </form>
+
+        <h3 class="text-lg font-semibold">
+          Add <span id="activityTitle"></span> to your Calendar
+        </h3>
+
+        <div class="flex flex-col gap-1">
+          <div>
+            <input
+              type="radio"
+              name="radio-2"
+              class="radio radio-xs"
+              style="color: #534ab7"
+              checked="checked"
+            />
+            <label class="text-xs text-base-content/60"
+              >Add to your Own Schedule</label
+            >
+          </div>
+          <div>
+            <input
+              type="radio"
+              name="radio-2"
+              class="radio radio-xs"
+              style="color: #534ab7"
+            />
+            <label class="text-xs text-base-content/60"
+              >Add to the Group Schedule</label
+            >
+          </div>
+        </div>
+
+        <!-- the date -->
+        <div class="flex gap-3">
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-xs text-base-content/60"
+              >Select the Date</label
+            >
+            <input id="startDateCal" type="date" class="input w-full" />
+          </div>
+        </div>
+
+        <!-- the time -->
+        <div class="flex flex-col gap-1 flex-1">
+          <label for="" class="text-xs text-base-content/60"
+            >Select the Time</label
+          >
+          <input type="time" class="input" />
+        </div>
+
+        <p id="addToCalError" class="text-xs text-red-500 mt-1 hidden"></p>
+
+        <div class="modal-action mt-0">
+          <form method="dialog">
+            <button class="btn btn-ghost">Cancel</button>
+          </form>
+          <button
+            id="addToCal"
+            class="btn"
+            style="background-color: #534ab7; color: white"
+          >
+            Add
           </button>
         </div>
       </div>
