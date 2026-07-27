@@ -378,7 +378,11 @@ document.getElementById("non-AI").addEventListener("click", (event) => {
 });
 
 // submitting the add to calendar
-document.getElementById("addToCal").addEventListener("click", async () => {
+const addToCalBtn = document.getElementById("addToCal");
+addToCalBtn.addEventListener("click", async () => {
+  const originalBtnContent = addToCalBtn.textContent;
+  if (addToCalBtn.dataset.loading === "true") return;
+
   calError.textContent = "";
   calError.classList.add("hidden");
   const time = document.getElementById("time").value;
@@ -388,48 +392,64 @@ document.getElementById("addToCal").addEventListener("click", async () => {
     return;
   }
 
-  // possibly new date input
-  const dateInput = document.getElementById("startDateCal").value;
+  addToCalBtn.innerHTML = `<span class="loading loading-spinner loading-sm"></span>`;
+  addToCalBtn.dataset.loading = "true";
 
-  // different routes based on user radio selection
-  const soloActivity = document.getElementById("solo");
-  const tripId = localStorage.getItem("selectedTripId");
-  if (soloActivity.checked) {
-    const response = await fetch(`/addToCalSolo/${tripId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        tripId: tripId,
-        activityName: title.textContent,
-        date: dateInput,
-        time: time,
-        placeId: calModal.dataset.placeId,
-        location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
-      }),
-    });
-    if (!response.ok){
-      calError.textContent = await response.text();
-      calError.classList.remove("hidden");
+  try {
+    // possibly new date input
+    const dateInput = document.getElementById("startDateCal").value;
+
+    // different routes based on user radio selection
+    const soloActivity = document.getElementById("solo");
+    const tripId = localStorage.getItem("selectedTripId");
+    if (soloActivity.checked) {
+      const response = await fetch(`/addToCalSolo/${tripId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tripId: tripId,
+          activityName: title.textContent,
+          date: dateInput,
+          time: time,
+          placeId: calModal.dataset.placeId,
+          location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
+        }),
+      });
+      if (!response.ok) {
+        calError.textContent = await response.text();
+        calError.classList.remove("hidden");
+      } else {
+        calModal.close();
+      }
+    } else {
+      const response = await fetch(`/addToCalgrp/${tripId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          activityName: title.textContent,
+          date: dateInput,
+          time: time,
+          placeId: calModal.dataset.placeId,
+          location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
+        }),
+      });
+      if (!response.ok) {
+        calError.textContent = await response.text();
+        calError.classList.remove("hidden");
+      } else {
+        calModal.close();
+      }
     }
-  } else {
-    const response = await fetch(`/addToCalgrp/${tripId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        activityName: title.textContent,
-        date: dateInput,
-        time: time,
-        placeId: calModal.dataset.placeId,
-        location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
-      }),
-    });
-    if (!response.ok) {
-      calError.textContent = await response.text();
-      calError.classList.remove("hidden");
-    }
+    // handle network errors - if fetch throws(the request never got a response at all) - the other !response.ok check http request throws
+  } catch (error) {
+    calError.textContent = "Could not reach the server. Try again.";
+    calError.classList.remove("hidden");
+  } finally {
+    addToCalBtn.textContent = originalBtnContent;
+    addToCalBtn.dataset.loading = "false";
   }
 });
