@@ -146,7 +146,7 @@ async function renderSuggestions(data) {
         ? `https://places.googleapis.com/v1/${item.photos[0].name}/media?maxHeightPx=400&key=${key}`
         : null;
 
-    let element = `<div class="card bg-base-100 shadow-sm border border-base-200">
+    let element = `<div data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" class="card bg-base-100 shadow-sm border border-base-200">
                 ${
                   photoUrl
                     ? `<figure class="relative">
@@ -181,7 +181,7 @@ async function renderSuggestions(data) {
                         />
                       </svg>
                       <div class="text-xs flex flex-row gap-1 items-center" style="color: #854f0b">
-                        <span >${item.rating}</span>/ (<span>${item.userRatingCount}</span>)
+                        <span >${item.rating}</span> (<span>${item.userRatingCount.toLocaleString()} reviews</span>)
                       </div>
 
                     </div>`
@@ -270,7 +270,7 @@ async function renderSuggestions(data) {
                         />
                       </svg>
                       <span class="text-xs text-base-content/70"
-                        >${item.formattedAddress} · 30 min from LA</span
+                        >${item.formattedAddress}</span
                       >
                     </div>
                     ${
@@ -318,7 +318,7 @@ async function renderSuggestions(data) {
                         target="_blank"
                         class="text-xs text-base-content/70 truncate"
                         style="color: #534ab7"
-                        >${item.websiteUri}</a
+                        >Visit Website</a
                       >
                     </div>`
                         : ""

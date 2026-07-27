@@ -779,6 +779,7 @@ app.get("/config/places-key", (req, res) => {
 });
 
 //google API call for getting suggestions
+// Google's field mask parser rejects the extra spaces before some field names - removed the spaces to fix the problem
 app.post("/googleAPI", async (req, res) => {
   try {
     const apiCall = await (
@@ -789,7 +790,7 @@ app.post("/googleAPI", async (req, res) => {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API,
           "X-Goog-FieldMask":
-            "places.id,places.displayName,places.formattedAddress,places.priceLevel, places.photos, places.regularOpeningHours, places.priceRange, places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri ",
+            "places.id,places.displayName,places.formattedAddress,places.priceLevel,places.photos,places.regularOpeningHours,places.priceRange,places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri",
         },
       })
     ).json();
