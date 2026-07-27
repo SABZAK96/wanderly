@@ -355,18 +355,73 @@ async function renderSuggestions(data) {
 }
 
 // attaching listener to all add to calendar buttons in suggestion section -using delegation
+const calModal = document.getElementById("my_modal_calendar");
+const title = document.getElementById("activityTitle");
 document.getElementById("non-AI").addEventListener("click", (event) => {
   const btn = event.target.closest(".addToCal");
   if (!btn) return;
-
-  const title = document.getElementById("activityTitle");
 
   title.textContent = btn
     .closest(".parent")
     .querySelector(".card-title").textContent;
 
+  // stash the card's place data on the modal so the Add button can read it later
+  calModal.dataset.placeId = btn.closest(".parent").dataset.id;
+  calModal.dataset.lat = btn.closest(".parent").dataset.lat;
+  calModal.dataset.lng = btn.closest(".parent").dataset.lng;
+
   // fill out the date - defaults to the first day of the trip
   const date = document.getElementById("tripHeader").dataset.startDate;
   document.getElementById("startDateCal").value = date;
-  document.getElementById("my_modal_calendar").showModal();
+  calModal.showModal();
+});
+
+// submitting the add to calendar
+document.getElementById("addToCal").addEventListener("click", async () => {
+  const calError = document.getElementById("addToCalError");
+  calError.classList.add("hidden");
+  calError.textContent = "";
+  const time = document.getElementById("time").value;
+  if (!time) {
+    calError.textContent = "Please select a Time.";
+    calError.classList.remove("hidden");
+    return;
+  }
+
+  // possibly new date input
+  const dateInput = document.getElementById("startDateCal").value;
+
+  // different routes based on user radio selection
+  const soloActivity = document.getElementById("solo");
+  const tripId = localStorage.getItem("selectedTripId");
+  if (soloActivity.checked) {
+    const response = await fetch(`/addToCalSolo/${tripId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tripId: tripId,
+        activityName: title.textContent,
+        date: dateInput,
+        time: time,
+        placeId: calModal.dataset.placeId,
+        location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
+      }),
+    });
+  } else {
+    const data = await fetch(`/addToCalgrp/${tripId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        activityName: title.textContent,
+        date: dateInput,
+        time: time,
+        placeId: calModal.dataset.placeId,
+        location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
+      }),
+    });
+  }
 });
