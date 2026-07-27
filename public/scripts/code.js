@@ -146,7 +146,7 @@ async function renderSuggestions(data) {
         ? `https://places.googleapis.com/v1/${item.photos[0].name}/media?maxHeightPx=400&key=${key}`
         : null;
 
-    let element = `<div data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" class="card bg-base-100 shadow-sm border border-base-200">
+    let element = `<div data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" class="parent card bg-base-100 shadow-sm border border-base-200">
                 ${
                   photoUrl
                     ? `<figure class="relative">
@@ -353,3 +353,20 @@ async function renderSuggestions(data) {
     container.insertAdjacentHTML("beforeend", element);
   });
 }
+
+// attaching listener to all add to calendar buttons in suggestion section -using delegation
+document.getElementById("non-AI").addEventListener("click", (event) => {
+  const btn = event.target.closest(".addToCal");
+  if (!btn) return;
+
+  const title = document.getElementById("activityTitle");
+
+  title.textContent = btn
+    .closest(".parent")
+    .querySelector(".card-title").textContent;
+
+  // fill out the date - defaults to the first day of the trip
+  const date = document.getElementById("tripHeader").dataset.startDate;
+  document.getElementById("startDateCal").value = date;
+  document.getElementById("my_modal_calendar").showModal();
+});

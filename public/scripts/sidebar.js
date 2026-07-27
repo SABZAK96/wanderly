@@ -309,6 +309,7 @@ async function getSingleTripDetails(tripId) {
   container.dataset.tripId = tripId;
 
   const start = trip.startDate.slice(0, 10);
+  container.dataset.startDate = start;
   const end = trip.endDate.slice(0, 10);
   const dateInfo = formatTripDates(start, end);
 
