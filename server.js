@@ -135,6 +135,10 @@ app.use(express.static("public"));
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 
+// ====================================================
+// database schemas
+// ====================================================
+
 // schema for users
 const userSchema = new mongoose.Schema({
   name: String,
@@ -142,6 +146,17 @@ const userSchema = new mongoose.Schema({
   password: String,
   trips: [String], // trip ids
   isPlaceholder: { type: Boolean, default: false }, // for names added in the expense tab to track expenses for those who dont have an account
+  soloActivities: [
+    {
+      tripId: String, // personal plans user might have in a specific trip
+      activityName: String,
+      date: Date,
+      time: String,
+      address: String,
+      placeId: String, // use placeId and location to open up the google maps and build a accurate url to see the exact location information
+      location: { lat: Number, lng: Number },
+    },
+  ],
 });
 
 // schema for trip
@@ -172,6 +187,16 @@ const tripSchema = new mongoose.Schema({
       payer: String, // user id of person paying back
       payee: String, // user id of person being paid back
       amount: Number,
+    },
+  ],
+  activities: [
+    {
+      activityName: String,
+      date: Date,
+      time: String,
+      address: String,
+      placeId: String, // use placeId and location to open up the google maps and build a accurate url to see the exact location information
+      location: { lat: Number, lng: Number },
     },
   ],
 });
@@ -754,21 +779,22 @@ app.get("/config/places-key", (req, res) => {
 });
 
 //google API call for getting suggestions
-app.post("/googleAPI", async(req,res)=>{
-  try{
-    const apiCall = await (await fetch("https://places.googleapis.com/v1/places:searchText", {
-      method:"POST",
-      body: JSON.stringify({ textQuery: req.body.userQuery }),
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key' : process.env.GOOGLE_PLACES_API,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.priceLevel, places.photos, places.regularOpeningHours, places.priceRange, places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri '
-      }
-
-    })).json()
+app.post("/googleAPI", async (req, res) => {
+  try {
+    const apiCall = await (
+      await fetch("https://places.googleapis.com/v1/places:searchText", {
+        method: "POST",
+        body: JSON.stringify({ textQuery: req.body.userQuery }),
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API,
+          "X-Goog-FieldMask":
+            "places.id,places.displayName,places.formattedAddress,places.priceLevel, places.photos, places.regularOpeningHours, places.priceRange, places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri ",
+        },
+      })
+    ).json();
     res.json(apiCall);
+  } catch (error) {
+    res.status(500).send("error connecting to the api.");
   }
-  catch(error){
-res.status(500).send("error connecting to the api.")
-  }
-})
+});
