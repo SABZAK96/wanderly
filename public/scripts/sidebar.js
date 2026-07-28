@@ -1,6 +1,9 @@
 // restore the last-selected trip (if any) so switching pages doesn't lose it
 const storedTripId = localStorage.getItem("selectedTripId");
-if (storedTripId) getSingleTripDetails(storedTripId);
+if (storedTripId) {
+  getSingleTripDetails(storedTripId);
+  getRecentActivities(storedTripId);
+}
 
 // =====================================================================================================
 // validate the city user enters as the destination using google places api autocomplete
@@ -91,6 +94,7 @@ async function getMyId() {
 // listen to the custom event created in plan.html for adding a new trip through suggestion modal
 document.addEventListener("addTripSuggest", (e) => {
   getSingleTripDetails(e.detail.tripId);
+  getRecentActivities(e.detail.tripId);
   const element = document.querySelector(
     `#yourTrips [id="${e.detail.tripId}"]`,
   );
@@ -179,6 +183,7 @@ document
         modal.close();
         await getSingleTripDetails(editingTripId);
         await loadYourTrips();
+        getRecentActivities(editingTripId);
       } else {
         tripError.textContent = "Could not update the trip, please try again.";
         tripError.classList.remove("hidden");
@@ -205,6 +210,7 @@ document
       const data = await response.json(); // data is the trip._id coming back from the db
       localStorage.setItem("selectedTripId", data);
       await getSingleTripDetails(data);
+      getRecentActivities(data);
       // clear the form so the next "+ New Trip" opens blank, not with this trip's info
       document.getElementById("dest-title").dataset.destination = "";
       document.getElementById("startDate").value = "";
@@ -291,6 +297,7 @@ document
     );
     await getSingleTripDetails(element.id);
     await highlightTrip(element);
+    getRecentActivities(element.id);
   });
 
 // fetches the selected trip's details and renders them into #tripHeader
@@ -542,17 +549,18 @@ async function getRecentActivities(tripId) {
     if (response.ok) {
       const data = await response.json();
       if (data.length === 0) {
-        errorMsg.className = "text-sm font-normal text-white mt-1";
+        errorMsg.className = "text-xs text-white mt-1 text-center mt-2";
         errorMsg.textContent = "No activities to show.";
         errorMsg.classList.remove("hidden");
-      }
-      else {
-        data.forEach(element=>{
+      } else {
+        data.forEach((element) => {
+          const dateString = element.date.slice(0, 10);
+          const date = new Date(dateString + "T00:00:00").toLocaleDateString(
+            "en-US",
+            { month: "short", day: "numeric" },
+          );
 
-          const dateString = element.date.slice(0,10);
-          const date = new Date(dateString  + "T00:00:00").toLocaleDateString("en-US" , { month: "short", day: "numeric" });
-
-          const html = `<div data-tripId="${element?.tripId ?? ''}" data-id="${element._id}" class="flex flex-col gap-2">
+          const html = `<div data-tripId="${element?.tripId ?? ""}" data-id="${element._id}" class="flex flex-col gap-2">
                   <p class="text-sm font-normal text-white">${date}</p>
                   <div class="card flex-1 bg-base-100 card-xs shadow-sm">
                     <div class="card-body">
@@ -583,17 +591,17 @@ async function getRecentActivities(tripId) {
                     </div>
                   </div>
                 </div>`;
-                container.insertAdjacentHTML("beforeend", html)
-        })
+          container.insertAdjacentHTML("beforeend", html);
+        });
       }
     } else {
-      errorMsg.className = "text-sm text-red-500 mt-1";
+      errorMsg.className = "text-sm text-red-500 mt-1 text-center mt-2";
       errorMsg.textContent = await response.text();
       errorMsg.classList.remove("hidden");
     }
   } catch (error) {
     const errorMsg = document.getElementById("activityError");
-    errorMsg.className = "text-sm text-red-500 mt-1";
+    errorMsg.className = "text-sm text-red-500 mt-1 text-center mt-2";
     errorMsg.textContent = "Could not reach the server. Try again.";
     errorMsg.classList.remove("hidden");
   }
