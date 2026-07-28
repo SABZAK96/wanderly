@@ -385,9 +385,20 @@ addToCalBtn.addEventListener("click", async () => {
 
   calError.textContent = "";
   calError.classList.add("hidden");
-  const time = document.getElementById("time").value;
-  if (!time) {
+  const startTime = document.getElementById("startTime").value;
+  const endTime = document.getElementById("endTime").value;
+  if (!startTime) {
     calError.textContent = "Please select a Time.";
+    calError.classList.remove("hidden");
+    return;
+  }
+  if (!endTime) {
+    calError.textContent = "Please select an End Time.";
+    calError.classList.remove("hidden");
+    return;
+  }
+  if (endTime <= startTime) {
+    calError.textContent = "End Time must be after Start Time.";
     calError.classList.remove("hidden");
     return;
   }
@@ -412,7 +423,8 @@ addToCalBtn.addEventListener("click", async () => {
           tripId: tripId,
           activityName: title.textContent,
           date: dateInput,
-          time: time,
+          startTime: startTime,
+          endTime: endTime,
           placeId: calModal.dataset.placeId,
           location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
         }),
@@ -432,7 +444,8 @@ addToCalBtn.addEventListener("click", async () => {
         body: JSON.stringify({
           activityName: title.textContent,
           date: dateInput,
-          time: time,
+          startTime: startTime,
+          endTime: endTime,
           placeId: calModal.dataset.placeId,
           location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
         }),

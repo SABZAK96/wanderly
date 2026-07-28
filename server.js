@@ -151,7 +151,8 @@ const userSchema = new mongoose.Schema({
       tripId: String, // personal plans user might have in a specific trip
       activityName: String,
       date: Date,
-      time: String,
+      startTime: String,
+      endTime: String,
       address: String,
       placeId: String, // use placeId and location to open up the google maps and build a accurate url to see the exact location information
       location: { lat: Number, lng: Number },
@@ -198,7 +199,8 @@ const tripSchema = new mongoose.Schema({
     {
       activityName: String,
       date: Date,
-      time: String,
+      startTime: String,
+      endTime: String,
       address: String,
       placeId: String, // use placeId and location to open up the google maps and build a accurate url to see the exact location information
       location: { lat: Number, lng: Number },

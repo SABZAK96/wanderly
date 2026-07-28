@@ -686,47 +686,20 @@
             </button>
           </div>
 
+          <!-- single selected trip info -->
           <div id="singleTripInfo">
             <!-- container of the name of the trip -->
             <div id="tripHeader" class="flex flex-col gap-2"></div>
-
-            <div id="daysInfo" class="mt-2 flex flex-col gap-1">
-              <!-- summary of the activities added -->
-              <div class="flex flex-col gap-2">
-                <h2
-                  class="flex flex-row items-baseline justify-between gap-2 text-base font-semibold text-white"
-                >
-                  <span>Day 1</span
-                  ><span class="text-sm font-normal text-white">Jul 12</span>
-                </h2>
-                <div class="card flex-1 bg-base-100 card-xs shadow-sm">
-                  <div class="card-body">
-                    <div
-                      class="flex flex-row items-center justify-between gap-2"
-                    >
-                      <h2 class="card-title">Universal Studios</h2>
-                      <div class="flex items-center gap-2 shrink-0">
-                        <p class="text-sm text-base-content/60">full-day</p>
-                        <button>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <!-- summary of the recent activities added to the trip -->
+            <div class="mt-2 flex flex-col gap-1">
+              <h2
+                class="flex flex-row items-baseline justify-between gap-2 text-base font-semibold text-white"
+              >
+                Recently Added Activities
+              </h2>
+              <p id="activityError" class="text-sm font-normal text-white"></p>
+              <div id="recentActivities" class="flex flex-col gap-2">
+                
               </div>
             </div>
           </div>
@@ -808,7 +781,7 @@
         <div class="flex flex-col gap-1">
           <div>
             <input
-            id="solo"
+              id="solo"
               type="radio"
               name="radio-2"
               class="radio radio-xs"
@@ -821,7 +794,7 @@
           </div>
           <div>
             <input
-            id="grp"
+              id="grp"
               type="radio"
               name="radio-2"
               class="radio radio-xs"
@@ -844,11 +817,19 @@
         </div>
 
         <!-- the time -->
-        <div class="flex flex-col gap-1 flex-1">
-          <label for="" class="text-xs text-base-content/60"
-            >Select the Time</label
-          >
-          <input id="time" type="time" class="input" />
+        <div class="flex gap-3">
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-xs text-base-content/60"
+              >Select the Start Time</label
+            >
+            <input id="startTime" type="time" class="input w-full" />
+          </div>
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-xs text-base-content/60"
+              >Select the End Time</label
+            >
+            <input id="endTime" type="time" class="input w-full" />
+          </div>
         </div>
 
         <p id="addToCalError" class="text-xs text-red-500 mt-1 hidden"></p>
