@@ -155,6 +155,11 @@ const userSchema = new mongoose.Schema({
       address: String,
       placeId: String, // use placeId and location to open up the google maps and build a accurate url to see the exact location information
       location: { lat: Number, lng: Number },
+      createdAt: {
+        // this would be used to show the recent added activities to the user in the sidebar
+        type: Date,
+        default: Date.now,
+      },
     },
   ],
 });
@@ -197,6 +202,11 @@ const tripSchema = new mongoose.Schema({
       address: String,
       placeId: String, // use placeId and location to open up the google maps and build a accurate url to see the exact location information
       location: { lat: Number, lng: Number },
+      createdAt: {
+        // this would be used to show the recent added activities to the user in the sidebar
+        type: Date,
+        default: Date.now,
+      },
     },
   ],
 });
@@ -801,7 +811,7 @@ app.post("/googleAPI", async (req, res) => {
 });
 
 // add to calendar routes- solo activities
-app.post("/addToCalSolo/:tripId", requireTripMember,  async (req, res) => {
+app.post("/addToCalSolo/:tripId", requireTripMember, async (req, res) => {
   try {
     const user = await userModel.findByIdAndUpdate(
       req.session.userId,
@@ -815,7 +825,7 @@ app.post("/addToCalSolo/:tripId", requireTripMember,  async (req, res) => {
 });
 
 // add to calendar routes- grp activities
-app.post("/addToCalgrp/:tripId", requireTripMember,  async (req, res) => {
+app.post("/addToCalgrp/:tripId", requireTripMember, async (req, res) => {
   try {
     const trip = await tripModel.findByIdAndUpdate(
       req.params.tripId,
@@ -825,5 +835,31 @@ app.post("/addToCalgrp/:tripId", requireTripMember,  async (req, res) => {
     res.json(trip);
   } catch (error) {
     res.status(500).send("Could not add activity to the group schedule.");
+  }
+});
+
+// get activities added within the last 2 hours
+app.get("/recentActivities/:tripId", requireTripMember, async (req, res) => {
+  try {
+    // date.now returns the current time in milliseconds
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+    // find grp activities withing this timeframe
+    const trip = await tripModel.findById(req.params.tripId);
+    // filter keeps the full activity objects whose createdAt is more recent than twoHoursAgo
+    const grpActivities = trip.activities.filter(
+      (activity) => activity.createdAt >= twoHoursAgo,
+    );
+
+    // find user soloAvtivities within the time frame
+    const user = await userModel.findById(req.session.userId);
+    const soloActivities = user.soloActivities.filter(
+      (activity) => activity.createdAt >= twoHoursAgo,
+    );
+    const combined = [...soloActivities, ...grpActivities];
+    
+    res.json(combined);
+  } catch (error) {
+    res.status(500).send("Could not fetch recent activities.");
   }
 });
