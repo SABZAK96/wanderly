@@ -10,19 +10,8 @@
       type="text/css"
     />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="styles/shared.css" />
     <style>
-      /* mobile nav dropdown items */
-      .nav-dropdown li > a {
-        border-radius: 0.75rem;
-        font-weight: 500;
-        /* daisyUI's default menu padding is too tight for a touch dropdown */
-        padding: 0.6rem 0.75rem;
-      }
-      .nav-dropdown li > a:hover {
-        background: #eeedfe;
-        color: #534ab7;
-      }
-
       /* Total Spent Per Person cards pop out over the layout when expanded,
          instead of growing the grid row and pushing everything else down */
       #totalSpent .collapse {
@@ -72,49 +61,6 @@
           border-color: transparent; /* Smooth fade out back to normal */
           box-shadow: none;
         }
-      }
-
-      /* the widget itself (host element) */
-      gmp-place-autocomplete {
-        width: 100%;
-        background-color: white;
-        color-scheme: light; /* prevents dark-mode auto-styling */
-        position: relative;
-        border: 1px solid #d1d5db;
-        z-index: 50; /* lifts the whole widget + its dropdown above siblings */
-      }
-
-      /* the input field */
-      gmp-place-autocomplete::part(input) {
-        background-color: white;
-        color: black;
-        padding: 10px 14px;
-      }
-
-      /* the dropdown */
-      gmp-place-autocomplete::part(prediction-list) {
-        background-color: white;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-        border-radius: 8px;
-        margin-top: 4px;
-        z-index: 50;
-      }
-
-      /* each suggestion row */
-      gmp-place-autocomplete::part(prediction-item) {
-        background-color: white;
-        color: black;
-      }
-
-      /* the place name + bolded matched text — keep them black too */
-      gmp-place-autocomplete::part(prediction-item-main-text),
-      gmp-place-autocomplete::part(prediction-item-match) {
-        color: black;
-      }
-
-      /* hover/keyboard highlight so rows don't disappear into the white */
-      gmp-place-autocomplete::part(prediction-item-selected) {
-        background-color: #f3f4f6;
       }
     </style>
   </head>
