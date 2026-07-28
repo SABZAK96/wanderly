@@ -146,7 +146,7 @@ async function renderSuggestions(data) {
         ? `https://places.googleapis.com/v1/${item.photos[0].name}/media?maxHeightPx=400&key=${key}`
         : null;
 
-    let element = `<div data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" class="parent card bg-base-100 shadow-sm border border-base-200">
+    let element = `<div data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" class="parent card bg-base-100 shadow-sm border border-base-200 h-full">
                 ${
                   photoUrl
                     ? `<figure class="relative">
@@ -324,7 +324,7 @@ async function renderSuggestions(data) {
                         : ""
                     }
                   </div>
-                  <div class="card-actions justify-end mt-1">
+                  <div class="card-actions justify-end mt-auto">
                     <button
                       class=" addToCal btn btn-sm text-white text-xs font-medium gap-1.5"
                       style="background: #534ab7; border: none"
