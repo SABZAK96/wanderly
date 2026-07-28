@@ -24,7 +24,7 @@
         color: #534ab7;
       }
       :root {
-       --fc-button-bg-color: #532ab7
+        --fc-button-bg-color: #532ab7;
       }
 
       /* move the outer border to the div wrapper so border-radius + overflow:hidden work */
@@ -33,36 +33,36 @@
         border-radius: 1rem;
         overflow: hidden;
       }
-      .fc-daygrid-day-frame{
+      .fc-daygrid-day-frame {
         border: 0.5px solid #eeedfe;
       }
-   .fc .fc-button {
-    border-radius: 10px;
-   }
-   .fc-event-title-container{
-    display: flex;
-    flex-direction: row;
-   flex-grow: 1;
-  }
-   .fc-event-title {
-    font-size: small;
-   }
+      .fc .fc-button {
+        border-radius: 10px;
+      }
+      .fc-event-title-container {
+        display: flex;
+        flex-direction: row;
+        flex-grow: 1;
+      }
+      .fc-event-title {
+        font-size: small;
+      }
 
-   @media (max-width: 640px) {
-     .fc-daygrid-event {
-       min-height: 1.5rem;
-       padding: 2px 4px;
-     }
-     .fc-event-main {
-       padding: 2px 0;
-     }
-     .fc-event-title {
-       font-size: 0.7rem;
-       white-space: normal;
-       overflow: visible;
-     }
-   }
-
+      @media (max-width: 640px) {
+        .fc-daygrid-event {
+          min-height: 1.5rem;
+          padding: 2px 4px;
+        }
+        .fc-event-main {
+          padding: 2px 0;
+        }
+        .fc-event-title {
+          font-size: 0.7rem;
+          white-space: normal;
+          overflow: visible;
+        }
+      }
+      
       /* the widget itself (host element) */
       gmp-place-autocomplete {
         width: 100%;
@@ -202,7 +202,10 @@
         <section class="flex justify-center px-4 py-8">
           <div class="w-full max-w-6xl">
             <div class="font-light text-3xl">Weather</div>
-            <p id="calendarError" class="text-sm text-red-500 mt-1 text-center hidden"></p>
+            <p
+              id="calendarError"
+              class="text-sm text-red-500 mt-1 text-center hidden"
+            ></p>
             <!-- calendar -->
             <div id="calendar" class="font-light text-4xl"></div>
           </div>
@@ -245,9 +248,7 @@
           <!-- container of all the trips -->
           <div class="flex flex-col gap-1 mb-5">
             <!-- one trip with name -->
-            <h2
-              class="text-xs uppercase tracking-wide text-white/60 px-2 mb-1"
-            >
+            <h2 class="text-xs uppercase tracking-wide text-white/60 px-2 mb-1">
               Your Trips
             </h2>
             <div id="yourTrips"></div>
@@ -278,15 +279,17 @@
             <div id="tripHeader" class="flex flex-col gap-2"></div>
 
             <!-- summary of the recent activities added to the trip -->
-            <div class="mt-2 flex flex-col gap-1">
+            <div class="mt-5 flex flex-col gap-1">
               <h2
                 class="flex flex-row items-baseline justify-between gap-2 text-base font-semibold text-white"
               >
                 Recently Added Activities
               </h2>
-              <p id="activityError" class="text-sm font-normal text-white mt-1 text-center hidden"></p>
-              <div id="recentActivities" class="flex flex-col gap-2">
-              </div>
+              <p
+                id="activityError"
+                class="text-sm font-normal text-white mt-1 text-center hidden"
+              ></p>
+              <div id="recentActivities" class="flex flex-col gap-2"></div>
             </div>
           </div>
         </div>
