@@ -434,6 +434,7 @@ addToCalBtn.addEventListener("click", async () => {
         calError.classList.remove("hidden");
       } else {
         calModal.close();
+        getRecentActivities(tripId);
       }
     } else {
       const response = await fetch(`/addToCalgrp/${tripId}`, {
@@ -455,6 +456,7 @@ addToCalBtn.addEventListener("click", async () => {
         calError.classList.remove("hidden");
       } else {
         calModal.close();
+        getRecentActivities(tripId);
       }
     }
     // handle network errors - if fetch throws(the request never got a response at all) - the other !response.ok check http request throws
