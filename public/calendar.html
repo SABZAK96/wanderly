@@ -17,6 +17,18 @@
         --fc-button-bg-color: #532ab7;
       }
 
+      /* FullCalendar's height:"100%" option just fills whatever height this
+         parent resolves to - so the actual per-breakpoint height lives here,
+         not in JS */
+      #calendarContainer {
+        height: 700px;
+      }
+      @media (max-width: 640px) {
+        #calendarContainer {
+          height: 500px;
+        }
+      }
+
       /* move the outer border to the div wrapper so border-radius + overflow:hidden work */
       .fc-view-harness {
         border: 1px solid #534ab7;
@@ -148,13 +160,15 @@
         <!-- main content -->
         <section class="flex justify-center px-4 py-8">
           <div class="w-full max-w-6xl">
-            <div class="font-light text-3xl">Weather</div>
+            <div class="font-light text-3xl mb-6">Weather</div>
             <p
               id="calendarError"
               class="text-sm text-red-500 mt-1 text-center hidden"
             ></p>
             <!-- calendar -->
-            <div id="calendar" class="font-light text-4xl"></div>
+            <div id="calendarContainer" class="mt-2">
+              <div id="calendar" class="font-light text-4xl"></div>
+            </div>
           </div>
         </section>
       </div>

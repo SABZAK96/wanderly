@@ -10,7 +10,7 @@ async function eventsFromDB(tripId) {
       const data = await response.json();
 
       if (data.length === 0) {
-        calendarError.className = "text-md text-base-content/60 mt-1 text-center";
+        calendarError.className = "text-md text-base-content/60 mt-1 text-center mb-2";
         calendarError.textContent = "No activities to show on your Calendar Yet.";
         calendarError.classList.remove("hidden");
         return;
@@ -30,12 +30,12 @@ async function eventsFromDB(tripId) {
         });
       });
     } else {
-      calendarError.className = "text-sm text-red-500 mt-1 text-center";
+      calendarError.className = "text-sm text-red-500 mt-1 text-center mb-2";
       calendarError.textContent = await response.text();
       calendarError.classList.remove("hidden");
     }
   } catch (error) {
-    calendarError.className = "text-sm text-red-500 mt-1 text-center";
+    calendarError.className = "text-sm text-red-500 mt-1 text-center mb-2";
     calendarError.textContent = "Could not reach the server. Try again.";
     calendarError.classList.remove("hidden");
   }
@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (tripId) await eventsFromDB(tripId);
   var calendarEl = document.getElementById("calendar");
   var calendar = new FullCalendar.Calendar(calendarEl, {
+    height: "100%",
     initialView: "dayGridMonth",
     events: myEvents,
     views: {
