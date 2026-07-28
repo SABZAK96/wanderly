@@ -865,3 +865,21 @@ app.get("/recentActivities/:tripId", requireTripMember, async (req, res) => {
     res.status(500).send("Could not fetch recent activities.");
   }
 });
+
+app.get("/allUserActivities/:tripId", requireTripMember, async(req,res)=>{
+   try {
+    // find grp activities withing this timeframe
+    const trip = await tripModel.findById(req.params.tripId);
+    // filter keeps the full activity objects whose createdAt is more recent than twoHoursAgo
+    const grpActivities = trip.activities;
+
+    // find user soloAvtivities
+    const user = await userModel.findById(req.session.userId);
+    const soloActivities = user.soloActivities;
+    const combined = [...soloActivities, ...grpActivities];
+    
+    res.json(combined);
+  } catch (error) {
+    res.status(500).send("Could not fetch user's activities.");
+  }
+})
