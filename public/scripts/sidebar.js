@@ -447,11 +447,13 @@ document
 // sends the actual delete request for a trip id, called only after the user confirms
 async function deleteTrip(id) {
   const response = await fetch(`/deleteTrip/${id}`, { method: "DELETE" });
-  if (response.ok){
+  if (response.ok) {
     localStorage.removeItem("selectedTripId");
-    document.dispatchEvent(new CustomEvent("tripDeleted", {detail:{tripId:id}}))
+    document.dispatchEvent(
+      new CustomEvent("tripDeleted", { detail: { tripId: id } }),
+    );
   }
-  return response ;
+  return response;
 }
 
 // clicking the trip header's delete icon opens the confirmation modal instead of
@@ -527,3 +529,72 @@ document
     const id = createBtn.closest("#tripHeader").dataset.tripId;
     await editTripSetup(id);
   });
+
+// get recently added activities from the server to show in the sidebar
+async function getRecentActivities(tripId) {
+  try {
+    const errorMsg = document.getElementById("activityError");
+    const container = document.getElementById("recentActivities");
+    container.innerHTML = "";
+
+    errorMsg.classList.add("hidden");
+    const response = await fetch(`/recentActivities/${tripId}`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.length === 0) {
+        errorMsg.className = "text-sm font-normal text-white mt-1";
+        errorMsg.textContent = "No activities to show.";
+        errorMsg.classList.remove("hidden");
+      }
+      else {
+        data.forEach(element=>{
+
+          const dateString = element.date.slice(0,10);
+          const date = new Date(dateString  + "T00:00:00").toLocaleDateString("en-US" , { month: "short", day: "numeric" });
+
+          const html = `<div data-tripId="${element?.tripId ?? ''}" data-id="${element._id}" class="flex flex-col gap-2">
+                  <p class="text-sm font-normal text-white">${date}</p>
+                  <div class="card flex-1 bg-base-100 card-xs shadow-sm">
+                    <div class="card-body">
+                      <div
+                        class="flex flex-row items-center justify-between gap-2"
+                      >
+                        <h2 class="card-title">${element.activityName}</h2>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <p class="text-sm text-base-content/60">${element.startTime} - ${element.endTime}</p>
+                          <button class="deleteActivity">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+                container.insertAdjacentHTML("beforeend", html)
+        })
+      }
+    } else {
+      errorMsg.className = "text-sm text-red-500 mt-1";
+      errorMsg.textContent = await response.text();
+      errorMsg.classList.remove("hidden");
+    }
+  } catch (error) {
+    const errorMsg = document.getElementById("activityError");
+    errorMsg.className = "text-sm text-red-500 mt-1";
+    errorMsg.textContent = "Could not reach the server. Try again.";
+    errorMsg.classList.remove("hidden");
+  }
+}
