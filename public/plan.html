@@ -174,6 +174,7 @@
           id="non-AI"
           class="hidden group-has-[#mode-suggestions:checked]:flex flex-col gap-4"
         >
+          <!-- input field with aura effect -->
           <div class="w-full aura aura-holo mx-auto">
             <div class="join card bg-base-100 flex flex-row overflow-hidden">
               <input
@@ -224,6 +225,23 @@
           </div>
 
           <p id="suggError" class="text-sm text-red-500 mt-1 text-center"></p>
+
+          <!-- container for suggestion view empty -->
+          <div
+            id="emptySuggestion"
+            class="flex flex-col gap-1 justify-center items-center"
+          >
+            <h2
+              class="text-base font-semibold leading-tight"
+              style="color: #3c3489"
+            >
+              Search for attractions, restaurants, or activities to get
+              suggestions for your trip.
+            </h2>
+            <div class="w-[900px] h-[900px]">
+              <img src="./images/suggestion.png" alt=""  />
+            </div>
+          </div>
 
           <!-- filters -->
           <div class="flex-1">
@@ -572,6 +590,7 @@
         </section>
       </div>
       <!-- drawer-content end -->
+
       <!-- sidebar -->
       <div
         class="drawer-side lg:pt-0 pt-20 flex flex-col items-center justify-center"
@@ -639,9 +658,7 @@
             <div id="tripHeader" class="flex flex-col gap-2"></div>
             <!-- summary of the recent activities added to the trip -->
             <div class="mt-5 flex flex-col gap-1">
-              <h2
-                class="text-xs uppercase tracking-wide text-white/60 px-2"
-              >
+              <h2 class="text-xs uppercase tracking-wide text-white/60 px-2">
                 Recently Added Activities
               </h2>
               <p

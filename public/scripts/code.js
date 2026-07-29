@@ -78,6 +78,8 @@ suggestModal.addEventListener("click", (event) => {
 // logic for connecting suggestion mode to the google places api
 // ==============================================================================
 const msg = document.getElementById("suggError");
+const emptySuggestionContainer = document.getElementById("emptySuggestion");
+
 const suggestionInput = document.getElementById("suggestionSearch");
 document.getElementById("searchSuggest").addEventListener("click", async () => {
   msg.textContent = "";
@@ -86,6 +88,7 @@ document.getElementById("searchSuggest").addEventListener("click", async () => {
     msg.textContent = "* Please enter a search term.";
     return;
   } else {
+    emptySuggestionContainer.classList.add("hidden");
     const destination = document.getElementById("destName").textContent;
     const finalQuery = query + " in " + destination;
     await googleSuggestion(finalQuery);
@@ -95,6 +98,12 @@ document.getElementById("searchSuggest").addEventListener("click", async () => {
 // clear the error when user starts typing again
 suggestionInput.addEventListener("input", () => {
   msg.textContent = "";
+  // only bring the empty-state graphic back if there's no existing
+  // results grid still on screen - otherwise it'd stack on top of it
+  const filters = document.getElementById("filterContainer");
+  if (filters.classList.contains("hidden")) {
+    emptySuggestionContainer.classList.remove("hidden");
+  }
 });
 
 // sends the constructed "<search term> in <destination>" query to our own
@@ -118,6 +127,7 @@ async function googleSuggestion(query) {
   } else {
     errorMsg.textContent = "Could not Fetch Data. Try Again.";
     errorMsg.classList.remove("hidden");
+    emptySuggestionContainer.classList.remove("hidden");
   }
 }
 
@@ -128,6 +138,7 @@ async function renderSuggestions(data) {
 
   if (!data.places || data.places.length === 0) {
     msg.textContent = "No results found. Try a different search.";
+    emptySuggestionContainer.classList.remove("hidden");
     return;
   }
 
