@@ -57,6 +57,14 @@ const startTime = document.getElementById("eventEditStartTime");
 const endTime = document.getElementById("eventEditEndTime");
 const eventDeleteScope = document.getElementById("eventDeleteScope");
 
+// resets the event-actions modal's toggle, scope choice, and error messages so stale state from a previous event doesn't leak into the next one
+function cleanUpEventActionsModal() {
+  document.getElementById("eventAction-edit").checked = true;
+  document.getElementById("eventDeleteForGroup").checked = true;
+  document.getElementById("eventEditError").classList.add("hidden");
+  document.getElementById("eventDeleteError").classList.add("hidden");
+}
+
 //   this code block is obtained from https://fullcalendar.io/docs/initialize-globals for initializing the FullCalendar
 let calendar;
 async function initCalendar() {
@@ -102,6 +110,7 @@ async function initCalendar() {
     // opens the edit/delete modal for the clicked event, pre-filled from
     // the event's own data
     eventClick: function (info) {
+      cleanUpEventActionsModal();
       eventActionModal.showModal();
       // set the id for sending data to db easily
       eventActionModal.dataset.activityId = info.event.id;
@@ -110,24 +119,19 @@ async function initCalendar() {
 
       title.textContent = info.event.title;
 
-      if (document.getElementById("eventAction-edit").checked) {
-        // info.event.start/end are always native Date objects, even though myEvents fed them in as strings - FullCalendar parses everything into Date internally, hence .toISOString() instead of .slice()/.split() directly
+      // info.event.start/end are always native Date objects, even though myEvents fed them in as strings - FullCalendar parses everything into Date internally, hence .toISOString() instead of .slice()/.split() directly
+      date.value = info.event.start.toISOString().slice(0, 10);
+      startTime.value = info.event.start
+        .toISOString()
+        .split("T")[1]
+        .slice(0, 5);
+      endTime.value = info.event.end.toISOString().split("T")[1].slice(0, 5);
 
-        date.value = info.event.start.toISOString().slice(0, 10);
-
-        startTime.value = info.event.start
-          .toISOString()
-          .split("T")[1]
-          .slice(0, 5);
-
-        endTime.value = info.event.end.toISOString().split("T")[1].slice(0, 5);
-      } else if (document.getElementById("eventAction-delete").checked) {
-        // solo isn't a reserved FullCalendar field, so it lands in extendedProps automatically
-        if (info.event.extendedProps.solo) {
-          eventDeleteScope.classList.add("hidden");
-        } else {
-          eventDeleteScope.classList.remove("hidden");
-        }
+      // solo isn't a reserved FullCalendar field, so it lands in extendedProps automatically
+      if (info.event.extendedProps.solo) {
+        eventDeleteScope.classList.add("hidden");
+      } else {
+        eventDeleteScope.classList.remove("hidden");
       }
     },
   });
