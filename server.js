@@ -940,3 +940,26 @@ app.delete(
     }
   },
 );
+
+// edit an activity's date/time
+app.put(
+  "/editActivity/:activityId",
+  requireActivityMember,
+  async (req, res) => {
+    try {
+      const activity = await activityModel.findByIdAndUpdate(
+        req.params.activityId,
+        {
+          $set: {
+            date: req.body.date,
+            startTime: req.body.startTime,
+            endTime: req.body.endTime,
+          },
+        }, {new: true}
+      );
+      res.json(activity);
+    } catch (error) {
+      res.status(500).send("Could not update the activity.");
+    }
+  },
+);
