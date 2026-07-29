@@ -834,6 +834,55 @@
       </form>
     </dialog>
 
+    <!-- confirmation modal for deleting an activity -->
+    <dialog id="deleteActivityConfirmModal" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <h3 class="text-lg font-semibold text-error">Delete Activity?</h3>
+        <p class="text-sm text-base-content/70">
+          This will permanently delete this activity. This cannot be undone.
+        </p>
+        <div id="deleteActivityScope" class="flex flex-col gap-1 hidden">
+          <div>
+            <input
+              id="deleteForGroup"
+              type="radio"
+              name="deleteScope"
+              class="radio radio-xs"
+              style="color: #534ab7"
+              checked="checked"
+            />
+            <label class="text-xs text-base-content/60"
+              >Delete for the whole group</label
+            >
+          </div>
+          <div>
+            <input
+              id="deleteForSelf"
+              type="radio"
+              name="deleteScope"
+              class="radio radio-xs"
+              style="color: #534ab7"
+            />
+            <label class="text-xs text-base-content/60"
+              >Just remove it for myself</label
+            >
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <form method="dialog">
+            <button class="btn btn-ghost">Cancel</button>
+          </form>
+          <button id="confirmDeleteActivity" class="btn btn-error">
+            Delete
+          </button>
+        </div>
+        <p id="deleteActivityError" class="text-sm text-red-500 hidden"></p>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
     <script src="scripts/navbar.js"></script>
     <script src="scripts/dates.js"></script>
     <script src="scripts/sidebar.js"></script>
