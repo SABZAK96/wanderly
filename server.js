@@ -250,6 +250,23 @@ async function requireTripMember(req, res, next) {
   }
 }
 
+// same idea as requireTripMember, but for routes keyed by :activityId
+// instead of a trip id directly - looks the activity up first to find its
+// tripId, then checks membership the same way
+async function requireActivityMember(req, res, next) {
+  try {
+    const activity = await activityModel.findById(req.params.activityId);
+    if (!activity) return res.status(404).send("Activity not found.");
+    const trip = await tripModel.findById(activity.tripId);
+    if (!trip || !trip.people.some((p) => p.person === req.session.userId)) {
+      return res.status(403).send("Not a member of this trip.");
+    }
+    next();
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+}
+
 main().catch((err) => console.log(err));
 
 async function main() {
@@ -877,7 +894,7 @@ app.get("/allUserActivities/:tripId", requireTripMember, async (req, res) => {
   try {
     // find all the activities related to a specific tripId - returns an array of objects
     const activities = await activityModel.find({ tripId: req.params.tripId });
-    // filter it out and keep the ones user is in 
+    // filter it out and keep the ones user is in
     const userActivities = activities.filter((activity) =>
       activity.participants.includes(req.session.userId),
     );
@@ -887,3 +904,39 @@ app.get("/allUserActivities/:tripId", requireTripMember, async (req, res) => {
     res.status(500).send("Could not fetch user's activities.");
   }
 });
+
+// delete an activity for the group
+app.delete(
+  "/deleteActivityGrp/:activityId",
+  requireActivityMember,
+  async (req, res) => {
+    try {
+      await activityModel.findByIdAndDelete(req.params.activityId);
+      res.send("Activity deleted successfully.");
+    } catch (error) {
+      res.status(500).send("Could not delete the activity.");
+    }
+  },
+);
+
+// delete an activity for the user only - removes them from participants,
+// and deletes the activity entirely if that was the last participant left
+app.delete(
+  "/deleteActivitySolo/:activityId",
+  requireActivityMember,
+  async (req, res) => {
+    try {
+      const activity = await activityModel.findByIdAndUpdate(
+        req.params.activityId,
+        { $pull: { participants: req.session.userId } },
+        { new: true },
+      );
+      if (activity.participants.length === 0) {
+        await activityModel.findByIdAndDelete(activity._id);
+      }
+      res.json(activity);
+    } catch (error) {
+      res.status(500).send("Could not remove the activity.");
+    }
+  },
+);
