@@ -25,6 +25,7 @@ loadPlacesLibrary();
 
 // function for making a call to google places api - source: google places documentation with some modification to integrate it with my codebase
 // no need to call this function since it would be called auromatically once the script tag from above loads
+const container = document.getElementById("dest-title");
 async function initAutocomplete() {
   // libraries=places in the script tag's URL already loaded the library,
   // but it only exposes the class namespaced under google.maps.places -
@@ -36,7 +37,7 @@ async function initAutocomplete() {
   // Create the input HTML element, and append it.
   const placeAutocomplete = new PlaceAutocompleteElement();
   placeAutocomplete.placeholder = "e.g. Tokyo, Japan";
-  document.getElementById("dest-title").appendChild(placeAutocomplete);
+  container.appendChild(placeAutocomplete);
 
   // tracks the exact text of the last real selection, so the "input"
   // listener below can tell "the user edited after selecting" apart from
@@ -53,8 +54,9 @@ async function initAutocomplete() {
         fields: ["displayName", "formattedAddress", "location"],
       });
       lastConfirmedValue = place.formattedAddress;
-      document.getElementById("dest-title").dataset.destination =
-        place.formattedAddress;
+      container.dataset.destination = place.formattedAddress;
+      container.dataset.lat = place.location.lat();
+      container.dataset.lng = place.location.lng();
     },
   );
 
@@ -69,7 +71,9 @@ async function initAutocomplete() {
   // real selection
   placeAutocomplete.addEventListener("input", () => {
     if (placeAutocomplete.value !== lastConfirmedValue) {
-      document.getElementById("dest-title").dataset.destination = "";
+      container.dataset.destination = "";
+      container.dataset.lat = "";
+      container.dataset.lng = "";
     }
   });
 }
@@ -143,6 +147,8 @@ document
       document.getElementById("dest-title").dataset.destination;
     const startDate = document.getElementById("startDate").value;
     const endDate = document.getElementById("endDate").value;
+    const lat = container.dataset.lat;
+    const lng = container.dataset.lng;
 
     const tripError = document.getElementById("tripError");
     tripError.classList.add("hidden");
@@ -175,6 +181,8 @@ document
           destination: destination,
           startDate: startDate,
           endDate: endDate,
+          lat: lat,
+          lng: lng,
         }),
       });
 
@@ -204,6 +212,8 @@ document
         destination: destination,
         startDate: startDate,
         endDate: endDate,
+        lat: lat,
+        lng: lng,
       }),
     });
     if (response.ok) {
@@ -560,16 +570,16 @@ async function getRecentActivities(tripId) {
             { month: "short", day: "numeric" },
           );
 
-          const html = `<div data-tripId="${element?.tripId ?? ""}" data-id="${element._id}" class="flex flex-col gap-2">
+          const html = `<div data-tripId="${element?.tripId ?? ""}" data-id="${element._id}" class="flex flex-col gap-2 px-2">
                   <p class="text-sm font-normal text-white">${date}</p>
                   <div class="card flex-1 bg-base-100 card-xs shadow-sm">
                     <div class="card-body">
                       <div
                         class="flex flex-row items-center justify-between gap-2"
                       >
-                        <h2 class="card-title">${element.activityName}</h2>
+                        <h2 class="card-title text-sm">${element.activityName}</h2>
                         <div class="flex items-center gap-2 shrink-0">
-                          <p class="text-sm text-base-content/60">${element.startTime} - ${element.endTime}</p>
+                          <p class="text-sm text-base-content/60">${element.startTime}-${element.endTime}</p>
                           <button class="deleteActivity">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"

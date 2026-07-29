@@ -170,6 +170,8 @@ const tripSchema = new mongoose.Schema({
   destination: String,
   startDate: Date,
   endDate: Date,
+  lat: Number,
+  lng: Number,
   people: [
     {
       person: String,
@@ -298,6 +300,8 @@ app.post("/addTrip", async (req, res) => {
       destination: req.body.destination,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
+      lat: req.body.lat,
+      lng: req.body.lng,
       people: [{ person: req.session.userId, badgeInfo: {} }],
       expenses: [],
       payments: [],
@@ -377,6 +381,8 @@ app.put("/editTrip/:id", requireTripMember, async (req, res) => {
           destination: req.body.destination,
           startDate: req.body.startDate,
           endDate: req.body.endDate,
+          lat: req.body.lat,
+          lng: req.body.lng,
         },
       },
       { new: true },
@@ -859,15 +865,15 @@ app.get("/recentActivities/:tripId", requireTripMember, async (req, res) => {
       (activity) => activity.createdAt >= twoHoursAgo,
     );
     const combined = [...soloActivities, ...grpActivities];
-    
+
     res.json(combined);
   } catch (error) {
     res.status(500).send("Could not fetch recent activities.");
   }
 });
 
-app.get("/allUserActivities/:tripId", requireTripMember, async(req,res)=>{
-   try {
+app.get("/allUserActivities/:tripId", requireTripMember, async (req, res) => {
+  try {
     // find grp activities withing this timeframe
     const trip = await tripModel.findById(req.params.tripId);
     // filter keeps the full activity objects whose createdAt is more recent than twoHoursAgo
@@ -877,9 +883,9 @@ app.get("/allUserActivities/:tripId", requireTripMember, async(req,res)=>{
     const user = await userModel.findById(req.session.userId);
     const soloActivities = user.soloActivities;
     const combined = [...soloActivities, ...grpActivities];
-    
+
     res.json(combined);
   } catch (error) {
     res.status(500).send("Could not fetch user's activities.");
   }
-})
+});
