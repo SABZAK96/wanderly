@@ -1,4 +1,6 @@
 let myEvents = [];
+let firstEventInTrip = undefined;
+
 const tripId = localStorage.getItem("selectedTripId");
 // get all the events from the db
 async function eventsFromDB(tripId) {
@@ -19,6 +21,17 @@ async function eventsFromDB(tripId) {
         calendarError.classList.remove("hidden");
         return;
       }
+
+      // finding the first upcoming event , so the calendar jumps up there
+      // allEventDates is an array of strings like ["2026-08-11", "2025-12-25"] which we can use the sort method on
+      const allEventDates = data.map((event) => event.date.slice(0, 10));
+
+      // new Date() -> gives current Time, toISOString() -> converts it to a string like 2026-07-29T22:38:15.123Z
+      const todayStr = new Date().toISOString().slice(0, 10);
+      // the earliest activity for that trip might be a past event, we want to show the first one after todays date
+      const upcomingEventDates = allEventDates.filter((d) => d >= todayStr);
+      const sortedEventDates = upcomingEventDates.sort();
+      firstEventInTrip = sortedEventDates[0];
 
       data.forEach((obj) => {
         // date that comes from the db is a string in ISO format, and Z should be removed
@@ -71,7 +84,7 @@ async function initCalendar() {
   // wait for the array to get populated based on the response from the server then construct the calendar
   if (tripId) await eventsFromDB(tripId);
   // remember where the user was looking before tearing down the old instance, so re-running this after an edit/delete lands back on the same day/month instead of resetting to today
-  const previousDate = calendar ? calendar.getDate() : undefined;
+  const previousDate = calendar ? calendar.getDate() : firstEventInTrip;
   const previousView = calendar ? calendar.view.type : "dayGridMonth";
   // destroy the previous instance first, otherwise re-running this (e.g. after an edit/delete) renders a second calendar into the same container instead of replacing the old one
   if (calendar) calendar.destroy();
