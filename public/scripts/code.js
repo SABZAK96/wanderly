@@ -157,7 +157,7 @@ async function renderSuggestions(data) {
         ? `https://places.googleapis.com/v1/${item.photos[0].name}/media?maxHeightPx=400&key=${key}`
         : null;
 
-    let element = `<div data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" class="parent card bg-base-100 shadow-sm border border-base-200 h-full">
+    let element = `<div data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" data-address="${item.formattedAddress}" class="parent card bg-base-100 shadow-sm border border-base-200 h-full">
                 ${
                   photoUrl
                     ? `<figure class="relative">
@@ -381,6 +381,7 @@ document.getElementById("non-AI").addEventListener("click", (event) => {
   calModal.dataset.placeId = btn.closest(".parent").dataset.id;
   calModal.dataset.lat = btn.closest(".parent").dataset.lat;
   calModal.dataset.lng = btn.closest(".parent").dataset.lng;
+  calModal.dataset.address = btn.closest(".parent").dataset.address;
 
   // fill out the date - defaults to the first day of the trip
   const date = document.getElementById("tripHeader").dataset.startDate;
@@ -431,11 +432,11 @@ addToCalBtn.addEventListener("click", async () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          tripId: tripId,
           activityName: title.textContent,
           date: dateInput,
           startTime: startTime,
           endTime: endTime,
+          address: calModal.dataset.address,
           placeId: calModal.dataset.placeId,
           location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
         }),
@@ -458,6 +459,7 @@ addToCalBtn.addEventListener("click", async () => {
           date: dateInput,
           startTime: startTime,
           endTime: endTime,
+          address: calModal.dataset.address,
           placeId: calModal.dataset.placeId,
           location: { lat: calModal.dataset.lat, lng: calModal.dataset.lng },
         }),

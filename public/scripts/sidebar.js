@@ -570,7 +570,7 @@ async function getRecentActivities(tripId) {
             { month: "short", day: "numeric" },
           );
 
-          const html = `<div data-tripId="${element?.tripId ?? ""}" data-id="${element._id}" class="flex flex-col gap-2 px-2">
+          const html = `<div data-solo="${element.participants.length === 1 ? "true" : "false"}" data-id="${element._id}" class="activity flex flex-col gap-2 px-2">
                   <p class="text-sm font-normal text-white">${date}</p>
                   <div class="card flex-1 bg-base-100 card-xs shadow-sm">
                     <div class="card-body">
@@ -616,3 +616,89 @@ async function getRecentActivities(tripId) {
     errorMsg.classList.remove("hidden");
   }
 }
+
+// deleting an activity from sidebar
+const deleteActivityModal = document.getElementById(
+  "deleteActivityConfirmModal",
+);
+
+// attach a listener using delegation
+const deleteScopeContainer = document.getElementById("deleteActivityScope");
+document
+  .getElementById("recentActivities")
+  .addEventListener("click", (event) => {
+    deleteScopeContainer.classList.add("hidden");
+
+    const deleteBtn = event.target.closest(".deleteActivity");
+    if (!deleteBtn) return;
+
+    // find out if the activity is solo or grp to show the radio options by reaching to the btn's parent row and reading its dataset
+    const activityRow = deleteBtn.closest(".activity");
+    deleteActivityModal.dataset.activityId = activityRow.dataset.id;
+    if (activityRow.dataset.solo === "false")
+      deleteScopeContainer.classList.remove("hidden");
+
+    deleteActivityModal.showModal();
+  });
+
+// delete the activity listener
+const confirmDeleteActivity = document.getElementById("confirmDeleteActivity");
+
+confirmDeleteActivity.addEventListener("click", async () => {
+  const btnOriginal = confirmDeleteActivity.textContent;
+  if (confirmDeleteActivity.dataset.loading === "true") return;
+  const tripId = localStorage.getItem("selectedTripId");
+  const activityId = deleteActivityModal.dataset.activityId;
+  const deleteActivityError = document.getElementById("deleteActivityError");
+  deleteActivityError.classList.add("hidden");
+
+  confirmDeleteActivity.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+  confirmDeleteActivity.dataset.loading = "true";
+
+  try {
+    if (!deleteScopeContainer.classList.contains("hidden")) {
+      if (document.getElementById("deleteForGroup").checked) {
+        const response = await fetch(`/deleteActivityGrp/${activityId}`, {
+          method: "DELETE",
+        });
+        if (response.ok) {
+          deleteActivityModal.close();
+          await getRecentActivities(tripId);
+        } else {
+          deleteActivityError.textContent = await response.text();
+          deleteActivityError.classList.remove("hidden");
+        }
+      } else {
+        const response = await fetch(`/deleteActivitySolo/${activityId}`, {
+          method: "DELETE",
+        });
+        if (response.ok) {
+          deleteActivityModal.close();
+          await getRecentActivities(tripId);
+        } else {
+          deleteActivityError.textContent = await response.text();
+          deleteActivityError.classList.remove("hidden");
+        }
+      }
+    } else {
+      const response = await fetch(`/deleteActivitySolo/${activityId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        deleteActivityModal.close();
+        await getRecentActivities(tripId);
+      } else {
+        deleteActivityError.textContent = await response.text();
+        deleteActivityError.classList.remove("hidden");
+      }
+    }
+    confirmDeleteActivity.textContent = btnOriginal;
+    confirmDeleteActivity.dataset.loading = "false";
+  } catch (error) {
+    deleteActivityError.textContent = "Could not reach the server. Try again.";
+    deleteActivityError.classList.remove("hidden");
+
+    confirmDeleteActivity.textContent = btnOriginal;
+    confirmDeleteActivity.dataset.loading = "false";
+  }
+});
