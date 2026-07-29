@@ -384,11 +384,21 @@ document.getElementById("non-AI").addEventListener("click", (event) => {
   calModal.dataset.address = btn.closest(".parent").dataset.address;
 
   // fill out the date - defaults to the first day of the trip
+  cleanUpCalendarModal();
   const date = document.getElementById("tripHeader").dataset.startDate;
   document.getElementById("startDateCal").value = date;
   calModal.showModal();
 });
 
+// resets the add-to-calendar modal's time inputs and radio selection so stale values from a previous activity don't leak into the next one
+function cleanUpCalendarModal() {
+  const startTime = document.getElementById("startTime");
+  const endTime = document.getElementById("endTime");
+  const soloActivity = document.getElementById("solo");
+  soloActivity.checked = true;
+  startTime.value = "";
+  endTime.value = "";
+}
 // submitting the add to calendar
 const addToCalBtn = document.getElementById("addToCal");
 addToCalBtn.addEventListener("click", async () => {
