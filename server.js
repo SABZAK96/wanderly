@@ -146,23 +146,6 @@ const userSchema = new mongoose.Schema({
   password: String,
   trips: [String], // trip ids
   isPlaceholder: { type: Boolean, default: false }, // for names added in the expense tab to track expenses for those who dont have an account
-  soloActivities: [
-    {
-      tripId: String, // personal plans user might have in a specific trip
-      activityName: String,
-      date: Date,
-      startTime: String,
-      endTime: String,
-      address: String,
-      placeId: String, // use placeId and location to open up the google maps and build a accurate url to see the exact location information
-      location: { lat: Number, lng: Number },
-      createdAt: {
-        // this would be used to show the recent added activities to the user in the sidebar
-        type: Date,
-        default: Date.now,
-      },
-    },
-  ],
 });
 
 // schema for trip
@@ -197,25 +180,28 @@ const tripSchema = new mongoose.Schema({
       amount: Number,
     },
   ],
-  activities: [
-    {
-      activityName: String,
-      date: Date,
-      startTime: String,
-      endTime: String,
-      address: String,
-      placeId: String, // use placeId and location to open up the google maps and build a accurate url to see the exact location information
-      location: { lat: Number, lng: Number },
-      createdAt: {
-        // this would be used to show the recent added activities to the user in the sidebar
-        type: Date,
-        default: Date.now,
-      },
-    },
-  ],
 });
+
+const activitySchema = new mongoose.Schema({
+  tripId: String, // tripId go here
+  participants: [String], //userIds go here
+  activityName: String,
+  date: Date,
+  startTime: String,
+  endTime: String,
+  address: String,
+  placeId: String, // use placeId and location to open up the google maps and build a accurate url to see the exact location information
+  location: { lat: Number, lng: Number },
+  createdAt: {
+    // this would be used to show the recent added activities to the user in the sidebar
+    type: Date,
+    default: Date.now,
+  },
+});
+
 const userModel = mongoose.model("users", userSchema);
 const tripModel = mongoose.model("trips", tripSchema);
+const activityModel = mongoose.model("activities", activitySchema);
 
 // gives userId a badge color if they don't already have one, picking a color
 // not already used by anyone currently in existingPeopleIds (their trip-mates) -
@@ -821,12 +807,19 @@ app.post("/googleAPI", async (req, res) => {
 // add to calendar routes- solo activities
 app.post("/addToCalSolo/:tripId", requireTripMember, async (req, res) => {
   try {
-    const user = await userModel.findByIdAndUpdate(
-      req.session.userId,
-      { $push: { soloActivities: req.body } },
-      { new: true },
-    );
-    res.json(user);
+    const soloActivity = await activityModel.create({
+      tripId: req.params.tripId,
+      participants: req.session.userId,
+      activityName: req.body.activityName,
+      date: req.body.date,
+      startTime: req.body.startTime,
+      endTime: req.body.endTime,
+      address: req.body.address,
+      placeId: req.body.placeId,
+      location: req.body.location,
+    });
+
+    res.json(soloActivity);
   } catch (error) {
     res.status(500).send("Could not add activity to your schedule.");
   }
@@ -835,12 +828,23 @@ app.post("/addToCalSolo/:tripId", requireTripMember, async (req, res) => {
 // add to calendar routes- grp activities
 app.post("/addToCalgrp/:tripId", requireTripMember, async (req, res) => {
   try {
-    const trip = await tripModel.findByIdAndUpdate(
-      req.params.tripId,
-      { $push: { activities: req.body } },
-      { new: true },
-    );
-    res.json(trip);
+    // get all people in the specific trip - an array if _ids
+    const trip = await tripModel.findById(req.params.tripId);
+    const peopleId = trip.people.map((element) => element.person);
+
+    const grpActivity = await activityModel.create({
+      tripId: req.params.tripId,
+      participants: peopleId,
+      activityName: req.body.activityName,
+      date: req.body.date,
+      startTime: req.body.startTime,
+      endTime: req.body.endTime,
+      address: req.body.address,
+      placeId: req.body.placeId,
+      location: req.body.location,
+    });
+
+    res.json(grpActivity);
   } catch (error) {
     res.status(500).send("Could not add activity to the group schedule.");
   }
@@ -852,21 +856,18 @@ app.get("/recentActivities/:tripId", requireTripMember, async (req, res) => {
     // date.now returns the current time in milliseconds
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
-    // find grp activities withing this timeframe
-    const trip = await tripModel.findById(req.params.tripId);
-    // filter keeps the full activity objects whose createdAt is more recent than twoHoursAgo
-    const grpActivities = trip.activities.filter(
+    // find all activities related to a tripId
+    const activities = await activityModel.find({ tripId: req.params.tripId });
+    // filter out the trips related to that specific user
+    const userActivities = activities.filter((activity) =>
+      activity.participants.includes(req.session.userId),
+    );
+    // filter out the result created withing the time frame
+    const result = userActivities.filter(
       (activity) => activity.createdAt >= twoHoursAgo,
     );
 
-    // find user soloAvtivities within the time frame
-    const user = await userModel.findById(req.session.userId);
-    const soloActivities = user.soloActivities.filter(
-      (activity) => activity.createdAt >= twoHoursAgo,
-    );
-    const combined = [...soloActivities, ...grpActivities];
-
-    res.json(combined);
+    res.json(result);
   } catch (error) {
     res.status(500).send("Could not fetch recent activities.");
   }
@@ -874,17 +875,14 @@ app.get("/recentActivities/:tripId", requireTripMember, async (req, res) => {
 
 app.get("/allUserActivities/:tripId", requireTripMember, async (req, res) => {
   try {
-    // find grp activities withing this timeframe
-    const trip = await tripModel.findById(req.params.tripId);
-    // filter keeps the full activity objects whose createdAt is more recent than twoHoursAgo
-    const grpActivities = trip.activities;
+    // find all the activities related to a specific tripId - returns an array of objects
+    const activities = await activityModel.find({ tripId: req.params.tripId });
+    // filter it out and keep the ones user is in 
+    const userActivities = activities.filter((activity) =>
+      activity.participants.includes(req.session.userId),
+    );
 
-    // find user soloAvtivities
-    const user = await userModel.findById(req.session.userId);
-    const soloActivities = user.soloActivities;
-    const combined = [...soloActivities, ...grpActivities];
-
-    res.json(combined);
+    res.json(userActivities);
   } catch (error) {
     res.status(500).send("Could not fetch user's activities.");
   }
