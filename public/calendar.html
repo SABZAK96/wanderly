@@ -17,6 +17,10 @@
         --fc-button-bg-color: #532ab7;
         --fc-button-active-bg-color: #532ab7;
         --fc-button-active-border-color: #532ab7;
+        /* without these, FullCalendar falls back to its default (dark gray/
+           black) hover color instead of a shade of the brand purple */
+        --fc-button-hover-bg-color: #44228f;
+        --fc-button-hover-border-color: #44228f;
       }
 
       /* FullCalendar's height:"100%" option just fills whatever height this
@@ -32,7 +36,7 @@
       }
 
       /* move the outer border to the div wrapper so border-radius + overflow:hidden work */
-      
+
       .fc-view-harness {
         border: 1px solid #534ab7;
         border-radius: 1rem;
@@ -172,6 +176,26 @@
             <div id="calendarContainer" class="mt-2">
               <div id="calendar" class="font-light text-4xl"></div>
             </div>
+            <!-- button for adding a new event -->
+            <div class="flex justify-end mt-2">
+              <button id="addEvent" class="btn rounded-xl text-white bg-[#532ab7] hover:bg-[#44228f] transition-colors">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Add a New Event
+              </button>
+            </div>
           </div>
         </section>
       </div>
@@ -244,9 +268,7 @@
 
             <!-- summary of the recent activities added to the trip -->
             <div class="mt-5 flex flex-col gap-1">
-              <h2
-                class="text-xs uppercase tracking-wide text-white/60 px-2"
-              >
+              <h2 class="text-xs uppercase tracking-wide text-white/60 px-2">
                 Recently Added Activities
               </h2>
               <p
@@ -505,11 +527,7 @@
               <label for="" class="text-xs text-base-content/60"
                 >Select the Start Time</label
               >
-              <input
-                id="eventEditStartTime"
-                type="time"
-                class="input w-full"
-              />
+              <input id="eventEditStartTime" type="time" class="input w-full" />
             </div>
             <div class="flex flex-col gap-1 flex-1">
               <label for="" class="text-xs text-base-content/60"
@@ -534,12 +552,9 @@
         <div
           class="hidden group-has-[#eventAction-delete:checked]:flex flex-col gap-3"
         >
-          <h3 class="text-sm font-semibold text-error">
-            Delete this activity
-          </h3>
+          <h3 class="text-sm font-semibold text-error">Delete this activity</h3>
           <p class="text-sm text-base-content/70">
-            This will permanently delete this activity. This cannot be
-            undone.
+            This will permanently delete this activity. This cannot be undone.
           </p>
           <div id="eventDeleteScope" class="flex flex-col gap-1">
             <div>
@@ -568,15 +583,67 @@
               >
             </div>
           </div>
-          <p
-            id="eventDeleteError"
-            class="text-xs text-red-500 mt-1 hidden"
-          ></p>
+          <p id="eventDeleteError" class="text-xs text-red-500 mt-1 hidden"></p>
           <div class="flex justify-end">
             <button id="confirmEventDelete" class="btn btn-error">
               Delete
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- click outside to close -->
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- modal for inserting an acitivity- similar to add a new trip modal -->
+    <dialog id="my_modal_event" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <!-- close button in its own form so it doesn't submit -->
+        <form method="dialog">
+          <button
+            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          >
+            ✕
+          </button>
+        </form>
+
+        <h3 id="actTitle" class="text-lg font-semibold">
+          Add a New Evenet to your Calendar
+        </h3>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-base-content/60">Destination</label>
+          <div id="dest-title"></div>
+        </div>
+
+        <div class="flex gap-3">
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-sm text-base-content/60"
+              >Start Date</label
+            >
+            <input id="startDate" type="date" class="input w-full" />
+          </div>
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-sm text-base-content/60">End Date</label>
+            <input id="endDate" type="date" class="input w-full" />
+          </div>
+        </div>
+        <p id="actError" class="text-sm text-red-500 mt-1 hidden"></p>
+
+        <div class="modal-action mt-0">
+          <form method="dialog">
+            <button class="btn btn-ghost">Cancel</button>
+          </form>
+          <button
+            id="createAct"
+            class="btn"
+            style="background-color: #534ab7; color: white"
+          >
+            Add
+          </button>
         </div>
       </div>
 
