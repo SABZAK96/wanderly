@@ -38,14 +38,9 @@ function setUpAutocomplete(container) {
 
   // Create the input HTML element, and append it.
   const placeAutocomplete = new PlaceAutocompleteElement();
-  placeAutocomplete.placeholder = container.dataset.placeholder || "e.g. Tokyo, Japan";
+  placeAutocomplete.placeholder =
+    container.dataset.placeholder || "e.g. Tokyo, Japan";
   container.appendChild(placeAutocomplete);
-
-  // tracks the exact text of the last real selection, so the "input"
-  // listener below can tell "the user edited after selecting" apart from
-  // "this input event was fired by the selection itself" without relying
-  // on which of the two events happens to fire first internally
-  let lastConfirmedValue = "";
 
   // Add the gmp-select listener
   placeAutocomplete.addEventListener(
@@ -55,7 +50,8 @@ function setUpAutocomplete(container) {
       await place.fetchFields({
         fields: ["displayName", "formattedAddress", "location"],
       });
-      lastConfirmedValue = place.formattedAddress;
+      // stored on dataset (not a closure variable) so resetDestinationAutocomplete can clear it from outside this function
+      container.dataset.lastConfirmedValue = place.formattedAddress;
       container.dataset.destination = place.formattedAddress;
       container.dataset.lat = place.location.lat();
       container.dataset.lng = place.location.lng();
@@ -67,17 +63,28 @@ function setUpAutocomplete(container) {
   // destination." check in validateTripDates (sidebar.js) blocks
   // submitting an unselected/garbage destination, instead of silently
   // reusing whatever place was selected before the user started editing.
-  // Compares against lastConfirmedValue rather than unconditionally
+  // Compares against dataset.lastConfirmedValue rather than unconditionally
   // clearing, since selecting a suggestion may itself fire "input" -
   // only clear when the visible text has actually diverged from the last
   // real selection
   placeAutocomplete.addEventListener("input", () => {
-    if (placeAutocomplete.value !== lastConfirmedValue) {
+    if (placeAutocomplete.value !== container.dataset.lastConfirmedValue) {
       container.dataset.destination = "";
       container.dataset.lat = "";
       container.dataset.lng = "";
     }
   });
+}
+
+// clears a destination-autocomplete container back to blank: the widget's own
+// displayed text, dataset.destination/lat/lng, and dataset.lastConfirmedValue
+function resetDestinationAutocomplete(container) {
+  const widget = container.querySelector("gmp-place-autocomplete");
+  if (widget) widget.value = "";
+  container.dataset.destination = "";
+  container.dataset.lat = "";
+  container.dataset.lng = "";
+  container.dataset.lastConfirmedValue = "";
 }
 
 // expense.js (a module, so it can't call getSingleTripDetails directly) fires
@@ -117,7 +124,7 @@ document.getElementById("addTrip").addEventListener("click", () => {
   delete modal.dataset.editingTripId;
   document.getElementById("tripTitle").textContent = "Add a New Trip";
   document.getElementById("createTrip").textContent = "Create Trip";
-  document.getElementById("dest-title").dataset.destination = "";
+  resetDestinationAutocomplete(document.getElementById("dest-title"));
   document.getElementById("startDate").value = "";
   document.getElementById("endDate").value = "";
   modal.showModal();
@@ -224,7 +231,7 @@ document
       await getSingleTripDetails(data);
       getRecentActivities(data);
       // clear the form so the next "+ New Trip" opens blank, not with this trip's info
-      document.getElementById("dest-title").dataset.destination = "";
+      resetDestinationAutocomplete(document.getElementById("dest-title"));
       document.getElementById("startDate").value = "";
       document.getElementById("endDate").value = "";
 
