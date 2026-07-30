@@ -56,3 +56,37 @@ gmp-place-autocomplete::part(prediction-item-match) {
 gmp-place-autocomplete::part(prediction-item-selected) {
   background-color: #f3f4f6;
 }
+
+/* daisyUI's CDN stylesheet is precompiled on its own and never passes through
+   Tailwind's engine, so Tailwind's browser CDN JIT (which only knows its own
+   utilities) never generates a real "lg:drawer-open" rule - that class in the
+   markup has no effect. Hand-roll the same behavior daisyUI's plain
+   .drawer-open class gives, gated behind the same 1024px breakpoint, so the
+   sidebar stays open as a static column on desktop instead of collapsing to
+   its default hidden/overlay state - shared by every page using this drawer
+   (plan/calendar/expense/account/settings). */
+@media (min-width: 1024px) {
+  .drawer.lg\:drawer-open > .drawer-toggle {
+    display: none;
+  }
+  .drawer.lg\:drawer-open > .drawer-toggle ~ .drawer-side {
+    pointer-events: auto;
+    visibility: visible;
+    overscroll-behavior: auto;
+    opacity: 1;
+    width: auto;
+    display: block;
+    position: sticky;
+  }
+  .drawer.lg\:drawer-open > .drawer-toggle ~ .drawer-side > .drawer-overlay {
+    cursor: default;
+    background-color: transparent;
+  }
+  /* the base (always-on) drawer-side rules slide its content off-screen with
+     translate: -100% regardless of breakpoint - cancel that so the sidebar's
+     actual content (trip list, etc.) sits back in view instead of just its
+     empty background column showing. */
+  .drawer.lg\:drawer-open > .drawer-toggle ~ .drawer-side > :not(.drawer-overlay) {
+    translate: 0%;
+  }
+}
