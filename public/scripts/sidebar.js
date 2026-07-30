@@ -132,18 +132,37 @@ document.getElementById("addTrip").addEventListener("click", () => {
 
 // checks destination/date inputs for create and edit trip forms, returns an
 // error message to show the user or null if everything's valid
-function validateTripDates(destination, startDate, endDate) {
+function validateTripDates(destination, startDate, endDate, startTime, endTime) {
   // get todays date in yyyy-mm-dd format
   const todayDate = new Date().toISOString().slice(0, 10);
 
-  if (destination.trim() === "") {
+  // same undefined-vs-"" distinction as the dates/time below - skip when the caller isn't validating a destination at all
+  if (destination !== undefined && destination.trim() === "") {
     return "Please Enter your destination.";
-  } else if (!startDate || !endDate) {
-    return "Please select both a start and end date.";
-  } else if (endDate <= startDate) {
-    return "End date must be after the start date.";
-  } else if (startDate < todayDate) {
-    return "Start date can't be in the past.";
+  }
+
+  // undefined means the caller didn't pass dates at all (skip); "" means it did, and the user left it blank
+  if (startDate !== undefined && endDate !== undefined) {
+    if (startDate === "") {
+      return "Please select a Start Date.";
+    } else if (endDate === "") {
+      return "Please select an End Date.";
+    } else if (endDate <= startDate) {
+      return "End date must be after the start date.";
+    } else if (startDate < todayDate) {
+      return "Start date can't be in the past.";
+    }
+  }
+
+  // same undefined-vs-"" distinction as the dates above
+  if (startTime !== undefined && endTime !== undefined) {
+    if (startTime === "") {
+      return "Please select a Start Time.";
+    } else if (endTime === "") {
+      return "Please select an End Time.";
+    } else if (startTime >= endTime) {
+      return "End time must be after the start time.";
+    }
   }
   return null;
 }
@@ -337,6 +356,7 @@ async function getSingleTripDetails(tripId) {
   const start = trip.startDate.slice(0, 10);
   container.dataset.startDate = start;
   const end = trip.endDate.slice(0, 10);
+  container.dataset.endDate = end;
   const dateInfo = formatTripDates(start, end);
 
   container.innerHTML = "";

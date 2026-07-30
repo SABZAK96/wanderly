@@ -409,18 +409,27 @@ addToCalBtn.addEventListener("click", async () => {
   calError.classList.add("hidden");
   const startTime = document.getElementById("startTime").value;
   const endTime = document.getElementById("endTime").value;
-  if (!startTime) {
-    calError.textContent = "Please select a Time.";
+  const errorMessage = validateTripDates(
+    undefined,
+    undefined,
+    undefined,
+    startTime,
+    endTime,
+  );
+  if (errorMessage) {
+    calError.textContent = errorMessage;
     calError.classList.remove("hidden");
     return;
   }
-  if (!endTime) {
-    calError.textContent = "Please select an End Time.";
-    calError.classList.remove("hidden");
-    return;
-  }
-  if (endTime <= startTime) {
-    calError.textContent = "End Time must be after Start Time.";
+
+  // startDateCal is prefilled from the trip's own start date, but the user can still change it - make sure it stays within the trip's date range
+  const activityDate = document.getElementById("startDateCal").value;
+  const tripHeader = document.getElementById("tripHeader");
+  if (
+    activityDate < tripHeader.dataset.startDate ||
+    activityDate > tripHeader.dataset.endDate
+  ) {
+    calError.textContent = "Date must be within the trip's dates.";
     calError.classList.remove("hidden");
     return;
   }
