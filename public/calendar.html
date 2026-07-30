@@ -216,6 +216,29 @@
               class="text-sm text-red-500 mt-1 text-center hidden"
             ></p>
             <div class="font-light text-3xl mb-6">Calendar</div>
+            <!-- drag has no hover-cursor cue on touch, unlike desktop - only show this where it's actually needed -->
+            <p
+              class="sm:hidden flex items-center justify-center gap-1 text-xs text-base-content/60 text-center mb-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="#eab308"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 18h6m-5 3h4m.5-6.03A5.5 5.5 0 1 0 7 10.5c0 1.6.7 3 2 4.03V16a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1.47Z"
+                />
+              </svg>
+              <span
+                >Tip: Press and hold an event to reschedule it. In day view,
+                you can also drag its edge to resize.</span
+              >
+            </p>
             <!-- calendar -->
             <div id="calendarContainer" class="mt-2">
               <div id="calendar" class="font-light text-4xl"></div>
@@ -493,6 +516,34 @@
           </button>
         </div>
         <p id="deleteActivityError" class="text-sm text-red-500 hidden"></p>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- confirms a drag (reschedule) or resize (duration change) before
+         saving it - cancelling must call the in-progress FullCalendar
+         eventDrop/eventResize info.revert() to snap the event back, not
+         just close this dialog, so the JS wiring needs to hook the
+         cancel button (and the modal's native "close" event, to also
+         catch backdrop-click/Esc dismissal) rather than relying on
+         <form method="dialog"> alone -->
+    <dialog id="dragResizeConfirmModal" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <h3 class="text-lg font-semibold">Confirm Change?</h3>
+        <p id="dragResizeConfirmMessage" class="text-sm text-base-content/70"></p>
+        <div class="flex justify-end gap-2">
+          <button id="cancelDragResize" class="btn btn-ghost">Cancel</button>
+          <button
+            id="confirmDragResize"
+            class="btn"
+            style="background-color: #534ab7; color: white"
+          >
+            Confirm
+          </button>
+        </div>
+        <p id="dragResizeError" class="text-sm text-red-500 hidden"></p>
       </div>
       <form method="dialog" class="modal-backdrop">
         <button>close</button>
