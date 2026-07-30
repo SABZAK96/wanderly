@@ -96,7 +96,7 @@ async function initCalendar() {
     headerToolbar: {
       left: "prev,next today",
       center: "title",
-      right: "dayGridMonth,timeGridDay",
+      right: "dayGridMonth,timeGridDay,listWeek",
     },
     events: myEvents,
     views: {
@@ -155,22 +155,32 @@ initCalendar();
 // attach a listener to change button
 const saveEventEdit = document.getElementById("saveEventEdit");
 const eventEditError = document.getElementById("eventEditError");
+// container of the selected trip tp get the dates from its datasets
+const tripHeader = document.getElementById("tripHeader");
 saveEventEdit.addEventListener("click", async () => {
   if (saveEventEdit.dataset.loading === "true") return;
 
   eventEditError.classList.add("hidden");
-  if (!startTime.value) {
-    eventEditError.textContent = "Please select a Time.";
+  const validationError = validateTripDates(
+    undefined,
+    undefined,
+    undefined,
+    startTime.value,
+    endTime.value,
+  );
+  if (validationError) {
+    eventEditError.textContent = validationError;
     eventEditError.classList.remove("hidden");
     return;
   }
-  if (!endTime.value) {
-    eventEditError.textContent = "Please select an End Time.";
-    eventEditError.classList.remove("hidden");
-    return;
-  }
-  if (endTime.value <= startTime.value) {
-    eventEditError.textContent = "End Time must be after Start Time.";
+
+  // eventEditDate is a single date (not a range like eventStartDate/eventEndDate) - keep it within the trip's own range
+
+  if (
+    date.value < tripHeader.dataset.startDate ||
+    date.value > tripHeader.dataset.endDate
+  ) {
+    eventEditError.textContent = "Date must be within the trip's dates.";
     eventEditError.classList.remove("hidden");
     return;
   }
@@ -244,5 +254,111 @@ confirmEventDelete.addEventListener("click", async () => {
   } finally {
     confirmEventDelete.textContent = originalLabel;
     confirmEventDelete.dataset.loading = "false";
+  }
+});
+
+// add a new event to calendar
+const addEventModal = document.getElementById("my_modal_event");
+const eventDestination = document.getElementById("dest-title-event");
+const eventDate = document.getElementById("eventDate");
+const eventSolo = document.getElementById("eventSolo");
+const eventGrp = document.getElementById("eventGrp");
+const eventStartTime = document.getElementById("eventStartTime");
+const eventEndTime = document.getElementById("eventEndTime");
+
+// clean up the add new event modal
+function cleanUpAddEventModal() {
+  resetDestinationAutocomplete(eventDestination);
+  eventSolo.checked = true;
+  eventStartTime.value = "";
+  eventEndTime.value = "";
+  eventDate.value = "";
+}
+
+// popping up add event to calendar modal
+document.getElementById("addEvent").addEventListener("click", () => {
+  cleanUpAddEventModal();
+  addEventModal.showModal();
+});
+
+// submit modal
+const addEventBtn = document.getElementById("createAct");
+const addEventError = document.getElementById("actError");
+addEventBtn.addEventListener("click", async () => {
+  if (addEventBtn.dataset.loading === "true") return;
+
+  addEventError.classList.add("hidden");
+  // eventDestination is the widget's container div, not an input - the
+  // selected place lives in dataset.destination (set by the gmp-select
+  // handler in sidebar.js), not a .value
+  const validationError = validateTripDates(
+    eventDestination.dataset.destination,
+    undefined,
+    undefined,
+    eventStartTime.value,
+    eventEndTime.value,
+  );
+  if (validationError) {
+    addEventError.textContent = validationError;
+    addEventError.classList.remove("hidden");
+    return;
+  }
+
+  // eventDate is a single date (like eventEditDate/startDateCal, not a
+  // range like the trip-creation modal) but we should still keep it within the trip's own range
+  if (eventDate.value === "") {
+    addEventError.textContent = "Please select a Date.";
+    addEventError.classList.remove("hidden");
+    return;
+  } else if (
+    eventDate.value < tripHeader.dataset.startDate ||
+    eventDate.value > tripHeader.dataset.endDate
+  ) {
+    addEventError.textContent = "Date must be within the trip's dates.";
+    addEventError.classList.remove("hidden");
+    return;
+  }
+
+  const originalLabel = addEventBtn.textContent;
+  addEventBtn.dataset.loading = "true";
+  addEventBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+  // POST to /addToCalSolo/:tripId or /addToCalgrp/:tripId depending on
+  // eventSolo/eventGrp, same request shape as code.js's addToCalBtn
+  const route = eventSolo.checked ? "addToCalSolo" : "addToCalgrp";
+
+  try {
+    const response = await fetch(`/${route}/${tripId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        activityName: eventDestination.dataset.destination,
+        date: eventDate.value,
+        startTime: eventStartTime.value,
+        endTime: eventEndTime.value,
+        address: eventDestination.dataset.destination,
+        placeId: eventDestination.dataset.placeId,
+        location: {
+          lat: eventDestination.dataset.lat,
+          lng: eventDestination.dataset.lng,
+        },
+      }),
+    });
+
+    if (response.ok) {
+      addEventModal.close();
+      await initCalendar();
+    } else {
+      addEventError.textContent = await response.text();
+      addEventError.classList.remove("hidden");
+    }
+  } catch (error) {
+    addEventError.textContent = "Could not reach the server. Try again.";
+    addEventError.classList.remove("hidden");
+  } finally {
+    addEventBtn.textContent = originalLabel;
+    addEventBtn.dataset.loading = "false";
   }
 });
