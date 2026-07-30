@@ -104,19 +104,89 @@ async function getMyId() {
   return myId;
 }
 
-// listen to the custom event created in plan.html for adding a new trip through suggestion modal
-document.addEventListener("addTripSuggest", (e) => {
-  getSingleTripDetails(e.detail.tripId);
-  getRecentActivities(e.detail.tripId);
-  const element = document.querySelector(
-    `#yourTrips [id="${e.detail.tripId}"]`,
-  );
-  // #yourTrips is populated by this file's own loadYourTrips(), separately
-  // from code.js's loadTrips() (which populates the suggest-modal's own
-  // list) - the two fetches aren't coordinated, so element can be null if
-  // loadYourTrips() hasn't resolved yet when this fires
-  if (element) highlightTrip(element);
+// ====================================================================
+// (#my_modal_suggest) - shared by
+// plan/calendar/expense, not present on account/settings
+// ====================================================================
+
+// loads the user's trips into #addedTrips for the picker
+async function loadTrips() {
+  const data = await (await fetch("/allTrips")).json();
+  const container = document.getElementById("addedTrips");
+  container.innerHTML = "";
+  data.forEach((trip) => {
+    const startDate = trip.startDate.slice(0, 10); // gives sth like 2017-08-19
+    const endDate = trip.endDate.slice(0, 10);
+    const dateRange = formatTripDates(startDate, endDate);
+    let element = "";
+    element += `<div data-id ="${trip._id}"
+                class="card suggest flex flex-row items-center justify-between gap-2 text-sm font-medium  px-2.5 py-2 rounded-xl hover:cursor-pointer hover:border-2 hover:border-[#3c3489] text-[#3c3489] bg-[#eeedfe]"
+              >
+                <span>${trip.destination.charAt(0).toUpperCase() + trip.destination.slice(1)}</span
+                ><span class="text-xs font-normal"
+                  >${dateRange.compact}</span
+                >
+              </div>`;
+    container.insertAdjacentHTML("beforeend", element);
+  });
+}
+
+const suggestModal = document.getElementById("my_modal_suggest");
+
+// forces the user to pick (or create) a trip before a trip-scoped action
+// proceeds - callers on pages with the modal (plan/calendar/expense) call
+// this and bail out if it returns false
+async function requireTripSelected() {
+  if (localStorage.getItem("selectedTripId")) return true;
+  await loadTrips();
+  suggestModal.showModal();
+  return false;
+}
+
+// expense.js is a module and can't call requireTripSelected() directly -
+// it dispatches this event instead when it needs the picker shown
+document.addEventListener("requireTripPick", () => {
+  loadTrips().then(() => suggestModal.showModal());
 });
+
+// #my_modal_suggest doesn't exist on account.html/settings.html - skip wiring it up there
+
+if (suggestModal) {
+  // open up the add-a-new-trip modal once "create a new trip" is clicked from the picker
+  suggestModal.addEventListener("click", (event) => {
+    const btn = event.target.closest("#createTripinPickModal");
+    if (!btn) return; // click was somewhere else in the modal (close button, backdrop, a trip card)
+    document.getElementById("my_modal_trip").showModal();
+    suggestModal.close();
+  });
+
+  // picking a trip from the list
+  suggestModal.addEventListener("click", (event) => {
+    // remove all the borders first
+    suggestModal.querySelectorAll(".suggest").forEach((element) => {
+      element.classList.contains("border-2") &&
+        element.classList.remove("border-2");
+    });
+    const selectedTrip = event.target.closest(".suggest");
+    if (!selectedTrip) return;
+
+    selectedTrip.classList.add("border-2", "border-[#3c3489]");
+    localStorage.setItem("selectedTripId", selectedTrip.dataset.id);
+    onTripPickedFromSuggestModal(selectedTrip.dataset.id);
+    suggestModal.close();
+  });
+}
+
+// updates the sidebar after a trip is picked from the "pick a trip first"
+// modal - see notes/suggest-modal-trip-picker.md
+function onTripPickedFromSuggestModal(tripId) {
+  getSingleTripDetails(tripId);
+  getRecentActivities(tripId);
+  const element = document.querySelector(`#yourTrips [id="${tripId}"]`);
+  // element can be null - this file's own loadYourTrips() may not have
+  // resolved yet when this fires
+  if (element) highlightTrip(element);
+}
 
 document.getElementById("addTrip").addEventListener("click", () => {
   // clear any leftover edit state so this opens as a fresh "create" form

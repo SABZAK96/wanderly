@@ -64,6 +64,12 @@ function resetExpenseModal() {
 }
 
 document.getElementById("addExp").addEventListener("click", () => {
+  // sidebar.js owns the trip-picker modal and can't be called directly from
+  // a module script - dispatch an event instead, see notes/suggest-modal-trip-picker.md
+  if (!tripId) {
+    document.dispatchEvent(new CustomEvent("requireTripPick"));
+    return;
+  }
   document.getElementById("my_modal_expense").showModal();
   resetExpenseModal();
 });
@@ -86,6 +92,10 @@ function resetGhostModal() {
 }
 
 document.getElementById("addGhost").addEventListener("click", () => {
+  if (!tripId) {
+    document.dispatchEvent(new CustomEvent("requireTripPick"));
+    return;
+  }
   resetGhostModal();
   document.getElementById("addGhostModal").showModal();
 });

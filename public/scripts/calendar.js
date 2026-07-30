@@ -276,7 +276,10 @@ function cleanUpAddEventModal() {
 }
 
 // popping up add event to calendar modal
-document.getElementById("addEvent").addEventListener("click", () => {
+document.getElementById("addEvent").addEventListener("click", async () => {
+  // shows the trip-picker modal and bails out if no trip is selected yet (sidebar.js)
+  if (!(await requireTripSelected())) return;
+  // if the trip is selected show add event modal
   cleanUpAddEventModal();
   addEventModal.showModal();
 });
