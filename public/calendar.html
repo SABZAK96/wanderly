@@ -47,6 +47,15 @@
       }
       .fc .fc-button {
         border-radius: 10px;
+        padding: 0.3em 0.65em;
+        font-size: 0.85rem;
+      }
+      /* keep the "Add a New Event" button matching the fc-buttons' own size/look at every breakpoint */
+      #addEvent {
+        border-radius: 10px;
+        padding: 0.3em 0.65em;
+        font-size: 0.85rem;
+        height: auto;
       }
       .fc-event-title-container {
         display: flex;
@@ -66,9 +75,39 @@
           padding: 2px 0;
         }
         .fc-event-title {
-          font-size: 0.7rem;
+          display: flex;
+          flex-wrap: wrap;
+          font-size: 0.6rem;
           white-space: normal;
           overflow: visible;
+        }
+        /* stack the whole toolbar (prev/next/today, title, view buttons)
+           instead of squeezing all three side by side, which is what made
+           this look cramped/broken on narrow screens */
+        .fc .fc-toolbar {
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: start;
+          gap: 0.5rem;
+        }
+        .fc .fc-toolbar-chunk {
+          width: fit-content;
+          display: flex;
+          justify-content: center;
+          align-items: start;
+          gap: 1px;
+        }
+        .fc .fc-toolbar-title {
+          font-size: 1.1rem;
+          text-align: center;
+        }
+        .fc .fc-button {
+          padding: 0.25em 0.5em;
+          font-size: 0.75rem;
+        }
+        #addEvent {
+          padding: 0.25em 0.5em;
+          font-size: 0.75rem;
         }
       }
     </style>
@@ -172,13 +211,17 @@
               id="calendarError"
               class="text-sm text-red-500 mt-1 text-center hidden"
             ></p>
+            <div class="font-light text-3xl mb-6">Calendar</div>
             <!-- calendar -->
             <div id="calendarContainer" class="mt-2">
               <div id="calendar" class="font-light text-4xl"></div>
             </div>
             <!-- button for adding a new event -->
             <div class="flex justify-end mt-2">
-              <button id="addEvent" class="btn rounded-xl text-white bg-[#532ab7] hover:bg-[#44228f] transition-colors">
+              <button
+                id="addEvent"
+                class="btn rounded-xl text-white bg-[#532ab7] hover:bg-[#44228f] transition-colors"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-4 w-4"
