@@ -46,7 +46,6 @@ async function eventsFromDB(tripId) {
           end: EventEnd,
           display: "block",
           editable: true,
-          address: obj.address,
           placeId: obj.placeId,
           lat: obj.location?.lat,
           lng: obj.location?.lng,
@@ -88,6 +87,13 @@ async function initCalendar() {
   // remember where the user was looking before tearing down the old instance, so re-running this after an edit/delete lands back on the same day/month instead of resetting to today
   const previousDate = calendar ? calendar.getDate() : firstEventInTrip;
   const previousView = calendar ? calendar.view.type : "dayGridMonth";
+
+  // constants to use for event frop and event resize
+  const modal = document.getElementById("dragResizeConfirmModal");
+  const errorMsg = document.getElementById("dragResizeError");
+  const cancelBtn = document.getElementById("cancelDragResize");
+  const confirmBtn = document.getElementById("confirmDragResize");
+
   // destroy the previous instance first, otherwise re-running this (e.g. after an edit/delete) renders a second calendar into the same container instead of replacing the old one
   if (calendar) calendar.destroy();
   var calendarEl = document.getElementById("calendar");
@@ -181,6 +187,105 @@ async function initCalendar() {
       } else {
         eventDeleteScope.classList.remove("hidden");
       }
+    },
+
+    // confirms a drag (reschedule to a different day) before saving it -
+    // resize (day view, edge-drag) is what owns time/duration changes, so
+    // this only ever sends `date`, not startTime/endTime
+    eventDrop: function (info) {
+      errorMsg.classList.add("hidden");
+      modal.showModal();
+
+      // cancel is a terminal action (always closes+reverts), so it only
+      // ever needs to fire once - but it also has to remove confirm's
+      // listener, otherwise confirm's listener leaks (still attached, with
+      // this closure's stale `info`) the next time an event gets dropped
+      function onCancel() {
+        confirmBtn.removeEventListener("click", onConfirm);
+        modal.close();
+        info.revert();
+      }
+
+      // not {once:true} - a failed save should let the user retry Confirm
+      // again, not silently stop responding to clicks
+      async function onConfirm() {
+        if (confirmBtn.dataset.loading === "true") return;
+        const dateStr = info.event.start.toISOString().slice(0, 10);
+
+        confirmBtn.dataset.loading = "true";
+        try {
+          const response = await fetch(`/editActivity/${info.event.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date: dateStr }),
+          });
+          if (response.ok) {
+            // only remove cancel's listener once actually done - on
+            // failure, both stay live so the user can retry or bail out
+            cancelBtn.removeEventListener("click", onCancel);
+            confirmBtn.removeEventListener("click", onConfirm);
+            modal.close();
+            await initCalendar();
+          } else {
+            errorMsg.textContent = await response.text();
+            errorMsg.classList.remove("hidden");
+          }
+        } catch (error) {
+          errorMsg.textContent = "Could not reach the server. Try again.";
+          errorMsg.classList.remove("hidden");
+        } finally {
+          confirmBtn.dataset.loading = "false";
+        }
+      }
+
+      cancelBtn.addEventListener("click", onCancel, { once: true });
+      confirmBtn.addEventListener("click", onConfirm);
+    },
+    eventResize: function (info) {
+      errorMsg.classList.add("hidden");
+      modal.showModal();
+
+      function onCancel() {
+        confirmBtn.removeEventListener("click", onConfirm); // removing the listener attached to confirm to avoid stacking
+        modal.close();
+        info.revert();
+      }
+
+      async function onConfirm() {
+        if (confirmBtn.dataset.loading === "true") return;
+        const startTime = info.event.start
+          .toISOString()
+          .split("T")[1]
+          .slice(0, 5);
+        const endTime = info.event.end.toISOString().split("T")[1].slice(0, 5);
+        confirmBtn.dataset.loading = "true";
+
+        try {
+          const response = await fetch(`/editActivity/${info.event.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ startTime: startTime, endTime: endTime }),
+          });
+          if (response.ok) {
+            // remove both listener on sucess to avoid stacking
+            cancelBtn.removeEventListener("click", onCancel);
+            confirmBtn.removeEventListener("click", onConfirm);
+            modal.close();
+            await initCalendar();
+          } else {
+            errorMsg.textContent = await response.text();
+            errorMsg.classList.remove("hidden");
+          }
+        } catch (error) {
+          errorMsg.textContent = "Could not reach the server. Try again.";
+          errorMsg.classList.remove("hidden");
+        } finally {
+          confirmBtn.dataset.loading = "false";
+        }
+      }
+
+      confirmBtn.addEventListener("click", onConfirm);
+      cancelBtn.addEventListener("click", onCancel, { once: true }); // attached and removed the first time its clicked
     },
   });
   calendar.render();
