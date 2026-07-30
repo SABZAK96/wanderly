@@ -48,6 +48,8 @@ async function eventsFromDB(tripId) {
           editable: true,
           address: obj.address,
           placeId: obj.placeId,
+          lat: obj.location?.lat,
+          lng: obj.location?.lng,
           solo: obj.participants.length === 1,
         });
       });
@@ -120,6 +122,39 @@ async function initCalendar() {
     dateClick: function (info) {
       calendar.changeView("timeGridDay", info.dateStr);
     },
+
+    // adds a "View on Map" link to each event, only in day view (month/list
+    // are too cramped for it) - eventDidMount is FullCalendar's own hook for
+    // this, called once per rendered event with info.el (its DOM element)
+    eventDidMount: function (info) {
+      if (info.view.type !== "timeGridDay") return;
+      const { lat, lng, placeId } = info.event.extendedProps;
+      if (!lat || !lng) return;
+
+      const mapLink = document.createElement("a");
+      mapLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${placeId || ""}`;
+      // target blank redirects to new tab
+      mapLink.target = "_blank";
+      // .rel noopener comes with _blank target
+      mapLink.rel = "noopener";
+      mapLink.className =
+        "text-xs underline mb-2 inline-flex items-center gap-1 shrink-0";
+      // heroicons "arrow-top-right-on-square" - signals this opens elsewhere (a new tab), matching target="_blank" above
+      mapLink.innerHTML = `
+        View on Map
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+        </svg>
+      `;
+      // stop the click from also opening the edit/delete modal (eventClick)
+      mapLink.addEventListener("click", (e) => e.stopPropagation());
+
+      // appended as a SIBLING of .fc-event-title-container (not inside it) -
+      // their shared parent (.fc-event-main-frame) is flex-direction: column,
+      // so this lands on its own line instead of next to the title
+      info.el.querySelector(".fc-event-main-frame")?.appendChild(mapLink); // not all events have main frame (like all-day events), so we should do optional chaining for safety
+    },
+
     // opens the edit/delete modal for the clicked event, pre-filled from
     // the event's own data
     eventClick: function (info) {
