@@ -300,7 +300,7 @@
 
         <div class="flex flex-col gap-1">
           <label class="text-sm text-base-content/60">Destination</label>
-          <div id="dest-title"></div>
+          <div id="dest-title" class="dest-autocomplete"></div>
         </div>
 
         <div class="flex gap-3">
@@ -616,7 +616,39 @@
 
         <div class="flex flex-col gap-1">
           <label class="text-sm text-base-content/60">Destination</label>
-          <div id="dest-title"></div>
+          <div
+            id="dest-title-event"
+            class="dest-autocomplete"
+            data-placeholder="e.g. Eiffel Tower"
+          ></div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <div>
+            <input
+              id="eventSolo"
+              type="radio"
+              name="eventScope"
+              class="radio radio-xs"
+              style="color: #534ab7"
+              checked="checked"
+            />
+            <label class="text-xs text-base-content/60"
+              >Add to your Own Schedule</label
+            >
+          </div>
+          <div>
+            <input
+              id="eventGrp"
+              type="radio"
+              name="eventScope"
+              class="radio radio-xs"
+              style="color: #534ab7"
+            />
+            <label class="text-xs text-base-content/60"
+              >Add to the Group Schedule</label
+            >
+          </div>
         </div>
 
         <div class="flex gap-3">
@@ -624,13 +656,29 @@
             <label for="" class="text-sm text-base-content/60"
               >Start Date</label
             >
-            <input id="startDate" type="date" class="input w-full" />
+            <input id="eventStartDate" type="date" class="input w-full" />
           </div>
           <div class="flex flex-col gap-1 flex-1">
             <label for="" class="text-sm text-base-content/60">End Date</label>
-            <input id="endDate" type="date" class="input w-full" />
+            <input id="eventEndDate" type="date" class="input w-full" />
           </div>
         </div>
+
+        <div class="flex gap-3">
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-xs text-base-content/60"
+              >Select the Start Time</label
+            >
+            <input id="eventStartTime" type="time" class="input w-full" />
+          </div>
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-xs text-base-content/60"
+              >Select the End Time</label
+            >
+            <input id="eventEndTime" type="time" class="input w-full" />
+          </div>
+        </div>
+
         <p id="actError" class="text-sm text-red-500 mt-1 hidden"></p>
 
         <div class="modal-action mt-0">

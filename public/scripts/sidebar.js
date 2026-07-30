@@ -26,17 +26,19 @@ loadPlacesLibrary();
 // function for making a call to google places api - source: google places documentation with some modification to integrate it with my codebase
 // no need to call this function since it would be called auromatically once the script tag from above loads
 const container = document.getElementById("dest-title");
+
+// sets up every .dest-autocomplete box once the Places library is actually ready - see notes/working-with-google-places-case-studies.md Part 7
 async function initAutocomplete() {
-  // libraries=places in the script tag's URL already loaded the library,
-  // but it only exposes the class namespaced under google.maps.places -
-  // there's no bare global called PlaceAutocompleteElement on its own
-  // so const { PlaceAutocompleteElement } =
-  // await google.maps.importLibrary('places'); will be changed to the following lines
+  document.querySelectorAll(".dest-autocomplete").forEach(setUpAutocomplete);
+}
+
+function setUpAutocomplete(container) {
+  // no bare global for this - it's namespaced under google.maps.places, see notes/working-with-google-places-case-studies.md Part 3
   const { PlaceAutocompleteElement } = google.maps.places;
 
   // Create the input HTML element, and append it.
   const placeAutocomplete = new PlaceAutocompleteElement();
-  placeAutocomplete.placeholder = "e.g. Tokyo, Japan";
+  placeAutocomplete.placeholder = container.dataset.placeholder || "e.g. Tokyo, Japan";
   container.appendChild(placeAutocomplete);
 
   // tracks the exact text of the last real selection, so the "input"
