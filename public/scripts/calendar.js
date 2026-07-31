@@ -212,7 +212,9 @@ async function initCalendar() {
         if (confirmBtn.dataset.loading === "true") return;
         const dateStr = info.event.start.toISOString().slice(0, 10);
 
+        const originalLabel = confirmBtn.textContent;
         confirmBtn.dataset.loading = "true";
+        confirmBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
         try {
           const response = await fetch(`/editActivity/${info.event.id}`, {
             method: "PUT",
@@ -234,6 +236,7 @@ async function initCalendar() {
           errorMsg.textContent = "Could not reach the server. Try again.";
           errorMsg.classList.remove("hidden");
         } finally {
+          confirmBtn.textContent = originalLabel;
           confirmBtn.dataset.loading = "false";
         }
       }
@@ -258,7 +261,10 @@ async function initCalendar() {
           .split("T")[1]
           .slice(0, 5);
         const endTime = info.event.end.toISOString().split("T")[1].slice(0, 5);
+
+        const originalLabel = confirmBtn.textContent;
         confirmBtn.dataset.loading = "true";
+        confirmBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
 
         try {
           const response = await fetch(`/editActivity/${info.event.id}`, {
@@ -280,6 +286,7 @@ async function initCalendar() {
           errorMsg.textContent = "Could not reach the server. Try again.";
           errorMsg.classList.remove("hidden");
         } finally {
+          confirmBtn.textContent = originalLabel;
           confirmBtn.dataset.loading = "false";
         }
       }
