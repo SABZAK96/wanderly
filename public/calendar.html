@@ -14,9 +14,9 @@
     <link rel="stylesheet" href="styles/shared.css" />
     <style>
       :root {
-        --fc-button-bg-color: #532ab7;
-        --fc-button-active-bg-color: #532ab7;
-        --fc-button-active-border-color: #532ab7;
+        --fc-button-bg-color: #534ab7;
+        --fc-button-active-bg-color: #534ab7;
+        --fc-button-active-border-color: #534ab7;
         /* without these, FullCalendar falls back to its default (dark gray/
            black) hover color instead of a shade of the brand purple */
         --fc-button-hover-bg-color: #44228f;
@@ -208,7 +208,7 @@
         </label>
 
         <!-- main content -->
-        <section class="flex justify-center px-4 py-8">
+        <section class="flex justify-center px-4 py-8 mb-8">
           <div class="w-full max-w-6xl">
             <div class="flex flex-col gap-2">
               <div class="font-light text-3xl mb-1">Weather</div>
@@ -248,12 +248,12 @@
 
                   <!-- icon + current temp+ lowest highest -->
                   <div
-                    class="flex flex-row items-center justify-start gap-4 md:gap-10"
+                    class="flex flex-row items-stretch justify-start gap-4 md:gap-10"
                   >
                     <img
                       src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
                       alt="Weather icon"
-                      class="rounded-xl md:w-50 md:h-50 w-20 h-20 shrink-0 object-cover"
+                      class="rounded-xl md:w-50 w-30 shrink-0 object-cover"
                     />
                     <div class="flex flex-col gap-2 justify-start">
                       <p
@@ -409,7 +409,7 @@
               id="calendarError"
               class="text-sm text-red-500 mt-1 text-center hidden"
             ></p>
-            <div class="font-light text-3xl mb-2">Calendar</div>
+            <div class="font-light text-3xl my-2">Calendar</div>
             <!-- drag has no hover-cursor cue on touch, unlike desktop - only show this where it's actually needed -->
             <p
               class="sm:hidden flex items-center justify-center gap-1 text-xs text-base-content/60 text-center mb-6"
@@ -441,7 +441,7 @@
             <div class="flex justify-end mt-2">
               <button
                 id="addEvent"
-                class="btn rounded-xl text-white bg-[#532ab7] hover:bg-[#44228f] transition-colors"
+                class="btn rounded-xl text-white bg-[#534ab7] hover:bg-[#44228f] transition-colors"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
