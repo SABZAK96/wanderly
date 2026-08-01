@@ -968,18 +968,27 @@ app.put(
 // google api weather
 app.post("/getWeather", async (req, res) => {
   try {
-    const response = await fetch(
-      `https://weather.googleapis.com/v1/forecast/days:lookup?key=${process.env.GOOGLE_PLACES_API}&location.latitude=${req.body.lat}&location.longitude=${req.body.lng}&days=10&pageSize=10`,
-    );
-    if (response.ok) {
-      const data = await response.json();
-      res.json(data);
-    }
-    else {
-      console.error("Weather API request failed:", await response.text());
-      res.status(502).send("Failed to fetch weather API.")
-    }
+    const apiCall = await (
+      await fetch(
+        `https://weather.googleapis.com/v1/forecast/days:lookup?key=${process.env.GOOGLE_PLACES_API}&location.latitude=${req.body.lat}&location.longitude=${req.body.lng}&days=10&pageSize=10`,
+      )
+    ).json();
+    res.json(apiCall);
   } catch (error) {
-    console.error(error);
+    res.status(500).send("error connecting to the api.");
+  }
+});
+
+// google api weather - current conditions, for the "today" card in the weather carousel
+app.post("/currentWeather", async (req, res) => {
+  try {
+    const apiCall = await (
+      await fetch(
+        `https://weather.googleapis.com/v1/currentConditions:lookup?key=${process.env.GOOGLE_PLACES_API}&location.latitude=${req.body.lat}&location.longitude=${req.body.lng}`,
+      )
+    ).json();
+    res.json(apiCall);
+  } catch (error) {
+    res.status(500).send("error connecting to the api.");
   }
 });

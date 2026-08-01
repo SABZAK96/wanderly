@@ -523,7 +523,6 @@ async function requestWeatherData() {
   const tripdestination = document.getElementById("tripHeader");
   const lat = tripdestination.dataset?.lat;
   const lng = tripdestination.dataset?.lng;
-
   try {
     const response = await fetch(`/getWeather`, {
       method: "POST",
@@ -562,7 +561,11 @@ function renderCarouselAPI(data) {
       month: "short",
       day: "numeric",
     });
-    let element = `<div data-weatherDesc="${item.daytimeForecast.weatherCondition.description.text}" data-day="${formattedDate}" data-uv="${item.daytimeForecast.uvIndex}" data-wind="${item.daytimeForecast.wind.speed.value}"
+    // mark the element with the current date as current - will be used in rendering selecteddayweather card
+    const elementDate = dateObject.toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+
+    let element = `<div data-weather-desc="${item.daytimeForecast.weatherCondition.description.text}" data-day="${formattedDate}" data-day-of-week="${dayOfWeek}" data-uv="${item.daytimeForecast.uvIndex}" data-wind="${item.daytimeForecast.wind.speed.value}" data-feels-like-max="${item.feelsLikeMaxTemperature.degrees}" data-feels-like-min="${item.feelsLikeMinTemperature.degrees}" ${elementDate === today ? 'data-current="true"' : ""}
                   class="carousel-item rounded-2xl"
                   style="
                     background-color: #e0dbfb;
@@ -641,4 +644,246 @@ function renderCarouselAPI(data) {
                 </div>`;
     carouselContainer.insertAdjacentHTML("beforeend", element);
   });
+}
+
+// render the big card selectedDayWeather - for current day it should fetch a different route, for upcoming dates it should use the metadata/data stashed/displayed in the carousel
+async function renderDetailsWeather(element) {
+  const container = document.getElementById("selectedDayWeather");
+  container.innerHTML = "";
+  try {
+    if (element.dataset.current && element.dataset.current === "true") {
+      // fetch a different route to get current condition
+      const tripdestination = document.getElementById("tripHeader");
+      const lat = tripdestination.dataset?.lat;
+      const lng = tripdestination.dataset?.lng;
+      const response = await fetch("/currentWeather", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ lat: lat, lng: lng }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const currentdateFormatted = new Date(
+          data.currentTime,
+        ).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        const dayOfWeek = new Date(data.currentTime).toLocaleDateString("en-US", {
+          weekday: "short",
+        });
+        let html = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
+                  <div class="flex flex-col gap-1">
+                    <h2
+                      id="selectedDate"
+                      class="card-title text-base md:text-xl"
+                      style="color: #534ab7"
+                    >
+                      ${dayOfWeek.toUpperCase()}, ${currentdateFormatted.toUpperCase()}
+                    </h2>
+                    <p class="text-sm md:text-base text-base-content/60">
+                      Day <span class="text-base-content">1</span> of your trip
+                      to
+                      <span class="text-base-content">Los Angeles</span>
+                    </p>
+                  </div>
+
+                  <!-- icon + current temp+ lowest highest -->
+                  <div
+                    class="flex flex-row items-stretch justify-start gap-4 md:gap-10"
+                  >
+                    <img
+                      src="${data.weatherCondition.iconBaseUri}.png"
+                      alt="Weather icon"
+                      class="rounded-xl md:w-50 w-30 shrink-0 object-cover"
+                    />
+                    <div class="flex flex-col gap-2 justify-start">
+                      <p
+                        id="currentTemp"
+                        class="md:text-6xl text-3xl font-bold"
+                      >
+                        ${data.temperature.degrees}°
+                      </p>
+                      <p id="status" class="font-semibold text-base-content/70">
+                        ${data.weatherCondition.description.text}
+                      </p>
+
+                      <!-- feels like, lowest, highest -->
+                      <div
+                        class="flex md:flex-row flex-col gap-1 text-base-content/60"
+                      >
+                        <p class="font-semibold">
+                          Feels like:
+                          <span style="color: #534ab7" id="feelsLike">${data.feelsLikeTemperature.degrees}°</span>
+                        </p>
+                        <p class="font-semibold">
+                          H:
+                          <span style="color: #f97316" id="highest">${data.currentConditionsHistory.maxTemperature.degrees}°</span>
+                        </p>
+                        <p class="font-semibold">
+                          L: <span style="color: #3b82f6" id="lowest">${data.currentConditionsHistory.minTemperature.degrees}°</span>
+                        </p>
+                      </div>
+                      <!-- end of feels like etc. -->
+                    </div>
+                  </div>
+
+                  <!-- other data -->
+                  <div
+                    class="flex flex-row justify-between items-center border-t border-base-200 w-full pt-2"
+                  >
+                    <div class="flex flex-col gap-1 items-start justify-start">
+                      <p
+                        id="precip"
+                        class="text-xs uppercase tracking-wide text-base-content/60"
+                      >
+                        Precip
+                      </p>
+                      <p class="font-semibold">${data.precipitation.probability.percent}%</p>
+                    </div>
+                    <div class="flex flex-col gap-1 items-start justify-start">
+                      <p
+                        id="uvInd"
+                        class="text-xs uppercase tracking-wide text-base-content/60"
+                      >
+                        UV Index
+                      </p>
+                      <p class="font-semibold">8${data.uvIndex}</p>
+                    </div>
+                    <div class="flex flex-col gap-1 items-start justify-start">
+                      <p
+                        id="wind"
+                        class="text-xs uppercase tracking-wide text-base-content/60"
+                      >
+                        Wind
+                      </p>
+                      <p class="font-semibold">${data.wind.speed.value} mph</p>
+                    </div>
+                  </div>
+                </div>`;
+        container.insertAdjacentHTML("beforeend", html);
+      } else {
+        console.error("Current weather request failed:", response.status);
+      }
+    } else {
+      const image = element.querySelector("img").src;
+      const highest = element.querySelector(".highest").textContent;
+      const lowest = element.querySelector(".lowest").textContent;
+      const precip = element.querySelector(".prec").textContent;
+
+      let html = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
+                  <div class="flex flex-col gap-1">
+                    <h2
+                      id="selectedDate"
+                      class="card-title text-base md:text-xl"
+                      style="color: #534ab7"
+                    >
+                      ${element.dataset.dayOfWeek.toUpperCase()}, ${element.dataset.day.toUpperCase()}
+                    </h2>
+                    <p class="text-sm md:text-base text-base-content/60">
+                      Day <span class="text-base-content">1</span> of your trip
+                      to
+                      <span class="text-base-content">Los Angeles</span>
+                    </p>
+                  </div>
+
+                  <!-- icon + current temp+ lowest highest -->
+                  <div
+                    class="flex flex-row items-stretch justify-start gap-4 md:gap-10"
+                  >
+                    <img
+                      src="${image}"
+                      alt="Weather icon"
+                      class="rounded-xl md:w-50 w-30 shrink-0 object-cover"
+                    />
+                    <div class="flex flex-col gap-2 justify-start">
+                      <p
+                        id="currentTemp"
+                        class="md:text-6xl text-3xl font-bold"
+                      >
+                        ${highest} / ${lowest}
+                      </p>
+                      <p id="status" class="font-semibold text-base-content/70">
+                        ${element.dataset.weatherDesc}
+                      </p>
+
+                      <!-- feels like, lowest, highest -->
+                      <div
+                        class="flex md:flex-row flex-col gap-1 text-base-content/60"
+                      >
+                        <p class="font-semibold">
+                          Feels like:
+                          <span style="color: #534ab7" id="feelsLike">${element.dataset.feelsLikeMax}° / ${element.dataset.feelsLikeMin}°</span>
+                        </p>
+                        <p class="font-semibold">
+                          H:
+                          <span style="color: #f97316" id="highest">${highest}</span>
+                        </p>
+                        <p class="font-semibold">
+                          L: <span style="color: #3b82f6" id="lowest">${lowest}</span>
+                        </p>
+                      </div>
+                      <!-- end of feels like etc. -->
+                    </div>
+                  </div>
+
+                  <!-- other data -->
+                  <div
+                    class="flex flex-row justify-between items-center border-t border-base-200 w-full pt-2"
+                  >
+                    <div class="flex flex-col gap-1 items-start justify-start">
+                      <p
+                        id="precip"
+                        class="text-xs uppercase tracking-wide text-base-content/60"
+                      >
+                        Precip
+                      </p>
+                      <p class="font-semibold">${precip}</p>
+                    </div>
+                    <div class="flex flex-col gap-1 items-start justify-start">
+                      <p
+                        id="uvInd"
+                        class="text-xs uppercase tracking-wide text-base-content/60"
+                      >
+                        UV Index
+                      </p>
+                      <p class="font-semibold">${element.dataset.uv}</p>
+                    </div>
+                    <div class="flex flex-col gap-1 items-start justify-start">
+                      <p
+                        id="wind"
+                        class="text-xs uppercase tracking-wide text-base-content/60"
+                      >
+                        Wind
+                      </p>
+                      <p class="font-semibold">${element.dataset.wind} mph</p>
+                    </div>
+                  </div>
+                </div>`;
+      container.insertAdjacentHTML("beforeend", html);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+// attach a listener to the carousel using delegation
+document
+  .getElementById("carouselContainer")
+  .addEventListener("click", async(event) => {
+    [...document.getElementById("carouselContainer").querySelectorAll(".carousel-item")].map(child => resetHighlightedDayWeather(child))
+    const targetElement = event.target.closest(".carousel-item");
+    highlightSelectedDayWeather(targetElement);
+     await renderDetailsWeather(targetElement)
+  });
+
+function highlightSelectedDayWeather(element) {
+  element.style.backgroundColor = "#534ab7";
+  element.style.color = "white";
+}
+
+function resetHighlightedDayWeather(element) {
+  element.style.backgroundColor = "#e0dbfb";
+  element.style.color = "";
 }
