@@ -558,7 +558,11 @@ function renderCarouselAPI(data) {
     const dayOfWeek = dateObject.toLocaleDateString("en-US", {
       weekday: "short",
     });
-    let element = `                <div
+    const formattedDate = dateObject.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    let element = `<div data-weatherDesc="${item.daytimeForecast.weatherCondition.description.text}" data-day="${formattedDate}" data-uv="${item.daytimeForecast.uvIndex}" data-wind="${item.daytimeForecast.wind.speed.value}"
                   class="carousel-item rounded-2xl"
                   style="
                     background-color: #e0dbfb;
