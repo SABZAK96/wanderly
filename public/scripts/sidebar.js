@@ -422,6 +422,8 @@ async function getSingleTripDetails(tripId) {
   const trip = await response.json();
   const container = document.getElementById("tripHeader");
   container.dataset.tripId = tripId;
+  container.dataset.lat = trip.lat;
+  container.dataset.lng = trip.lng;
 
   const start = trip.startDate.slice(0, 10);
   container.dataset.startDate = start;
@@ -524,6 +526,11 @@ async function getSingleTripDetails(tripId) {
                 </div>
               </div>`;
   container.insertAdjacentHTML("beforeend", addedElement);
+
+  // lets other scripts (e.g. calendar.js's weather widget) know tripHeader's
+  // dataset (lat/lng included) is actually populated, since this function is
+  // async and runs on page load before those scripts can rely on it being done
+  document.dispatchEvent(new CustomEvent("tripHeaderRendered"));
 }
 // invitation logic for the button that appears next to each single trip
 document

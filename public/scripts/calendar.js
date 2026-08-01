@@ -512,3 +512,129 @@ addEventBtn.addEventListener("click", async () => {
     addEventBtn.dataset.loading = "false";
   }
 });
+
+// ======================================================
+// api weather
+// ======================================================
+
+// request weather data
+
+async function requestWeatherData() {
+  const tripdestination = document.getElementById("tripHeader");
+  const lat = tripdestination.dataset?.lat;
+  const lng = tripdestination.dataset?.lng;
+
+  try {
+    const response = await fetch(`/getWeather`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ lat: lat, lng: lng }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data);
+      // call the render function
+      await renderCarouselAPI(data);
+    } else {
+      // show an http request error
+      console.error("Weather request failed:", response.status);
+    }
+  } catch (error) {
+    // show a network error
+    console.error(error);
+  }
+}
+document.addEventListener("tripHeaderRendered", requestWeatherData);
+
+// render api results in the carousel
+function renderCarouselAPI(data) {
+  const carouselContainer = document.getElementById("carouselContainer");
+  carouselContainer.innerHTML = "";
+  data.forecastDays.forEach((item) => {
+    const dateObject = new Date(item.interval.startTime);
+    const dayOfWeek = dateObject.toLocaleDateString("en-US", {
+      weekday: "short",
+    });
+    let element = `                <div
+                  class="carousel-item rounded-2xl"
+                  style="
+                    background-color: #e0dbfb;
+                    box-shadow: 0 8px 8px -6px rgba(83, 74, 183, 0.35);
+                  "
+                >
+                  <div
+                    class="flex flex-col gap-1.5 justify-between items-center p-1"
+                  >
+                    <h3 class="day font-semibold" style="color: #534ab7">
+                      ${dayOfWeek}
+                    </h3>
+                    <img
+                      src="${item.daytimeForecast.weatherCondition.iconBaseUri}.png"
+                      alt=""
+                      class="md:w-20 md:h-20 w-16 h-16 rounded-xl object-cover"
+                    />
+                    <!-- H/L/precip grouped into one row instead of each on its own line -->
+                    <div
+                      class="flex flex-row items-center gap-2 text-sm font-semibold text-base-content/70 rounded-full px-2 py-1"
+                      style="background-color: #eeedfe"
+                    >
+                      <span class="flex items-center gap-0.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="#f97316"
+                          stroke-width="2.5"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M5 12l7-7 7 7M12 5v14"
+                          />
+                        </svg>
+                        <span class="highest" style="color: #f97316">${item.maxTemperature.degrees}°</span>
+                      </span>
+                      <span class="flex items-center gap-0.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="#3b82f6"
+                          stroke-width="2.5"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M19 12l-7 7-7-7M12 19V5"
+                          />
+                        </svg>
+                        <span class="lowest" style="color: #3b82f6">${item.minTemperature.degrees}°</span>
+                      </span>
+                      <span class="flex items-center gap-0.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="#534ab7"
+                          stroke-width="2"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M12 2.75c-3.5 4.5-6 7.75-6 10.75a6 6 0 0 0 12 0c0-3-2.5-6.25-6-10.75Z"
+                          />
+                        </svg>
+                        <span class="prec" style="color: #534ab7">${item.daytimeForecast.precipitation.probability.percent}%</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>`;
+    carouselContainer.insertAdjacentHTML("beforeend", element);
+  });
+}

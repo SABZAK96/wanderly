@@ -955,7 +955,8 @@ app.put(
             startTime: req.body.startTime,
             endTime: req.body.endTime,
           },
-        }, {new: true}
+        },
+        { new: true },
       );
       res.json(activity);
     } catch (error) {
@@ -963,3 +964,22 @@ app.put(
     }
   },
 );
+
+// google api weather
+app.post("/getWeather", async (req, res) => {
+  try {
+    const response = await fetch(
+      `https://weather.googleapis.com/v1/forecast/days:lookup?key=${process.env.GOOGLE_PLACES_API}&location.latitude=${req.body.lat}&location.longitude=${req.body.lng}&days=10&pageSize=10`,
+    );
+    if (response.ok) {
+      const data = await response.json();
+      res.json(data);
+    }
+    else {
+      console.error("Weather API request failed:", await response.text());
+      res.status(502).send("Failed to fetch weather API.")
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
