@@ -537,6 +537,16 @@ async function requestWeatherData() {
       console.log(data);
       // call the render function
       await renderCarouselAPI(data);
+
+      // filter returns an array so we should do [0] to pick the only element inside
+      const currentDayElement = [
+        ...document.querySelectorAll(".carousel-item"),
+      ].filter((el) => el.dataset.current === "true")[0];
+
+      // show todays weather in the big card as deafult
+      await renderDetailsWeather(currentDayElement);
+      // highligh the current day in the carousel
+      await highlightSelectedDayWeather(currentDayElement);
     } else {
       // show an http request error
       console.error("Weather request failed:", response.status);
@@ -565,7 +575,7 @@ function renderCarouselAPI(data) {
     const elementDate = dateObject.toISOString().slice(0, 10);
     const today = new Date().toISOString().slice(0, 10);
 
-    let element = `<div data-weather-desc="${item.daytimeForecast.weatherCondition.description.text}" data-day="${formattedDate}" data-day-of-week="${dayOfWeek}" data-uv="${item.daytimeForecast.uvIndex}" data-wind="${item.daytimeForecast.wind.speed.value}" data-feels-like-max="${item.feelsLikeMaxTemperature.degrees}" data-feels-like-min="${item.feelsLikeMinTemperature.degrees}" ${elementDate === today ? 'data-current="true"' : ""}
+    let element = `<div data-full-date="${item.interval.startTime}" data-weather-desc="${item.daytimeForecast.weatherCondition.description.text}" data-day="${formattedDate}" data-day-of-week="${dayOfWeek}" data-uv="${item.daytimeForecast.uvIndex}" data-wind="${item.daytimeForecast.wind.speed.value}" data-feels-like-max="${item.feelsLikeMaxTemperature.degrees}" data-feels-like-min="${item.feelsLikeMinTemperature.degrees}" ${elementDate === today ? 'data-current="true"' : ""}
                   class="carousel-item rounded-2xl"
                   style="
                     background-color: #e0dbfb;
@@ -671,9 +681,12 @@ async function renderDetailsWeather(element) {
           month: "short",
           day: "numeric",
         });
-        const dayOfWeek = new Date(data.currentTime).toLocaleDateString("en-US", {
-          weekday: "short",
-        });
+        const dayOfWeek = new Date(data.currentTime).toLocaleDateString(
+          "en-US",
+          {
+            weekday: "short",
+          },
+        );
         let html = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
                   <div class="flex flex-col gap-1">
                     <h2
@@ -871,19 +884,23 @@ async function renderDetailsWeather(element) {
 // attach a listener to the carousel using delegation
 document
   .getElementById("carouselContainer")
-  .addEventListener("click", async(event) => {
-    [...document.getElementById("carouselContainer").querySelectorAll(".carousel-item")].map(child => resetHighlightedDayWeather(child))
+  .addEventListener("click", async (event) => {
+    [
+      ...document
+        .getElementById("carouselContainer")
+        .querySelectorAll(".carousel-item"),
+    ].map((child) => resetHighlightedDayWeather(child));
     const targetElement = event.target.closest(".carousel-item");
     highlightSelectedDayWeather(targetElement);
-     await renderDetailsWeather(targetElement)
+    await renderDetailsWeather(targetElement);
   });
 
 function highlightSelectedDayWeather(element) {
   element.style.backgroundColor = "#534ab7";
-  element.style.color = "white";
+  element.querySelector("h3").style.color = "white";
 }
 
 function resetHighlightedDayWeather(element) {
   element.style.backgroundColor = "#e0dbfb";
-  element.style.color = "";
+  element.querySelector("h3").style.color = "";
 }
