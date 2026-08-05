@@ -173,13 +173,10 @@ async function initCalendar() {
 
       title.textContent = info.event.title;
 
-      // info.event.start/end are always native Date objects, even though myEvents fed them in as strings - FullCalendar parses everything into Date internally, hence .toISOString() instead of .slice()/.split() directly
-      date.value = info.event.start.toISOString().slice(0, 10);
-      startTime.value = info.event.start
-        .toISOString()
-        .split("T")[1]
-        .slice(0, 5);
-      endTime.value = info.event.end.toISOString().split("T")[1].slice(0, 5);
+      // info.event.start/end are always native Date objects, even though myEvents fed them in as strings - FullCalendar parses everything into Date internally. Use local getters (toLocalDateStr/toLocalTimeStr), not toISOString(), so these match what day view (rendered in local time) shows
+      date.value = toLocalDateStr(info.event.start);
+      startTime.value = toLocalTimeStr(info.event.start);
+      endTime.value = toLocalTimeStr(info.event.end);
 
       // solo isn't a reserved FullCalendar field, so it lands in extendedProps automatically
       if (info.event.extendedProps.solo) {
@@ -210,7 +207,7 @@ async function initCalendar() {
       // again, not silently stop responding to clicks
       async function onConfirm() {
         if (confirmBtn.dataset.loading === "true") return;
-        const dateStr = info.event.start.toISOString().slice(0, 10);
+        const dateStr = toLocalDateStr(info.event.start);
 
         const originalLabel = confirmBtn.textContent;
         confirmBtn.dataset.loading = "true";
@@ -257,11 +254,8 @@ async function initCalendar() {
 
       async function onConfirm() {
         if (confirmBtn.dataset.loading === "true") return;
-        const startTime = info.event.start
-          .toISOString()
-          .split("T")[1]
-          .slice(0, 5);
-        const endTime = info.event.end.toISOString().split("T")[1].slice(0, 5);
+        const startTime = toLocalTimeStr(info.event.start);
+        const endTime = toLocalTimeStr(info.event.end);
 
         const originalLabel = confirmBtn.textContent;
         confirmBtn.dataset.loading = "true";
@@ -564,6 +558,16 @@ async function requestWeatherData() {
 }
 document.addEventListener("tripHeaderRendered", requestWeatherData);
 
+// gives a YYYY-MM-DD string using local date parts - unlike toISOString() (UTC), this won't roll over to the next/previous day when the local timezone is ahead of/behind UTC. en-CA happens to format dates as YYYY-MM-DD
+function toLocalDateStr(date) {
+  return date.toLocaleDateString("en-CA");
+}
+
+// gives a 24h HH:MM string using local time parts - same reasoning as toLocalDateStr, but for the time-of-day
+function toLocalTimeStr(date) {
+  return date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
 // render api results in the carousel
 function renderCarouselAPI(data) {
   const carouselContainer = document.getElementById("carouselContainer");
@@ -578,8 +582,8 @@ function renderCarouselAPI(data) {
       day: "numeric",
     });
     // mark the element with the current date as current - will be used in rendering selecteddayweather card
-    const elementDate = dateObject.toISOString().slice(0, 10);
-    const today = new Date().toISOString().slice(0, 10);
+    const elementDate = toLocalDateStr(dateObject);
+    const today = toLocalDateStr(new Date());
 
     let element = `<div data-full-date="${elementDate}" data-weather-desc="${item.daytimeForecast.weatherCondition.description.text}" data-day="${formattedDate}" data-day-of-week="${dayOfWeek}" data-uv="${item.daytimeForecast.uvIndex}" data-wind="${item.daytimeForecast.wind.speed.value}" data-feels-like-max="${item.feelsLikeMaxTemperature.degrees}" data-feels-like-min="${item.feelsLikeMinTemperature.degrees}" ${elementDate === today ? 'data-current="true"' : ""}
                   class="carousel-item rounded-2xl"
@@ -693,6 +697,16 @@ async function renderDetailsWeather(element) {
             weekday: "short",
           },
         );
+
+        // showing the correct info instead of hardcoded day x of your trip to los angeles
+        const tripName = tripdestination.destinationName;
+        // calculating which day of the trip
+        const diffDays =
+          Math.round(
+            (new Date(data.currentTime).getTime() -
+              new Date(tripdestination.dataset.startDate + "T00:00:00").getTime()) /
+              86400000,
+          ) + 1;
         let html = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
                   <div class="flex flex-col gap-1">
                     <h2
@@ -702,11 +716,15 @@ async function renderDetailsWeather(element) {
                     >
                       ${dayOfWeek.toUpperCase()}, ${currentdateFormatted.toUpperCase()}
                     </h2>
-                    <p class="text-sm md:text-base text-base-content/60">
-                      Day <span class="text-base-content">1</span> of your trip
+                    ${
+                      diffDays >= 1
+                        ? `<p class="text-sm md:text-base text-base-content/60">
+                      Day <span class="text-base-content">${diffDays}</span> of your trip
                       to
-                      <span class="text-base-content">Los Angeles</span>
-                    </p>
+                      <span class="text-base-content">${tripName}</span>
+                    </p>`
+                        : ""
+                    }
                   </div>
 
                   <!-- icon + current temp+ lowest highest -->
@@ -935,13 +953,11 @@ function matchEventsWithWeather() {
   }));
   // find out which events are going to happen in the next 10 days that we have the weather info for
   const notifyEvents = allEvents.filter((event) =>
-    carouselItemsDays.some(
-      (day) => day.date === event.start.toISOString().slice(0, 10),
-    ),
+    carouselItemsDays.some((day) => day.date === toLocalDateStr(event.start)),
   );
   // pair each matching event back up with that date's weather info for the heads-up card
   const notifyInfo = notifyEvents.map((event) => {
-    const dateStr = event.start.toISOString().slice(0, 10);
+    const dateStr = toLocalDateStr(event.start);
     const weatherDay = carouselItemsDays.find((day) => day.date === dateStr);
     return {
       title: [event.title],
@@ -976,10 +992,13 @@ function renderHeadsUpBanner() {
   container.classList.remove("hidden");
   allInfo.forEach((info) => {
     const title = info.title.join(", ");
-    const formattedDate = new Date(info.date + "T00:00:00").toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
+    const formattedDate = new Date(info.date + "T00:00:00").toLocaleDateString(
+      "en-US",
+      {
+        month: "short",
+        day: "numeric",
+      },
+    );
     let html = `<p>
                  ⚠️ ${info.chance} chance of ${info.type} on day ${formattedDate} during your
                   ${title} plans.

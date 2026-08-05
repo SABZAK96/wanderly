@@ -427,6 +427,7 @@ async function getSingleTripDetails(tripId) {
   container.dataset.tripId = tripId;
   container.dataset.lat = trip.lat;
   container.dataset.lng = trip.lng;
+  container.destinationName = trip.destination;
 
   const start = trip.startDate.slice(0, 10);
   container.dataset.startDate = start;
