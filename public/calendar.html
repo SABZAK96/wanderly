@@ -214,14 +214,13 @@
               <div class="font-light text-3xl mb-1">Weather</div>
 
               <!-- weather-driven heads up for the day (e.g. "Pack for rain") - empty/hidden until there's actually something worth flagging -->
-              <p
+              <div
                 id="weatherHeadsUp"
-                class="w-full rounded-xl px-3 py-2 text-sm font-medium"
+                class="w-full rounded-xl px-3 py-2 text-sm font-medium hidden"
                 style="background-color: #fef3c7; color: #92400e"
-              >
-                ☂️ Pack for rain on day 3 — 65% chance of showers during your
-                Hollywood plans.
-              </p>
+              > 
+                
+              </div>
               <div
                 id="selectedDayWeather"
                 class="card w-full h-1/4 rounded-2xl"
@@ -229,17 +228,14 @@
                   background-color: #e0dbfb;
                   box-shadow: 0 12px 28px -6px rgba(83, 74, 183, 0.35);
                 "
-              >
-              
-              </div>
+              ></div>
 
               <!-- carousel for showing 10-days forecast -->
               <div class="font-light text-xl mt-2 mb-1">10-Day Forecast</div>
-              <div id="carouselContainer"
-                class="carousel carousel-center bg-[#eeedfe] rounded-box w-full md:h-[200px] h-[140px] gap-4 mb-1 "
-              >
-
-              </div>
+              <div
+                id="carouselContainer"
+                class="carousel carousel-center bg-[#eeedfe] rounded-box w-full md:h-[200px] h-[140px] gap-4 mb-1"
+              ></div>
             </div>
             <p
               id="calendarError"

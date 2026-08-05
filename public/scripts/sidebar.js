@@ -53,6 +53,7 @@ function setUpAutocomplete(container) {
       // stored on dataset (not a closure variable) so resetDestinationAutocomplete can clear it from outside this function
       container.dataset.lastConfirmedValue = place.formattedAddress;
       container.dataset.destination = place.formattedAddress;
+      container.dataset.destinationName = place.displayName;
       container.dataset.lat = place.location.lat();
       container.dataset.lng = place.location.lng();
     },
@@ -70,6 +71,7 @@ function setUpAutocomplete(container) {
   placeAutocomplete.addEventListener("input", () => {
     if (placeAutocomplete.value !== container.dataset.lastConfirmedValue) {
       container.dataset.destination = "";
+      container.dataset.destinationName = "";
       container.dataset.lat = "";
       container.dataset.lng = "";
     }
@@ -82,6 +84,7 @@ function resetDestinationAutocomplete(container) {
   const widget = container.querySelector("gmp-place-autocomplete");
   if (widget) widget.value = "";
   container.dataset.destination = "";
+  container.dataset.destinationName = "";
   container.dataset.lat = "";
   container.dataset.lng = "";
   container.dataset.lastConfirmedValue = "";

@@ -228,6 +228,7 @@ async function initCalendar() {
             confirmBtn.removeEventListener("click", onConfirm);
             modal.close();
             await initCalendar();
+            renderHeadsUpBanner();
           } else {
             errorMsg.textContent = await response.text();
             errorMsg.classList.remove("hidden");
@@ -278,6 +279,7 @@ async function initCalendar() {
             confirmBtn.removeEventListener("click", onConfirm);
             modal.close();
             await initCalendar();
+            renderHeadsUpBanner();
           } else {
             errorMsg.textContent = await response.text();
             errorMsg.classList.remove("hidden");
@@ -352,6 +354,7 @@ saveEventEdit.addEventListener("click", async () => {
     if (response.ok) {
       eventActionModal.close();
       await initCalendar();
+      renderHeadsUpBanner();
     } else {
       eventEditError.textContent = await response.text();
       eventEditError.classList.remove("hidden");
@@ -391,6 +394,7 @@ confirmEventDelete.addEventListener("click", async () => {
     if (response.ok) {
       eventActionModal.close();
       await initCalendar();
+      renderHeadsUpBanner();
     } else {
       eventDeleteError.textContent = await response.text();
       eventDeleteError.classList.remove("hidden");
@@ -484,7 +488,7 @@ addEventBtn.addEventListener("click", async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        activityName: eventDestination.dataset.destination,
+        activityName: eventDestination.dataset.destinationName,
         date: eventDate.value,
         startTime: eventStartTime.value,
         endTime: eventEndTime.value,
@@ -500,6 +504,7 @@ addEventBtn.addEventListener("click", async () => {
     if (response.ok) {
       addEventModal.close();
       await initCalendar();
+      renderHeadsUpBanner();
     } else {
       addEventError.textContent = await response.text();
       addEventError.classList.remove("hidden");
@@ -537,7 +542,7 @@ async function requestWeatherData() {
       console.log(data);
       // call the render function
       await renderCarouselAPI(data);
-      matchEventsWithWeather();
+      renderHeadsUpBanner();
 
       // filter returns an array so we should do [0] to pick the only element inside
       const currentDayElement = [
@@ -817,7 +822,7 @@ async function renderDetailsWeather(element) {
                         id="currentTemp"
                         class="md:text-6xl text-3xl font-bold"
                       >
-                        ${highest} - ${lowest}
+                      ${lowest} - ${highest}
                       </p>
                       <p id="status" class="font-semibold text-base-content/70">
                         ${element.dataset.weatherDesc}
@@ -829,7 +834,7 @@ async function renderDetailsWeather(element) {
                       >
                         <p class="font-semibold">
                           Feels like:
-                          <span style="color: #534ab7" id="feelsLike">${element.dataset.feelsLikeMax}° / ${element.dataset.feelsLikeMin}°</span>
+                          <span style="color: #534ab7" id="feelsLike">${element.dataset.feelsLikeMin}° - ${element.dataset.feelsLikeMax}°</span>
                         </p>
                         <p class="font-semibold">
                           H:
@@ -939,11 +944,46 @@ function matchEventsWithWeather() {
     const dateStr = event.start.toISOString().slice(0, 10);
     const weatherDay = carouselItemsDays.find((day) => day.date === dateStr);
     return {
-      title: event.title,
+      title: [event.title],
       date: dateStr,
       chance: weatherDay.chance,
-      type: weatherDay.type,
+      type: weatherDay.type?.toLowerCase().replaceAll("_", " ") ?? "",
     };
   });
-  return notifyInfo;
+
+  // combine events that fall on the same day into one entry
+  const result = [];
+  notifyInfo.forEach((info) => {
+    const existing = result.find((item) => item.date === info.date);
+    if (!existing) {
+      result.push(info);
+    } else {
+      existing.title.push(...info.title);
+    }
+  });
+  return result;
+}
+
+// render the heads up card
+function renderHeadsUpBanner() {
+  const allInfo = matchEventsWithWeather();
+  const container = document.getElementById("weatherHeadsUp");
+  if (allInfo.length === 0) {
+    container.classList.add("hidden");
+    return;
+  }
+  container.innerHTML = "";
+  container.classList.remove("hidden");
+  allInfo.forEach((info) => {
+    const title = info.title.join(", ");
+    const formattedDate = new Date(info.date + "T00:00:00").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    let html = `<p>
+                 ⚠️ ${info.chance} chance of ${info.type} on day ${formattedDate} during your
+                  ${title} plans.
+                </p>`;
+    container.insertAdjacentHTML("beforeend", html);
+  });
 }
