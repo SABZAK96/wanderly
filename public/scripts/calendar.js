@@ -549,11 +549,13 @@ async function requestWeatherData() {
       await highlightSelectedDayWeather(currentDayElement);
     } else {
       // show an http request error
-      console.error("Weather request failed:", response.status);
+      const carouselContainer = document.getElementById("carouselContainer");
+      carouselContainer.innerHTML = `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">Failed to load data. Please try again.</p>`;
     }
   } catch (error) {
     // show a network error
-    console.error(error);
+    const carouselContainer = document.getElementById("carouselContainer");
+    carouselContainer.innerHTML = `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">Failed to load data. Please try again.</p>`;
   }
 }
 document.addEventListener("tripHeaderRendered", requestWeatherData);
@@ -565,7 +567,15 @@ function toLocalDateStr(date) {
 
 // gives a 24h HH:MM string using local time parts - same reasoning as toLocalDateStr, but for the time-of-day
 function toLocalTimeStr(date) {
-  return date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// placeholder for a missing weather icon - sizeClasses lets it stand in for either the big card icon or the small carousel icon
+function dashIconSvg(sizeClasses) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="${sizeClasses}"><path d="M4 10a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H4.75A.75.75 0 0 1 4 10Z" /></svg>`;
 }
 
 // render api results in the carousel
@@ -585,7 +595,7 @@ function renderCarouselAPI(data) {
     const elementDate = toLocalDateStr(dateObject);
     const today = toLocalDateStr(new Date());
 
-    let element = `<div data-full-date="${elementDate}" data-weather-desc="${item.daytimeForecast.weatherCondition.description.text}" data-day="${formattedDate}" data-day-of-week="${dayOfWeek}" data-uv="${item.daytimeForecast.uvIndex}" data-wind="${item.daytimeForecast.wind.speed.value}" data-feels-like-max="${item.feelsLikeMaxTemperature.degrees}" data-feels-like-min="${item.feelsLikeMinTemperature.degrees}" ${elementDate === today ? 'data-current="true"' : ""}
+    let element = `<div data-full-date="${elementDate}" data-weather-desc="${item.daytimeForecast.weatherCondition?.description?.text ?? "—"}" data-day="${formattedDate}" data-day-of-week="${dayOfWeek}" data-uv="${item.daytimeForecast.uvIndex ?? "—"}" data-wind="${item.daytimeForecast.wind?.speed?.value ?? "—"}" data-feels-like-max="${item.feelsLikeMaxTemperature?.degrees ?? "—"}" data-feels-like-min="${item.feelsLikeMinTemperature?.degrees ?? "—"}" ${elementDate === today ? 'data-current="true"' : ""}
                   class="carousel-item rounded-2xl"
                   style="
                     background-color: #e0dbfb;
@@ -598,11 +608,15 @@ function renderCarouselAPI(data) {
                     <h3 class="day font-semibold" style="color: #534ab7">
                       ${dayOfWeek}
                     </h3>
-                    <img
+                    ${
+                      item.daytimeForecast.weatherCondition?.iconBaseUri
+                        ? `<img
                       src="${item.daytimeForecast.weatherCondition.iconBaseUri}.png"
                       alt=""
                       class="md:w-20 md:h-20 w-16 h-16 rounded-xl object-cover"
-                    />
+                    />`
+                        : dashIconSvg("md:w-20 md:h-20 w-16 h-16 rounded-xl")
+                    }
                     <!-- H/L/precip grouped into one row instead of each on its own line -->
                     <div
                       class="flex flex-row items-center gap-2 text-sm font-semibold text-base-content/70 rounded-full px-2 py-1"
@@ -623,7 +637,7 @@ function renderCarouselAPI(data) {
                             d="M5 12l7-7 7 7M12 5v14"
                           />
                         </svg>
-                        <span class="highest" style="color: #f97316">${item.maxTemperature.degrees}°</span>
+                        <span class="highest" style="color: #f97316">${item.maxTemperature?.degrees != null ? item.maxTemperature.degrees + "°" : "—"}</span>
                       </span>
                       <span class="flex items-center gap-0.5">
                         <svg
@@ -640,7 +654,7 @@ function renderCarouselAPI(data) {
                             d="M19 12l-7 7-7-7M12 19V5"
                           />
                         </svg>
-                        <span class="lowest" style="color: #3b82f6">${item.minTemperature.degrees}°</span>
+                        <span class="lowest" style="color: #3b82f6">${item.minTemperature?.degrees != null ? item.minTemperature.degrees + "°" : "—"}</span>
                       </span>
                       <span class="flex items-center gap-0.5">
                         <svg
@@ -657,7 +671,7 @@ function renderCarouselAPI(data) {
                             d="M12 2.75c-3.5 4.5-6 7.75-6 10.75a6 6 0 0 0 12 0c0-3-2.5-6.25-6-10.75Z"
                           />
                         </svg>
-                        <span data-precip-type="${item.daytimeForecast.precipitation.probability.type}" class="prec" style="color: #534ab7">${item.daytimeForecast.precipitation.probability.percent}%</span>
+                        <span data-precip-type="${item.daytimeForecast.precipitation?.probability?.type ?? ""}" class="prec" style="color: #534ab7">${item.daytimeForecast.precipitation?.probability?.percent != null ? item.daytimeForecast.precipitation.probability.percent + "%" : "—"}</span>
                       </span>
                     </div>
                   </div>
@@ -704,9 +718,13 @@ async function renderDetailsWeather(element) {
         const diffDays =
           Math.round(
             (new Date(data.currentTime).getTime() -
-              new Date(tripdestination.dataset.startDate + "T00:00:00").getTime()) /
+              new Date(
+                tripdestination.dataset.startDate + "T00:00:00",
+              ).getTime()) /
               86400000,
           ) + 1;
+        // small inline placeholder for any field the api didn't return - reused wherever a single stat (not the big icon) might be missing
+        const dashIcon = dashIconSvg("inline-block h-4 w-4 align-middle");
         let html = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
                   <div class="flex flex-col gap-1">
                     <h2
@@ -730,21 +748,25 @@ async function renderDetailsWeather(element) {
                   <!-- icon + current temp+ lowest highest -->
                   <div
                     class="flex flex-row items-stretch justify-start gap-4 md:gap-10"
-                  >
-                    <img
-                      src="${data.weatherCondition.iconBaseUri}.png"
-                      alt="Weather icon"
-                      class="rounded-xl md:w-50 w-30 shrink-0 object-cover"
-                    />
+                  > ${
+                    data.weatherCondition?.iconBaseUri
+                      ? `<img
+                        src="${data.weatherCondition.iconBaseUri}.png"
+                        alt="Weather icon"
+                        class="rounded-xl md:w-50 w-30 shrink-0 object-cover"
+                      />`
+                      : dashIconSvg("md:w-50 w-30 shrink-0")
+                  }
+                    
                     <div class="flex flex-col gap-2 justify-start">
                       <p
                         id="currentTemp"
                         class="md:text-6xl text-3xl font-bold"
                       >
-                        ${data.temperature.degrees}°
+                        ${data.temperature?.degrees != null ? data.temperature.degrees + "°" : dashIcon}
                       </p>
                       <p id="status" class="font-semibold text-base-content/70">
-                        ${data.weatherCondition.description.text}
+                        ${data.weatherCondition?.description?.text ?? dashIcon}
                       </p>
 
                       <!-- feels like, lowest, highest -->
@@ -753,14 +775,14 @@ async function renderDetailsWeather(element) {
                       >
                         <p class="font-semibold">
                           Feels like:
-                          <span style="color: #534ab7" id="feelsLike">${data.feelsLikeTemperature.degrees}°</span>
+                          <span style="color: #534ab7" id="feelsLike">${data.feelsLikeTemperature?.degrees != null ? data.feelsLikeTemperature.degrees + "°" : dashIcon}</span>
                         </p>
                         <p class="font-semibold">
                           H:
-                          <span style="color: #f97316" id="highest">${data.currentConditionsHistory.maxTemperature.degrees}°</span>
+                          <span style="color: #f97316" id="highest">${data.currentConditionsHistory?.maxTemperature?.degrees != null ? data.currentConditionsHistory.maxTemperature.degrees + "°" : dashIcon}</span>
                         </p>
                         <p class="font-semibold">
-                          L: <span style="color: #3b82f6" id="lowest">${data.currentConditionsHistory.minTemperature.degrees}°</span>
+                          L: <span style="color: #3b82f6" id="lowest">${data.currentConditionsHistory?.minTemperature?.degrees != null ? data.currentConditionsHistory.minTemperature.degrees + "°" : dashIcon}</span>
                         </p>
                       </div>
                       <!-- end of feels like etc. -->
@@ -778,7 +800,7 @@ async function renderDetailsWeather(element) {
                       >
                         Precip
                       </p>
-                      <p class="font-semibold">${data.precipitation.probability.percent}%</p>
+                      <p class="font-semibold">${data.precipitation?.probability?.percent != null ? data.precipitation.probability.percent + "%" : dashIcon}</p>
                     </div>
                     <div class="flex flex-col gap-1 items-start justify-start">
                       <p
@@ -787,7 +809,7 @@ async function renderDetailsWeather(element) {
                       >
                         UV Index
                       </p>
-                      <p class="font-semibold">8${data.uvIndex}</p>
+                      <p class="font-semibold">${data.uvIndex != null ? data.uvIndex : dashIcon}</p>
                     </div>
                     <div class="flex flex-col gap-1 items-start justify-start">
                       <p
@@ -796,16 +818,21 @@ async function renderDetailsWeather(element) {
                       >
                         Wind
                       </p>
-                      <p class="font-semibold">${data.wind.speed.value} mph</p>
+                      <p class="font-semibold">${data.wind?.speed?.value != null ? data.wind.speed.value + " mph" : dashIcon}</p>
                     </div>
                   </div>
                 </div>`;
         container.insertAdjacentHTML("beforeend", html);
       } else {
-        console.error("Current weather request failed:", response.status);
+        let html = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
+                        <p
+                          class="text-md text-base-content/60 mt-1 text-center mb-2 w-full"
+                        >Failed to load data. Please try again.</p>
+                    </div>`;
+        container.insertAdjacentHTML("beforeend", html);
       }
     } else {
-      const image = element.querySelector("img").src;
+      const iconEl = element.querySelector("img");
       const highest = element.querySelector(".highest").textContent;
       const lowest = element.querySelector(".lowest").textContent;
       const precip = element.querySelector(".prec").textContent;
@@ -830,11 +857,15 @@ async function renderDetailsWeather(element) {
                   <div
                     class="flex flex-row items-stretch justify-start gap-4 md:gap-10"
                   >
-                    <img
-                      src="${image}"
+                    ${
+                      iconEl
+                        ? `<img
+                      src="${iconEl.src}"
                       alt="Weather icon"
                       class="rounded-xl md:w-50 w-30 shrink-0 object-cover"
-                    />
+                    />`
+                        : dashIconSvg("md:w-50 w-30 shrink-0")
+                    }
                     <div class="flex flex-col gap-2 justify-start">
                       <p
                         id="currentTemp"
