@@ -231,10 +231,19 @@ function ghostMarker() {
   return `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline align-middle ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>No account</title><path d="M9 10h.01" /><path d="M15 10h.01" /><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z" /></svg>`;
 }
 
-// fetch all the badges from the db
+// fetch all the badges from the db - falls back to an empty array on failure so callers'
+// .map()/.forEach() don't crash outright; setUpPage()'s try/catch is what surfaces the visible error
 async function getPeople() {
-  const response = await (await fetch(`/people/${tripId}`)).json();
-  return response;
+  try {
+    const response = await fetch(`/people/${tripId}`);
+    if (!response.ok) throw new Error(`getPeople failed: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    const pageLoadError = document.getElementById("pageLoadError");
+    pageLoadError.textContent = "Failed to load. Please try again.";
+    pageLoadError.classList.remove("hidden");
+    return [];
+  }
 }
 
 // load the modal with the badges recieved from the db
@@ -305,21 +314,33 @@ function showSectionLoading() {
   document.getElementById("totalSpent").innerHTML = spinner;
   document.getElementById("debtBreakdown").innerHTML = spinner;
   document.getElementById("simplify-rows").innerHTML = spinner;
+  // clear any error left over from a previous failed attempt, so it doesn't linger through a successful retry
+  document.getElementById("pageLoadError").classList.add("hidden");
 }
 
 // refreshes debt breakdown, spending stats, and settle suggestions from the db -
 // called on initial load and again after every add/delete/settle/reset
 function setUpPage() {
   showSectionLoading();
-  return renderDebtBreakdown().then(async () => {
-    initSettleToggles();
-    const netted = netAmountCalc();
-    const results = await calculateSpending();
-    // renderSpending reads netted before simplestSettle mutates it below
-    renderSpending(results, netted);
-    const transactions = simplestSettle(netted);
-    displaySimplestSettle(transactions);
-  });
+  return renderDebtBreakdown()
+    .then(async () => {
+      initSettleToggles();
+      const netted = netAmountCalc();
+      const results = await calculateSpending();
+      // renderSpending reads netted before simplestSettle mutates it below
+      renderSpending(results, netted);
+      const transactions = simplestSettle(netted);
+      displaySimplestSettle(transactions);
+    })
+    .catch((error) => {
+      // the fetch helpers above (getPeople/computeDebtBreakdown/calculateSpending) already
+      // show #pageLoadError themselves on failure - this only catches something unexpected
+      // beyond those (e.g. netOppositeDebts/simplestSettle throwing on bad data), so the
+      // spinner from showSectionLoading() doesn't spin forever with nothing shown
+      const pageLoadError = document.getElementById("pageLoadError");
+      pageLoadError.textContent = "Failed to load. Please try again.";
+      pageLoadError.classList.remove("hidden");
+    });
 }
 
 // shows the "no trip selected" message instead of the expense content -
@@ -647,7 +668,20 @@ async function initTable() {
   // switching trips just keeps appending on top of the old rows
   document.querySelector("#my_table tbody").innerHTML = "";
 
-  const response = await (await fetch(`/getExpenses/${tripId}`)).json();
+  let response;
+  try {
+    const res = await fetch(`/getExpenses/${tripId}`);
+    if (!res.ok) throw new Error(`initTable failed: ${res.status}`);
+    response = await res.json();
+  } catch (error) {
+    document
+      .querySelector("#my_table tbody")
+      .insertAdjacentHTML(
+        "beforeend",
+        `<tr><td colspan="4" class="text-center text-base-content/40 py-6">Failed to load expenses. Please try again.</td></tr>`,
+      );
+    return;
+  }
 
   if (response.length === 0) {
     document
@@ -1078,7 +1112,6 @@ async function calculateSplitAmounts(cost, selectedBadgesDebts) {
       let person = nameBadge.dataset.id;
       let amount = amountInput.value;
       splitAmounts.push({ person: person, amount: amount });
-      console.log(splitAmounts);
     });
 
     // if shared equally
@@ -1099,7 +1132,6 @@ async function calculateSplitAmounts(cost, selectedBadgesDebts) {
           person: person._id,
           amount: (cents / 100).toFixed(2),
         });
-        console.log(splitAmounts);
       });
     } else {
       const numberOfBadges = selectedBadgesDebts.length;
@@ -1112,7 +1144,6 @@ async function calculateSplitAmounts(cost, selectedBadgesDebts) {
           person: element.dataset.id,
           amount: (cents / 100).toFixed(2),
         });
-        console.log(splitAmounts);
       });
     }
   }
@@ -1149,7 +1180,6 @@ function calculateOwedAmount(owes, selectedBadgesPayers, costAmount) {
       owed.push({ person: name, amount: paidAmount - ownShare });
     });
   }
-  console.log(paidBy, owed);
   return { paidBy, owed };
 }
 
@@ -1370,11 +1400,23 @@ function netOppositeDebts(summary) {
 // orchestrates the above over all expenses/people
 async function computeDebtBreakdown() {
   // response is an array of expenses, people is an array containing person ids -
-  // fetched concurrently since neither depends on the other
-  const [response, people] = await Promise.all([
-    fetch(`/getExpenses/${tripId}`).then((res) => res.json()),
-    getPeople(),
-  ]);
+  // fetched concurrently since neither depends on the other. falls back to an
+  // empty array on failure, same reasoning as getPeople() above
+  let response, people;
+  try {
+    [response, people] = await Promise.all([
+      fetch(`/getExpenses/${tripId}`).then((res) => {
+        if (!res.ok) throw new Error(`computeDebtBreakdown failed: ${res.status}`);
+        return res.json();
+      }),
+      getPeople(),
+    ]);
+  } catch (error) {
+    const pageLoadError = document.getElementById("pageLoadError");
+    pageLoadError.textContent = "Failed to load. Please try again.";
+    pageLoadError.classList.remove("hidden");
+    return [];
+  }
 
   // find how much each person is owed and who owes to them, if any
   // map should be used instead of forEach so that the return value of ythe functions wont be thrown away
@@ -1713,12 +1755,22 @@ document.getElementById("person-filters").addEventListener("click", (event) => {
 async function calculateSpending() {
   const people = await getPeople();
   const personsIds = people.map((person) => person._id);
-  const results = await Promise.all(
-    personsIds.map((id) =>
-      fetch(`/spentDetails/${tripId}/${id}`).then((res) => res.json()),
-    ),
-  );
-  return results;
+  try {
+    return await Promise.all(
+      personsIds.map((id) =>
+        fetch(`/spentDetails/${tripId}/${id}`).then((res) => {
+          if (!res.ok)
+            throw new Error(`calculateSpending failed: ${res.status}`);
+          return res.json();
+        }),
+      ),
+    );
+  } catch (error) {
+    const pageLoadError = document.getElementById("pageLoadError");
+    pageLoadError.textContent = "Failed to load. Please try again.";
+    pageLoadError.classList.remove("hidden");
+    return [];
+  }
 }
 
 // closes an open Total Spent Per Person card when clicking outside of it
