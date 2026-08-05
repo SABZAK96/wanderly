@@ -55,9 +55,36 @@ suggestionInput.addEventListener("input", () => {
   }
 });
 
+// desgin the most popular filter pill using IMDB weighted method for showing top 250 popular movies - reference note: most-popular-filter-design.md
+function weightedRating(item, allItems, m) {
+  // API might not return some data - we filter them out
+  const reviewedItems = allItems.filter((candidate) => candidate.rating != null);
+
+  // formula = (v / (v + m)) * R + (m / (v + m)) * C
+
+  // calculate c - average rating across the current result set
+  const setSumRating = reviewedItems.reduce(
+    (sum, element) => sum + element.rating,
+    0,
+  );
+
+  const c =
+    reviewedItems.length !== 0 ? setSumRating / reviewedItems.length : 0;
+
+  // calculating v - the place's own review count
+  const v = item.userRatingCount ?? 0;
+
+  // calculating r - the place's own average rating
+  const r = item.rating ?? c; // no rating at all -> fall back to the set average
+
+  const score = (v / (v + m)) * r + (m / (v + m)) * c;
+  return score;
+}
+
 // sends the constructed "<search term> in <destination>" query to our own
 // /googleAPI proxy, which forwards it to Google Places Text Search
 // (fetch function only - no DOM/rendering here)
+let builtResults;
 async function googleSuggestion(query) {
   const errorMsg = document.getElementById("suggError");
   errorMsg.textContent = "";
@@ -72,7 +99,8 @@ async function googleSuggestion(query) {
 
   if (response.ok) {
     const data = await response.json();
-    await renderSuggestions(data);
+    builtResults = await renderSuggestions(data);
+    buildFilters(builtResults);
   } else {
     errorMsg.textContent = "Could not Fetch Data. Try Again.";
     errorMsg.classList.remove("hidden");
@@ -100,13 +128,15 @@ async function renderSuggestions(data) {
   // actual Photo media URL
   const { key } = await (await fetch("/config/places-key")).json();
 
+  let builtResult = [];
   data.places.forEach((item) => {
+    const weightedAverage = weightedRating(item, data.places, 30);
     const photoUrl =
       item.photos && item.photos[0]
         ? `https://places.googleapis.com/v1/${item.photos[0].name}/media?maxHeightPx=400&key=${key}`
         : null;
 
-    let element = `<div data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" data-address="${item.formattedAddress}" class="parent card bg-base-100 shadow-sm border border-base-200 h-full">
+    let element = `<div data-weighted-average="${weightedAverage}" data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" data-address="${item.formattedAddress}" class="parent card bg-base-100 shadow-sm border border-base-200 h-full">
                 ${
                   photoUrl
                     ? `<figure class="relative">
@@ -159,7 +189,7 @@ async function renderSuggestions(data) {
                   }
                   <div class="flex flex-col gap-1.5 mt-1">
                     ${
-                      item.priceRange
+                      item.priceRange?.startPrice && item.priceRange?.endPrice
                         ? `<div class="flex items-center gap-2">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -203,8 +233,8 @@ async function renderSuggestions(data) {
                           d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
                         />
                       </svg>
-                      <span class="text-xs text-base-content/70"
-                        >${item.primaryType}</span
+                      <span data-type="${item.primaryType}" class="text-xs text-base-content/70"
+                        >${item.primaryType.replaceAll("_", " ")}</span
                       >
                     </div>`
                         : ""
@@ -311,7 +341,10 @@ async function renderSuggestions(data) {
                 </div>
               </div>`;
     container.insertAdjacentHTML("beforeend", element);
+    // buildFilters needs a real DOM node (to call .querySelector on), not the HTML string used to insert it
+    builtResult.push(container.lastElementChild);
   });
+  return builtResult;
 }
 
 // attaching listener to all add to calendar buttons in suggestion section -using delegation
