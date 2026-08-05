@@ -537,6 +537,7 @@ async function requestWeatherData() {
       console.log(data);
       // call the render function
       await renderCarouselAPI(data);
+      matchEventsWithWeather();
 
       // filter returns an array so we should do [0] to pick the only element inside
       const currentDayElement = [
@@ -575,7 +576,7 @@ function renderCarouselAPI(data) {
     const elementDate = dateObject.toISOString().slice(0, 10);
     const today = new Date().toISOString().slice(0, 10);
 
-    let element = `<div data-full-date="${item.interval.startTime}" data-weather-desc="${item.daytimeForecast.weatherCondition.description.text}" data-day="${formattedDate}" data-day-of-week="${dayOfWeek}" data-uv="${item.daytimeForecast.uvIndex}" data-wind="${item.daytimeForecast.wind.speed.value}" data-feels-like-max="${item.feelsLikeMaxTemperature.degrees}" data-feels-like-min="${item.feelsLikeMinTemperature.degrees}" ${elementDate === today ? 'data-current="true"' : ""}
+    let element = `<div data-full-date="${elementDate}" data-weather-desc="${item.daytimeForecast.weatherCondition.description.text}" data-day="${formattedDate}" data-day-of-week="${dayOfWeek}" data-uv="${item.daytimeForecast.uvIndex}" data-wind="${item.daytimeForecast.wind.speed.value}" data-feels-like-max="${item.feelsLikeMaxTemperature.degrees}" data-feels-like-min="${item.feelsLikeMinTemperature.degrees}" ${elementDate === today ? 'data-current="true"' : ""}
                   class="carousel-item rounded-2xl"
                   style="
                     background-color: #e0dbfb;
@@ -647,7 +648,7 @@ function renderCarouselAPI(data) {
                             d="M12 2.75c-3.5 4.5-6 7.75-6 10.75a6 6 0 0 0 12 0c0-3-2.5-6.25-6-10.75Z"
                           />
                         </svg>
-                        <span class="prec" style="color: #534ab7">${item.daytimeForecast.precipitation.probability.percent}%</span>
+                        <span data-precip-type="${item.daytimeForecast.precipitation.probability.type}" class="prec" style="color: #534ab7">${item.daytimeForecast.precipitation.probability.percent}%</span>
                       </span>
                     </div>
                   </div>
@@ -816,7 +817,7 @@ async function renderDetailsWeather(element) {
                         id="currentTemp"
                         class="md:text-6xl text-3xl font-bold"
                       >
-                        ${highest} / ${lowest}
+                        ${highest} - ${lowest}
                       </p>
                       <p id="status" class="font-semibold text-base-content/70">
                         ${element.dataset.weatherDesc}
@@ -895,12 +896,54 @@ document
     await renderDetailsWeather(targetElement);
   });
 
+// function to highlight each element in the carousel
 function highlightSelectedDayWeather(element) {
   element.style.backgroundColor = "#534ab7";
   element.querySelector("h3").style.color = "white";
 }
 
+// function to clearup any highlighting in the carousel
 function resetHighlightedDayWeather(element) {
   element.style.backgroundColor = "#e0dbfb";
   element.querySelector("h3").style.color = "";
+}
+
+// =========================================================
+// populating headsup section
+// =========================================================
+// cross-references calendar events with risky-weather days from the carousel and returns the matches
+function matchEventsWithWeather() {
+  // calendar has module scope, we can use .getEvents() to get all the events without connecting to the server again - returns an array
+  const allEvents = calendar.getEvents();
+
+  // get the carouselItems(divs with carousel-item class) with percipitation above 50%
+  const carouselItems = [...document.querySelectorAll(".carousel-item")].filter(
+    (item) =>
+      Number(item.querySelector(".prec").textContent.replace("%", "")) > 50,
+  );
+  console.log(carouselItems);
+
+  const carouselItemsDays = carouselItems.map((item) => ({
+    date: item.dataset.fullDate,
+    chance: item.querySelector(".prec").textContent,
+    type: item.querySelector("[data-precip-type]").dataset.precipType,
+  }));
+  // find out which events are going to happen in the next 10 days that we have the weather info for
+  const notifyEvents = allEvents.filter((event) =>
+    carouselItemsDays.some(
+      (day) => day.date === event.start.toISOString().slice(0, 10),
+    ),
+  );
+  // pair each matching event back up with that date's weather info for the heads-up card
+  const notifyInfo = notifyEvents.map((event) => {
+    const dateStr = event.start.toISOString().slice(0, 10);
+    const weatherDay = carouselItemsDays.find((day) => day.date === dateStr);
+    return {
+      title: event.title,
+      date: dateStr,
+      chance: weatherDay.chance,
+      type: weatherDay.type,
+    };
+  });
+  return notifyInfo;
 }
