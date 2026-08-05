@@ -568,19 +568,19 @@ function buildFilters(suggestionCards) {
                 class="btn btn-xs rounded-full"
                 type="radio"
                 name="metaframeworks"
-                aria-label="price: low-high"
+                aria-label="💰 price: low-high"
               />
               <input
                 class="btn btn-xs rounded-full"
                 type="radio"
                 name="metaframeworks"
-                aria-label="price: high-low"
+                aria-label="💸 price: high-low"
               />
               <input
                 class="btn btn-xs rounded-full"
                 type="radio"
                 name="metaframeworks"
-                aria-label="Most Popular"
+                aria-label="🔥 Most Popular"
               />`;
 
   // one pill per unique category actually present in this result set, not one per card
@@ -602,7 +602,7 @@ function buildFilters(suggestionCards) {
   });
 }
 
-// resolves a card's raw primaryType (data-type) to its display category label, e.g. "seafood_restaurant" -> "Food & Drink"
+// resolves a card's raw primaryType (data-type) to its display category label (icon + text), e.g. "seafood_restaurant" -> "🍜 Food & Drink"
 function checkAndFindType(element) {
   const type = element.querySelector("[data-type]")?.dataset.type;
   if (!type) return undefined;
@@ -612,7 +612,9 @@ function checkAndFindType(element) {
   const categoryName = Object.keys(typeLists).find((key) =>
     typeLists[key].includes(type),
   );
-  return categoryName ? categories[categoryName].label : undefined;
+  return categoryName
+    ? `${categories[categoryName].icon} ${categories[categoryName].label}`
+    : undefined;
 }
 
 // activating actual filtering with click - attaching a listener using delegation
@@ -626,7 +628,7 @@ filterContainer.addEventListener("click", (event) => {
     builtResults.forEach((result) =>
       container.insertAdjacentElement("beforeend", result),
     );
-  } else if (filterBtn.ariaLabel === "price: low-high") {
+  } else if (filterBtn.ariaLabel === "💰 price: low-high") {
     // sort ascending based on weightedPrice data attribute
     // elements with weightedAverage dataset with the value of 0 are the ones that have missing field because of the api
     // they should go to the end of the list
@@ -644,7 +646,7 @@ filterContainer.addEventListener("click", (event) => {
     insertArrayElements(sortedResults, container);
     // add the missing ones to the end
     insertArrayElements(filterOutMissingFields, container);
-  } else if (filterBtn.ariaLabel === "price: high-low") {
+  } else if (filterBtn.ariaLabel === "💸 price: high-low") {
     // sort descending based on weightedPrice data attribute
     const sortedResults = [...builtResults].sort(
       (a, b) =>
@@ -652,7 +654,7 @@ filterContainer.addEventListener("click", (event) => {
     );
 
     insertArrayElements(sortedResults, container);
-  } else if (filterBtn.ariaLabel === "Most Popular") {
+  } else if (filterBtn.ariaLabel === "🔥 Most Popular") {
     // sort in descending order - sort a copy, not builtResults itself, so other filter pills (All, category pills) keep seeing the original order
     const sortedResults = [...builtResults].sort(
       (a, b) =>
