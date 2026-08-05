@@ -516,9 +516,20 @@ addEventBtn.addEventListener("click", async () => {
 // api weather
 // ======================================================
 
-// request weather data
 
+// markup for a single centered loading spinner, reused wherever a weather container needs one
+function spinnerHtml() {
+  return `<div class="w-full h-full flex items-center justify-center py-6"><span class="loading loading-spinner loading-md" style="color: #534ab7"></span></div>`;
+}
+// shows the spinner in both weather containers at once, before the initial fetch kicks off
+function showSectionLoading() {
+  document.getElementById("carouselContainer").innerHTML = spinnerHtml();
+  document.getElementById("selectedDayWeather").innerHTML = spinnerHtml();
+}
+
+// request weather data
 async function requestWeatherData() {
+  showSectionLoading();
   const tripdestination = document.getElementById("tripHeader");
   const lat = tripdestination.dataset?.lat;
   const lng = tripdestination.dataset?.lng;
@@ -533,20 +544,18 @@ async function requestWeatherData() {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(data);
       // call the render function
       await renderCarouselAPI(data);
-      renderHeadsUpBanner();
+      
 
       // filter returns an array so we should do [0] to pick the only element inside
       const currentDayElement = [
         ...document.querySelectorAll(".carousel-item"),
       ].filter((el) => el.dataset.current === "true")[0];
 
-      // show todays weather in the big card as deafult
-      await renderDetailsWeather(currentDayElement);
-      // highligh the current day in the carousel
-      await highlightSelectedDayWeather(currentDayElement);
+      // show todays weather in the big card as deafult and highlight it
+      await Promise.all([renderDetailsWeather(currentDayElement), highlightSelectedDayWeather(currentDayElement), renderHeadsUpBanner()]);
+
     } else {
       // show an http request error
       const carouselContainer = document.getElementById("carouselContainer");
@@ -683,7 +692,7 @@ function renderCarouselAPI(data) {
 // render the big card selectedDayWeather - for current day it should fetch a different route, for upcoming dates it should use the metadata/data stashed/displayed in the carousel
 async function renderDetailsWeather(element) {
   const container = document.getElementById("selectedDayWeather");
-  container.innerHTML = "";
+  container.innerHTML = spinnerHtml();
   try {
     if (element.dataset.current && element.dataset.current === "true") {
       // fetch a different route to get current condition
@@ -753,9 +762,9 @@ async function renderDetailsWeather(element) {
                       ? `<img
                         src="${data.weatherCondition.iconBaseUri}.png"
                         alt="Weather icon"
-                        class="rounded-xl md:w-50 w-30 shrink-0 object-cover"
+                        class="rounded-xl md:w-50 w-24 shrink-0 object-cover"
                       />`
-                      : dashIconSvg("md:w-50 w-30 shrink-0")
+                      : dashIconSvg("md:w-50 w-24 shrink-0")
                   }
                     
                     <div class="flex flex-col gap-2 justify-start">
@@ -822,20 +831,31 @@ async function renderDetailsWeather(element) {
                     </div>
                   </div>
                 </div>`;
-        container.insertAdjacentHTML("beforeend", html);
+        container.innerHTML = html;
       } else {
         let html = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
                         <p
                           class="text-md text-base-content/60 mt-1 text-center mb-2 w-full"
                         >Failed to load data. Please try again.</p>
                     </div>`;
-        container.insertAdjacentHTML("beforeend", html);
+        container.innerHTML = html;
       }
     } else {
       const iconEl = element.querySelector("img");
       const highest = element.querySelector(".highest").textContent;
       const lowest = element.querySelector(".lowest").textContent;
       const precip = element.querySelector(".prec").textContent;
+
+      const tripdestination = document.getElementById("tripHeader");
+      const tripName = tripdestination.destinationName;
+      const diffDays =
+        Math.round(
+          (new Date(element.dataset.fullDate + "T00:00:00").getTime() -
+            new Date(
+              tripdestination.dataset.startDate + "T00:00:00",
+            ).getTime()) /
+            86400000,
+        ) + 1;
 
       let html = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
                   <div class="flex flex-col gap-1">
@@ -846,11 +866,15 @@ async function renderDetailsWeather(element) {
                     >
                       ${element.dataset.dayOfWeek.toUpperCase()}, ${element.dataset.day.toUpperCase()}
                     </h2>
-                    <p class="text-sm md:text-base text-base-content/60">
-                      Day <span class="text-base-content">1</span> of your trip
+                    ${
+                      diffDays >= 1
+                        ? `<p class="text-sm md:text-base text-base-content/60">
+                      Day <span class="text-base-content">${diffDays}</span> of your trip
                       to
-                      <span class="text-base-content">Los Angeles</span>
-                    </p>
+                      <span class="text-base-content">${tripName}</span>
+                    </p>`
+                        : ""
+                    }
                   </div>
 
                   <!-- icon + current temp+ lowest highest -->
@@ -864,7 +888,7 @@ async function renderDetailsWeather(element) {
                       alt="Weather icon"
                       class="rounded-xl md:w-50 w-30 shrink-0 object-cover"
                     />`
-                        : dashIconSvg("md:w-50 w-30 shrink-0")
+                        : dashIconSvg("md:w-50 w-24 shrink-0")
                     }
                     <div class="flex flex-col gap-2 justify-start">
                       <p
@@ -930,10 +954,14 @@ async function renderDetailsWeather(element) {
                     </div>
                   </div>
                 </div>`;
-      container.insertAdjacentHTML("beforeend", html);
+      container.innerHTML = html;
     }
   } catch (error) {
-    console.error(error);
+    container.innerHTML = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
+                        <p
+                          class="text-md text-base-content/60 mt-1 text-center mb-2 w-full"
+                        >Failed to load data. Please try again.</p>
+                    </div>`;
   }
 }
 // attach a listener to the carousel using delegation
@@ -975,7 +1003,6 @@ function matchEventsWithWeather() {
     (item) =>
       Number(item.querySelector(".prec").textContent.replace("%", "")) > 50,
   );
-  console.log(carouselItems);
 
   const carouselItemsDays = carouselItems.map((item) => ({
     date: item.dataset.fullDate,
