@@ -58,7 +58,9 @@ suggestionInput.addEventListener("input", () => {
 // desgin the most popular filter pill using IMDB weighted method for showing top 250 popular movies - reference note: most-popular-filter-design.md
 function weightedRating(item, allItems, m) {
   // API might not return some data - we filter them out
-  const reviewedItems = allItems.filter((candidate) => candidate.rating != null);
+  const reviewedItems = allItems.filter(
+    (candidate) => candidate.rating != null,
+  );
 
   // formula = (v / (v + m)) * R + (m / (v + m)) * C
 
@@ -130,13 +132,24 @@ async function renderSuggestions(data) {
 
   let builtResult = [];
   data.places.forEach((item) => {
+    const startPrice = item.priceRange?.startPrice?.units
+      ? Number(item.priceRange.startPrice.units)
+      : 0;
+    const endPrice = item.priceRange?.endPrice?.units
+      ? Number(item.priceRange.endPrice.units)
+      : 0;
+    // used for the price: low-high/high-low filter pills - stashed as data-weighted-price so no-price cards (0) can be pushed to the end
+    const averagePrice = (startPrice + endPrice) / 2;
+
+    // used for the Most Popular filter pill - stashed as data-weighted-average, see notes/most-popular-filter-design.md
     const weightedAverage = weightedRating(item, data.places, 30);
+
     const photoUrl =
       item.photos && item.photos[0]
         ? `https://places.googleapis.com/v1/${item.photos[0].name}/media?maxHeightPx=400&key=${key}`
         : null;
 
-    let element = `<div data-weighted-average="${weightedAverage}" data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" data-address="${item.formattedAddress}" class="parent card bg-base-100 shadow-sm border border-base-200 h-full">
+    let element = `<div data-weighted-price="${averagePrice}" data-weighted-average="${weightedAverage}" data-id="${item.id}" data-lat="${item.location.latitude}" data-lng="${item.location.longitude}" data-address="${item.formattedAddress}" class="parent card bg-base-100 shadow-sm border border-base-200 h-full">
                 ${
                   photoUrl
                     ? `<figure class="relative">

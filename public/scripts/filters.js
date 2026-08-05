@@ -627,17 +627,39 @@ filterContainer.addEventListener("click", (event) => {
       container.insertAdjacentElement("beforeend", result),
     );
   } else if (filterBtn.ariaLabel === "price: low-high") {
+    // sort ascending based on weightedPrice data attribute
+    // elements with weightedAverage dataset with the value of 0 are the ones that have missing field because of the api
+    // they should go to the end of the list
+
+    const filterOutMissingFields = [...builtResults].filter(
+      (item) => item.dataset.weightedPrice === "0",
+    );
+    const remainingResults = [...builtResults].filter(
+      (item) => item.dataset.weightedPrice !== "0",
+    );
+    const sortedResults = [...remainingResults].sort(
+      (a, b) =>
+        Number(a.dataset.weightedPrice) - Number(b.dataset.weightedPrice),
+    );
+    insertArrayElements(sortedResults, container);
+    // add the missing ones to the end
+    insertArrayElements(filterOutMissingFields, container);
   } else if (filterBtn.ariaLabel === "price: high-low") {
+    // sort descending based on weightedPrice data attribute
+    const sortedResults = [...builtResults].sort(
+      (a, b) =>
+        Number(b.dataset.weightedPrice) - Number(a.dataset.weightedPrice),
+    );
+
+    insertArrayElements(sortedResults, container);
   } else if (filterBtn.ariaLabel === "Most Popular") {
     // sort in descending order - sort a copy, not builtResults itself, so other filter pills (All, category pills) keep seeing the original order
     const sortedResults = [...builtResults].sort(
       (a, b) =>
         Number(b.dataset.weightedAverage) - Number(a.dataset.weightedAverage),
     );
-    sortedResults.forEach((result) =>
-      container.insertAdjacentElement("beforeend", result),
-    );
-    
+
+    insertArrayElements(sortedResults, container);
   } else {
     const filteredresults = builtResults.filter((result) => {
       const answer = checkAndFindType(result);
@@ -645,8 +667,14 @@ filterContainer.addEventListener("click", (event) => {
       else if (answer === filterBtn.ariaLabel) return true;
       return false;
     });
-    filteredresults.forEach((result) =>
-      container.insertAdjacentElement("beforeend", result),
-    );
+
+    insertArrayElements(filteredresults, container);
   }
 });
+
+// appends every element in myArray to the end of container, in order
+function insertArrayElements(myArray, container) {
+  myArray.forEach((result) =>
+    container.insertAdjacentElement("beforeend", result),
+  );
+}
