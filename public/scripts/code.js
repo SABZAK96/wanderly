@@ -220,12 +220,20 @@ async function googleSuggestion(query, token, page) {
   const errorMsg = document.getElementById("suggError");
   errorMsg.textContent = "";
 
+  // bias results toward the trip's actual coordinates - the destination
+  // name in the query is trusted (came from Places autocomplete, not
+  // user input), but the user's own search term isn't, so this keeps
+  // sloppy/generic search terms from ranking a far-away match highly
+  const tripHeader = document.getElementById("tripHeader");
+  const lat = tripHeader.dataset.lat;
+  const lng = tripHeader.dataset.lng;
+
   const response = await fetch(`/googleAPI`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userQuery: query, nextToken: token }),
+    body: JSON.stringify({ userQuery: query, nextToken: token, lat, lng }),
   });
 
   if (response.ok) {

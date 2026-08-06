@@ -803,6 +803,19 @@ app.get("/config/places-key", (req, res) => {
 // Google's field mask parser rejects the extra spaces before some field names - removed the spaces to fix the problem
 app.post("/googleAPI", async (req, res) => {
   try {
+    const { lat, lng } = req.body;
+    // soft ranking nudge, not a hard filter - Google can still return a
+    // result outside this radius if the text match is strong enough.
+    const locationBias =
+      lat && lng
+        ? {
+            circle: {
+              center: { latitude: Number(lat), longitude: Number(lng) },
+              radius: 50000,  // 50000m (~50km) is the max radius the API allows for locationBias
+            },
+          }
+        : undefined;
+
     const apiCall = await (
       await fetch("https://places.googleapis.com/v1/places:searchText", {
         method: "POST",
@@ -810,6 +823,7 @@ app.post("/googleAPI", async (req, res) => {
           textQuery: req.body.userQuery,
           pageSize: 20,
           pageToken: req.body?.nextToken ?? "",
+          locationBias,
         }),
         headers: {
           "Content-Type": "application/json",
