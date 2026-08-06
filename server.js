@@ -806,12 +806,16 @@ app.post("/googleAPI", async (req, res) => {
     const apiCall = await (
       await fetch("https://places.googleapis.com/v1/places:searchText", {
         method: "POST",
-        body: JSON.stringify({ textQuery: req.body.userQuery }),
+        body: JSON.stringify({
+          textQuery: req.body.userQuery,
+          pageSize: 20,
+          pageToken: req.body?.nextToken ?? "",
+        }),
         headers: {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API,
           "X-Goog-FieldMask":
-            "places.id,places.displayName,places.formattedAddress,places.priceLevel,places.photos,places.regularOpeningHours,places.priceRange,places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri",
+            "places.id,places.displayName,places.formattedAddress,places.priceLevel,places.photos,places.regularOpeningHours,places.priceRange,places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri,nextPageToken",
         },
       })
     ).json();

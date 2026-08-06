@@ -28,6 +28,7 @@ suggestModal.addEventListener("close", () => {
 // ==============================================================================
 const msg = document.getElementById("suggError");
 const emptySuggestionContainer = document.getElementById("emptySuggestion");
+let finalQuery;
 
 const suggestionInput = document.getElementById("suggestionSearch");
 document.getElementById("searchSuggest").addEventListener("click", async () => {
@@ -39,8 +40,9 @@ document.getElementById("searchSuggest").addEventListener("click", async () => {
   } else {
     emptySuggestionContainer.classList.add("hidden");
     const destination = document.getElementById("destName").textContent;
-    const finalQuery = query + " in " + destination;
-    await googleSuggestion(finalQuery);
+    finalQuery = query + " in " + destination;
+    builtResults = [];
+    await googleSuggestion(finalQuery, "");
   }
 });
 
@@ -86,8 +88,9 @@ function weightedRating(item, allItems, m) {
 // sends the constructed "<search term> in <destination>" query to our own
 // /googleAPI proxy, which forwards it to Google Places Text Search
 // (fetch function only - no DOM/rendering here)
-let builtResults;
-async function googleSuggestion(query) {
+let builtResults =[];
+let nextPageToken;
+async function googleSuggestion(query, token) {
   const errorMsg = document.getElementById("suggError");
   errorMsg.textContent = "";
 
@@ -96,29 +99,33 @@ async function googleSuggestion(query) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userQuery: query }),
+    body: JSON.stringify({ userQuery: query, nextToken: token }),
   });
 
   if (response.ok) {
     const data = await response.json();
-    builtResults = await renderSuggestions(data);
+    nextPageToken = data.nextPageToken;
+    builtResults = [...builtResults, ...(await renderSuggestions(data))];
     buildFilters(builtResults);
+    return nextPageToken;
   } else {
     errorMsg.textContent = "Could not Fetch Data. Try Again.";
     errorMsg.classList.remove("hidden");
     emptySuggestionContainer.classList.remove("hidden");
+    return;
   }
 }
 
 // this function renders the result that comes from the google API
 async function renderSuggestions(data) {
+  let newResults = [];
   const container = document.getElementById("suggestionContainer");
   container.innerHTML = "";
 
   if (!data.places || data.places.length === 0) {
     msg.textContent = "No results found. Try a different search.";
     emptySuggestionContainer.classList.remove("hidden");
-    return;
+    return newResults;
   }
 
   // show the filters
@@ -130,7 +137,6 @@ async function renderSuggestions(data) {
   // actual Photo media URL
   const { key } = await (await fetch("/config/places-key")).json();
 
-  let builtResult = [];
   data.places.forEach((item) => {
     const startPrice = item.priceRange?.startPrice?.units
       ? Number(item.priceRange.startPrice.units)
@@ -355,9 +361,9 @@ async function renderSuggestions(data) {
               </div>`;
     container.insertAdjacentHTML("beforeend", element);
     // buildFilters needs a real DOM node (to call .querySelector on), not the HTML string used to insert it
-    builtResult.push(container.lastElementChild);
+    newResults.push(container.lastElementChild);
   });
-  return builtResult;
+  return newResults;
 }
 
 // attaching listener to all add to calendar buttons in suggestion section -using delegation
