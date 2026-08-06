@@ -32,6 +32,19 @@
         color: white;
         border-color: #534ab7;
       }
+
+      /* daisyUI hides a closed dropdown-content with opacity: 0 only,
+         leaving pointer-events: auto - the invisible menu still catches
+         clicks aimed at whatever it happens to be sitting on top of
+         (Next button on mobile, here). Explicitly turn clicks off while
+         closed, back on while open (:focus-within, daisyUI's own signal
+         for "this dropdown is open") */
+      .dropdown-content {
+        pointer-events: none;
+      }
+      .dropdown:focus-within .dropdown-content {
+        pointer-events: auto;
+      }
     </style>
   </head>
   <body class="bg-base-200 min-h-dvh flex flex-col">

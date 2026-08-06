@@ -553,7 +553,11 @@ const typeLists = {
 };
 
 //  build the category filters on the go based on the response from API
+// filterContainer = "Filters" dropdown (All, Most Popular, category pills)
+// sortContainer = "Sort" dropdown (price low-high/high-low) - same radio
+// group (name="metaframeworks") across both, so they stay mutually exclusive
 const filterContainer = document.getElementById("filterContainer");
+const sortContainer = document.getElementById("sortContainer");
 function buildFilters(suggestionCards) {
   // base pills only need to be built once, not reset on every card
   filterContainer.innerHTML = `
@@ -568,6 +572,14 @@ function buildFilters(suggestionCards) {
                 class="btn btn-xs rounded-full"
                 type="radio"
                 name="metaframeworks"
+                aria-label="🔥 Most Popular"
+              />`;
+
+  sortContainer.innerHTML = `
+            <input
+                class="btn btn-xs rounded-full"
+                type="radio"
+                name="metaframeworks"
                 aria-label="💰 price: low-high"
               />
               <input
@@ -575,12 +587,6 @@ function buildFilters(suggestionCards) {
                 type="radio"
                 name="metaframeworks"
                 aria-label="💸 price: high-low"
-              />
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="🔥 Most Popular"
               />`;
 
   // one pill per unique category actually present in this result set, not one per card
@@ -617,15 +623,19 @@ function checkAndFindType(element) {
     : undefined;
 }
 
-// activating actual filtering with click - attaching a listener using delegation
-filterContainer.addEventListener("click", (event) => {
+// activating actual filtering with click - attaching a listener using
+// delegation to both containers now that the pills are split between them
+// (same handler, nothing about the filtering logic itself changed)
+function handleFilterClick(event) {
   const filterBtn = event.target.closest("input[type='radio']");
   const container = document.getElementById("suggestionContainer");
 
   if (!filterBtn) return;
   container.innerHTML = "";
+  // Object.values(builtResultsPerPage) gives an array of arrays like [[page1 cards], [page2 cards], [page3 cards]] -> with .flat() we convert it to a single array
+  const allResults = Object.values(builtResultsPerPage).flat();
   if (filterBtn.ariaLabel === "All") {
-    builtResults.forEach((result) =>
+    allResults.forEach((result) =>
       container.insertAdjacentElement("beforeend", result),
     );
   } else if (filterBtn.ariaLabel === "💰 price: low-high") {
@@ -633,10 +643,10 @@ filterContainer.addEventListener("click", (event) => {
     // elements with weightedAverage dataset with the value of 0 are the ones that have missing field because of the api
     // they should go to the end of the list
 
-    const filterOutMissingFields = [...builtResults].filter(
+    const filterOutMissingFields = [...allResults].filter(
       (item) => item.dataset.weightedPrice === "0",
     );
-    const remainingResults = [...builtResults].filter(
+    const remainingResults = [...allResults].filter(
       (item) => item.dataset.weightedPrice !== "0",
     );
     const sortedResults = [...remainingResults].sort(
@@ -648,22 +658,22 @@ filterContainer.addEventListener("click", (event) => {
     insertArrayElements(filterOutMissingFields, container);
   } else if (filterBtn.ariaLabel === "💸 price: high-low") {
     // sort descending based on weightedPrice data attribute
-    const sortedResults = [...builtResults].sort(
+    const sortedResults = [...allResults].sort(
       (a, b) =>
         Number(b.dataset.weightedPrice) - Number(a.dataset.weightedPrice),
     );
 
     insertArrayElements(sortedResults, container);
   } else if (filterBtn.ariaLabel === "🔥 Most Popular") {
-    // sort in descending order - sort a copy, not builtResults itself, so other filter pills (All, category pills) keep seeing the original order
-    const sortedResults = [...builtResults].sort(
+    // sort in descending order - sort a copy, so other filter pills (All, category pills) keep seeing the original order
+    const sortedResults = [...allResults].sort(
       (a, b) =>
         Number(b.dataset.weightedAverage) - Number(a.dataset.weightedAverage),
     );
 
     insertArrayElements(sortedResults, container);
   } else {
-    const filteredresults = builtResults.filter((result) => {
+    const filteredresults = allResults.filter((result) => {
       const answer = checkAndFindType(result);
       if (answer === undefined) return false;
       else if (answer === filterBtn.ariaLabel) return true;
@@ -672,7 +682,9 @@ filterContainer.addEventListener("click", (event) => {
 
     insertArrayElements(filteredresults, container);
   }
-});
+}
+filterContainer.addEventListener("click", handleFilterClick);
+sortContainer.addEventListener("click", handleFilterClick);
 
 // appends every element in myArray to the end of container, in order
 function insertArrayElements(myArray, container) {
