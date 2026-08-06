@@ -879,14 +879,14 @@ async function renderDetailsWeather(element) {
 
                   <!-- icon + current temp+ lowest highest -->
                   <div
-                    class="flex flex-row items-stretch justify-start gap-4 md:gap-10"
+                    class="flex flex-row items-center justify-start gap-4 md:gap-10"
                   >
                     ${
                       iconEl
                         ? `<img
                       src="${iconEl.src}"
                       alt="Weather icon"
-                      class="rounded-xl md:w-50 w-30 shrink-0 object-cover"
+                      class="rounded-xl md:w-50 w-40 shrink-0 object-cover"
                     />`
                         : dashIconSvg("md:w-50 w-24 shrink-0")
                     }
