@@ -173,7 +173,7 @@
         <!-- non-AI (suggestions) view -->
         <section
           id="non-AI"
-          class="hidden group-has-[#mode-suggestions:checked]:flex flex-col gap-4"
+          class="hidden group-has-[#mode-suggestions:checked]:flex flex-col gap-2"
         >
           <!-- input field with aura effect -->
           <div class="w-full aura aura-holo mx-auto">
@@ -247,18 +247,80 @@
             </div>
           </div>
 
-          <!-- filters -->
+          <!-- filters and pagination -->
           <div class="flex-1">
-            <!-- container of filters -->
-            <div
-              id="filterContainer"
-              class="filter-pills flex flex-wrap gap-2 pt-8 pb-3"
-            ></div>
-            
+            <div class="flex flex-row justify-between items-center">
+              <!-- left side : filters (All, Most Popular, category pills) -
+                   populated by buildFilters() in filters.js -->
+              <div class="dropdown dropdown-start">
+                <div
+                  tabindex="0"
+                  role="button"
+                  class="flex items-center gap-1 px-3 h-10 text-[#534ab7]"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z"
+                    />
+                  </svg>
+                  Filters
+                </div>
+                <ul
+                  id="filterContainer"
+                  tabindex="-1"
+                  class="dropdown-content menu filter-pills flex flex-col gap-2 bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+                ></ul>
+              </div>
+
+              <!-- right side: sorting (price low-high/high-low) - same source -->
+              <div class="dropdown dropdown-end">
+                <div
+                  tabindex="0"
+                  role="button"
+                  class="flex items-center gap-1 px-3 h-10 text-[#534ab7]"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"
+                    />
+                  </svg>
+                  Sort
+                </div>
+                <ul
+                  id="sortContainer"
+                  tabindex="-1"
+                  class="dropdown-content menu filter-pills flex flex-col gap-2 bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+                ></ul>
+              </div>
+            </div>
+
             <!-- pagination - same hidden-radio/label/peer-checked pattern as the
                  Ask AI/Suggestions mode toggle above, just without the aura glow -->
-            <div class="flex flex-row justify-center items-center my-3 h-10 hidden" id="pagination">
-              <div class="card bg-base-100 flex flex-row items-center border-0 has-checked:outline-none focus-visible:outline-none overflow-hidden h-full">
+            <div
+              class="flex flex-row justify-center items-center my-3 h-10 hidden"
+              id="pagination"
+            >
+              <div
+                class="card bg-base-100 flex flex-row items-center border-0 has-checked:outline-none focus-visible:outline-none overflow-hidden h-full"
+              >
                 <button
                   id="prevPage"
                   class="hidden px-3 h-full flex items-center justify-center text-[#534ab7]"
