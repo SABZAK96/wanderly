@@ -1839,7 +1839,7 @@ function renderSpending(results, netted) {
           >
             <input type="checkbox" class="appearance-none focus:outline-none" />
             <div class="absolute top-1 inset-x-1 z-30 flex items-center justify-between">
-              <div class="flex items-center gap-0.5">
+              <div class="flex items-center h-3.5 mt-1 gap-0.5">
                 ${
                   isPlaceholder
                     ? `<button

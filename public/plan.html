@@ -34,7 +34,7 @@
       }
     </style>
   </head>
-  <body class="bg-base-200 min-h-screen flex flex-col">
+  <body class="bg-base-200 min-h-dvh flex flex-col">
     <!-- navbar -->
     <div
       class="navbar bg-base-100 shadow-sm sticky top-0 z-20 px-4 lg:px-8"
@@ -109,7 +109,7 @@
     <!-- navbar end -->
     <!-- drawer wraps the entire page content so the sidebar can push/overlay it -->
     <div
-      class="drawer drawer-end lg:drawer-open min-h-screen"
+      class="drawer drawer-end lg:drawer-open min-h-dvh"
       style="background: #eeedfe"
     >
       <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
@@ -122,9 +122,10 @@
         <!-- toggle button visible only on small screens -->
         <label
           for="my-drawer-3"
-          class="btn drawer-button rounded-full self-start mb-4 lg:hidden"
+          class="btn drawer-button rounded-full self-start mb-2 lg:hidden"
+          style="background-color: #534ab7; color:#eeedfe"
         >
-          Itinerary Recap
+          Your Trips
         </label>
 
         <!-- mode toggle: Suggestions / Ask AI - the two pills are free to be
@@ -233,14 +234,14 @@
             class="flex flex-col gap-1 justify-center items-center"
           >
             <h2
-              class="text-base font-semibold leading-tight"
+              class="text-base text-center font-semibold leading-tight"
               style="color: #3c3489"
             >
               Search for attractions, restaurants, or activities to get
               suggestions for your trip.
             </h2>
-            <div class="w-[900px] h-[900px]">
-              <img src="./images/suggestion.png" alt="" />
+            <div class="w-[90vw] max-w-[600px] flex items-center justify-center">
+              <img src="./images/suggestion.png" alt="" class="w-full h-auto" />
             </div>
           </div>
 
@@ -266,7 +267,7 @@
         <!-- AI view -->
         <section
           id="AI"
-          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4"
+          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4 "
         >
           <!-- conversation thread -->
           <div class="flex flex-col gap-4">
@@ -548,7 +549,7 @@
           aria-label="close sidebar"
           class="drawer-overlay"
         ></label>
-        <div class="min-h-full w-80 p-4">
+        <div class="min-h-full md:w-90 w-[90vw] p-4">
           <!-- close button inside sidebar, only on mobile -->
           <label
             for="my-drawer-3"
