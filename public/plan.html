@@ -123,7 +123,7 @@
         <label
           for="my-drawer-3"
           class="btn drawer-button rounded-full self-start mb-2 lg:hidden"
-          style="background-color: #534ab7; color:#eeedfe"
+          style="background-color: #534ab7; color: #eeedfe"
         >
           Your Trips
         </label>
@@ -240,7 +240,9 @@
               Search for attractions, restaurants, or activities to get
               suggestions for your trip.
             </h2>
-            <div class="w-[90vw] max-w-[600px] flex items-center justify-center">
+            <div
+              class="w-[90vw] max-w-[600px] flex items-center justify-center"
+            >
               <img src="./images/suggestion.png" alt="" class="w-full h-auto" />
             </div>
           </div>
@@ -250,8 +252,40 @@
             <!-- container of filters -->
             <div
               id="filterContainer"
-              class="filter-pills flex flex-wrap gap-2 pt-8 pb-3 "
-            >
+              class="filter-pills flex flex-wrap gap-2 pt-8 pb-3"
+            ></div>
+            
+            <!-- pagination - same hidden-radio/label/peer-checked pattern as the
+                 Ask AI/Suggestions mode toggle above, just without the aura glow -->
+            <div class="flex flex-row justify-center items-center my-3 h-10 hidden" id="pagination">
+              <div class="card bg-base-100 flex flex-row items-center border-0 has-checked:outline-none focus-visible:outline-none overflow-hidden h-full">
+                <button
+                  id="prevPage"
+                  class="hidden px-3 h-full flex items-center justify-center text-[#534ab7]"
+                >
+                  Previous
+                </button>
+                <input
+                  type="radio"
+                  name="options"
+                  id="page-1"
+                  class="hidden peer/page1"
+                  aria-label="1"
+                  checked
+                />
+                <label
+                  for="page-1"
+                  class="px-3 h-full flex items-center justify-center text-[#534ab7] peer-checked/page1:bg-[#e0dbfb]"
+                >
+                  1
+                </label>
+                <button
+                  id="nextPage"
+                  class="px-3 h-full flex items-center justify-center text-[#534ab7] disabled:text-gray-400 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
             </div>
             <!-- container of the suggestions -->
             <section
@@ -267,7 +301,7 @@
         <!-- AI view -->
         <section
           id="AI"
-          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4 "
+          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4"
         >
           <!-- conversation thread -->
           <div class="flex flex-col gap-4">
