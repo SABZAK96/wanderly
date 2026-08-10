@@ -28,7 +28,9 @@ const signUpFormInputs = document.querySelectorAll("#signupForm input");
 
 const loginError = document.getElementById("loginError");
 
-document.getElementById("login").addEventListener("click", async () => {
+const loginBtn = document.getElementById("login");
+loginBtn.addEventListener("click", async () => {
+  if (loginBtn.dataset.loading === "true") return;
   loginError.classList.add("hidden");
   let info = {};
   loginFormInputs.forEach((input) => {
@@ -38,27 +40,37 @@ document.getElementById("login").addEventListener("click", async () => {
       info["password"] = input.value;
     }
   });
+  const originalLabel = loginBtn.textContent;
+  loginBtn.dataset.loading = "true";
+  loginBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
 
-  const response = await fetch("/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(info),
-  });
-  if (response.ok) {
-    // login.js is used in another html file , upon successful login we should do different stuff - this part hanldes normal flow withouth invitation
-    if (!location.search.includes("trip=")) {
-      window.location.href = "/plan.html";
-    // hand over to join.js
+  try {
+    const response = await fetch("/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(info),
+    });
+    if (response.ok) {
+      // login.js is used in another html file , upon successful login we should do different stuff - this part hanldes normal flow withouth invitation
+      if (!location.search.includes("trip=")) {
+        window.location.href = "/plan.html";
+        // hand over to join.js
+      } else {
+        handleInviteLogin();
+      }
     } else {
-      handleInviteLogin();
+      const data = await response.json();
+      loginError.textContent = data.error;
+      loginError.classList.remove("hidden");
     }
-  } else {
-    const data = await response.json();
-    loginError.textContent = data.error;
+  } catch (error) {
+    loginError.textContent = "Could not reach the server. Try again.";
     loginError.classList.remove("hidden");
-    return;
+  } finally {
+    loginBtn.dataset.loading = "false";
+    loginBtn.textContent = originalLabel;
   }
 });
 
@@ -66,7 +78,9 @@ document.getElementById("login").addEventListener("click", async () => {
 
 const signupError = document.getElementById("signupError");
 
-document.getElementById("signup").addEventListener("click", async () => {
+const signupBtn = document.getElementById("signup");
+signupBtn.addEventListener("click", async () => {
+  if (signupBtn.dataset.loading === "true") return;
   signupError.classList.add("hidden");
   let info = {};
   signUpFormInputs.forEach((input) => {
@@ -104,28 +118,39 @@ document.getElementById("signup").addEventListener("click", async () => {
 
   // check if the password matches
   if (info["firstPass"] === info["secondPass"]) {
-    const response = await fetch("/signup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: info["name"],
-        email: info["email"],
-        password: info["firstPass"],
-      }),
-    });
-    if (response.ok) {
-      if (!location.search.includes("trip=")) {
-        window.location.href = "/plan.html";
+    const originalLabel = signupBtn.textContent;
+    signupBtn.dataset.loading = "true";
+    signupBtn.innerHTML = `<span class="loading loading-dots loading-sm"></span>`;
+
+    try {
+      const response = await fetch("/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: info["name"],
+          email: info["email"],
+          password: info["firstPass"],
+        }),
+      });
+      if (response.ok) {
+        if (!location.search.includes("trip=")) {
+          window.location.href = "/plan.html";
+        } else {
+          handleInviteLogin();
+        }
       } else {
-        handleInviteLogin();
+        const data = await response.json();
+        signupError.textContent = data.error;
+        signupError.classList.remove("hidden");
       }
-    } else {
-      const data = await response.json();
-      signupError.textContent = data.error;
+    } catch (error) {
+      signupError.textContent = "Could not reach the server. Try again.";
       signupError.classList.remove("hidden");
-      return;
+    } finally {
+      signupBtn.dataset.loading = "false";
+      signupBtn.textContent = originalLabel;
     }
   } else {
     signupError.textContent = "Passwords don't match.";
