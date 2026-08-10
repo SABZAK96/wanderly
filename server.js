@@ -991,7 +991,15 @@ app.post("/getWeather", async (req, res) => {
         `https://weather.googleapis.com/v1/forecast/days:lookup?key=${process.env.GOOGLE_PLACES_API}&location.latitude=${req.body.lat}&location.longitude=${req.body.lng}&days=10&pageSize=10`,
       )
     ).json();
-    res.json(apiCall);
+    // the Google fetch above still resolves 200 even when Google itself
+    // couldn't serve this location (e.g. no weather coverage there) - it
+    // reports that as an `error` field in the body, not an HTTP status, so
+    // check for it explicitly instead of blindly forwarding it as success
+    if (apiCall.error) {
+      res.status(apiCall.error.code || 502).json(apiCall);
+    } else {
+      res.json(apiCall);
+    }
   } catch (error) {
     res.status(500).send("error connecting to the api.");
   }
@@ -1005,7 +1013,13 @@ app.post("/currentWeather", async (req, res) => {
         `https://weather.googleapis.com/v1/currentConditions:lookup?key=${process.env.GOOGLE_PLACES_API}&location.latitude=${req.body.lat}&location.longitude=${req.body.lng}`,
       )
     ).json();
-    res.json(apiCall);
+    // same as /getWeather above - Google reports "couldn't serve this
+    // location" as an `error` field in a 200 body, not an HTTP status {"error":{"code":404,"message":"Information is not supported for this location. Please try a different location.","status":"NOT_FOUND"}}
+    if (apiCall.error) {
+      res.status(apiCall.error.code || 502).json(apiCall);
+    } else {
+      res.json(apiCall);
+    }
   } catch (error) {
     res.status(500).send("error connecting to the api.");
   }

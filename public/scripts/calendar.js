@@ -2,6 +2,12 @@ let myEvents = [];
 let firstEventInTrip = undefined;
 
 const tripId = localStorage.getItem("selectedTripId");
+// no trip selected - requestWeatherData (the only thing that hides
+// #pageLoading) is only triggered by the tripHeaderRendered event, which
+// never fires without a trip, so the overlay needs hiding here instead
+if (!tripId) {
+  document.getElementById("pageLoading").classList.add("hidden");
+}
 // get all the events from the db
 async function eventsFromDB(tripId) {
   const calendarError = document.getElementById("calendarError");
@@ -293,7 +299,6 @@ async function initCalendar() {
   });
   calendar.render();
 }
-initCalendar();
 
 // attach a listener to change button
 const saveEventEdit = document.getElementById("saveEventEdit");
@@ -516,7 +521,6 @@ addEventBtn.addEventListener("click", async () => {
 // api weather
 // ======================================================
 
-
 // markup for a single centered loading spinner, reused wherever a weather container needs one
 function spinnerHtml() {
   return `<div class="w-full h-full flex items-center justify-center py-6"><span class="loading loading-spinner loading-md" style="color: #534ab7"></span></div>`;
@@ -546,7 +550,6 @@ async function requestWeatherData() {
       const data = await response.json();
       // call the render function
       await renderCarouselAPI(data);
-      
 
       // filter returns an array so we should do [0] to pick the only element inside
       const currentDayElement = [
@@ -554,20 +557,43 @@ async function requestWeatherData() {
       ].filter((el) => el.dataset.current === "true")[0];
 
       // show todays weather in the big card as deafult and highlight it
-      await Promise.all([renderDetailsWeather(currentDayElement), highlightSelectedDayWeather(currentDayElement), renderHeadsUpBanner()]);
-
+      await Promise.all([
+        renderDetailsWeather(currentDayElement),
+        highlightSelectedDayWeather(currentDayElement),
+      ]);
     } else {
-      // show an http request error
-      const carouselContainer = document.getElementById("carouselContainer");
-      carouselContainer.innerHTML = `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">Failed to load data. Please try again.</p>`;
+      // show an http request error - Google's own message when there is one
+      // (e.g. "Information is not supported for this location.")
+      const data = await response.json();
+      const message =
+        data.error?.message ?? "Failed to load data. Please try again.";
+      document.getElementById("carouselContainer").innerHTML =
+        `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
+      document.getElementById("selectedDayWeather").innerHTML =
+        `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
     }
   } catch (error) {
-    // show a network error
-    const carouselContainer = document.getElementById("carouselContainer");
-    carouselContainer.innerHTML = `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">Failed to load data. Please try again.</p>`;
+    // show a network error - no response to read a message from here
+    const message = "Could not reach the server. Try again.";
+    document.getElementById("carouselContainer").innerHTML =
+      `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
+    document.getElementById("selectedDayWeather").innerHTML =
+      `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
   }
 }
-document.addEventListener("tripHeaderRendered", requestWeatherData);
+
+// runs the weather widget and the calendar independently - a broken weather
+// fetch (e.g. this trip has no saved lat/lng yet, see notes/tomorrow-plan.md)
+// shouldn't also leave the calendar empty, since initCalendar doesn't depend
+// on weather data at all
+async function loadCalendarPage() {
+  await Promise.allSettled([requestWeatherData(), initCalendar()]);
+  // needs both: calendar.getEvents() requires initCalendar to have actually
+  // succeeded, and the risky-weather matching needs the carousel rendered
+  if (calendar) renderHeadsUpBanner();
+  document.getElementById("pageLoading").classList.add("hidden");
+}
+document.addEventListener("tripHeaderRendered", loadCalendarPage);
 
 // gives a YYYY-MM-DD string using local date parts - unlike toISOString() (UTC), this won't roll over to the next/previous day when the local timezone is ahead of/behind UTC. en-CA happens to format dates as YYYY-MM-DD
 function toLocalDateStr(date) {
@@ -833,12 +859,11 @@ async function renderDetailsWeather(element) {
                 </div>`;
         container.innerHTML = html;
       } else {
-        let html = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
-                        <p
-                          class="text-md text-base-content/60 mt-1 text-center mb-2 w-full"
-                        >Failed to load data. Please try again.</p>
-                    </div>`;
-        container.innerHTML = html;
+        // Google's own message when there is one, same as requestWeatherData
+        const data = await response.json();
+        const message =
+          data.error?.message ?? "Failed to load data. Please try again.";
+        container.innerHTML = `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
       }
     } else {
       const iconEl = element.querySelector("img");
@@ -957,11 +982,10 @@ async function renderDetailsWeather(element) {
       container.innerHTML = html;
     }
   } catch (error) {
-    container.innerHTML = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
-                        <p
-                          class="text-md text-base-content/60 mt-1 text-center mb-2 w-full"
-                        >Failed to load data. Please try again.</p>
-                    </div>`;
+    // covers both branches above (the current-day fetch throwing, or the
+    // upcoming-day branch choking on a malformed carousel dataset) - no
+    // single response to pull a specific message from either way
+    container.innerHTML = `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">Failed to load data. Please try again.</p>`;
   }
 }
 // attach a listener to the carousel using delegation
