@@ -23,6 +23,20 @@ suggestModal.addEventListener("close", () => {
   }
 });
 
+function pageLoadSpinner() {
+  // col-span-full + centered, like expense.js's showSectionLoading() - sits
+  // inline in the results grid, not a full-viewport overlay (that's what
+  // fixed inset-0 is for, e.g. expense.html's #pageLoading)
+  document.getElementById("suggestionContainer").innerHTML = `<div
+  id="suggestionSpinner"
+  class="col-span-full flex justify-center py-6"
+>
+  <span
+    class="loading loading-spinner loading-lg"
+    style="color: #534ab7"
+  ></span>
+</div>`;
+}
 // ==============================================================================
 // logic for connecting suggestion mode to the google places api
 // ==============================================================================
@@ -44,13 +58,18 @@ document.getElementById("searchSuggest").addEventListener("click", async () => {
     const destination = document.getElementById("destName").textContent;
     finalQuery = query + " in " + destination;
     builtResults = [];
-    document.getElementById("suggestionContainer").innerHTML = "";
+    pageLoadSpinner();
     // a fresh search resets the filter/sort pills back to All/no-sort too
     // (buildFilters, called from googleSuggestion) - clear the trigger
     // highlight left over from whatever was active on the previous search
     setTriggerActive(filterTrigger, false);
     setTriggerActive(sortTrigger, false);
-    nextPageToken = await googleSuggestion(finalQuery, "");
+    // .finally() so the spinner comes down whether the fetch succeeds,
+    // comes back empty, or fails - renderSuggestions doesn't clear the
+    // container itself (Load More depends on that), so nothing else removes it
+    nextPageToken = await googleSuggestion(finalQuery, "").finally(() =>
+      document.getElementById("suggestionSpinner")?.remove(),
+    );
     // toggle's 2nd arg (force) sets the class to exactly that boolean instead of flipping it - see notes/classlist-toggle-force.md
     loadMoreWrap.classList.toggle("hidden", !nextPageToken);
   }
@@ -78,8 +97,9 @@ loadMoreBtn.addEventListener("click", async () => {
 
   // re-check whichever freshly-built pill matches what was active before
   // the fetch reset them, so the UI and the re-render agree
-  const filterBtn = [...document.querySelectorAll("#filterContainer input")]
-    .find((el) => el.ariaLabel === prevFilterLabel);
+  const filterBtn = [
+    ...document.querySelectorAll("#filterContainer input"),
+  ].find((el) => el.ariaLabel === prevFilterLabel);
   const sortBtn = [...document.querySelectorAll("#sortContainer input")].find(
     (el) => el.ariaLabel === prevSortLabel,
   );
