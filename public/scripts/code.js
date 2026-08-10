@@ -45,7 +45,13 @@ document.getElementById("searchSuggest").addEventListener("click", async () => {
     finalQuery = query + " in " + destination;
     builtResults = [];
     document.getElementById("suggestionContainer").innerHTML = "";
+    // a fresh search resets the filter/sort pills back to All/no-sort too
+    // (buildFilters, called from googleSuggestion) - clear the trigger
+    // highlight left over from whatever was active on the previous search
+    setTriggerActive(filterTrigger, false);
+    setTriggerActive(sortTrigger, false);
     nextPageToken = await googleSuggestion(finalQuery, "");
+    // toggle's 2nd arg (force) sets the class to exactly that boolean instead of flipping it - see notes/classlist-toggle-force.md
     loadMoreWrap.classList.toggle("hidden", !nextPageToken);
   }
 });
@@ -57,7 +63,30 @@ loadMoreBtn.addEventListener("click", async () => {
   // no more results to fetch - don't send an empty token (Google treats
   // that as "start over from page 1")
   if (!nextPageToken) return;
+
+  // googleSuggestion calls buildFilters, which rebuilds the pills from
+  // scratch (back to All/no-sort) - grab what's actually checked now,
+  // before that reset wipes it
+  const prevFilterLabel = document.querySelector(
+    "#filterContainer input:checked",
+  )?.ariaLabel;
+  const prevSortLabel = document.querySelector(
+    "#sortContainer input:checked",
+  )?.ariaLabel;
+
   nextPageToken = await googleSuggestion(finalQuery, nextPageToken);
+
+  // re-check whichever freshly-built pill matches what was active before
+  // the fetch reset them, so the UI and the re-render agree
+  const filterBtn = [...document.querySelectorAll("#filterContainer input")]
+    .find((el) => el.ariaLabel === prevFilterLabel);
+  const sortBtn = [...document.querySelectorAll("#sortContainer input")].find(
+    (el) => el.ariaLabel === prevSortLabel,
+  );
+  if (filterBtn) filterBtn.checked = true;
+  if (sortBtn) sortBtn.checked = true;
+  if (filterBtn || sortBtn) buildFilteredResults(filterBtn, sortBtn);
+
   loadMoreWrap.classList.toggle("hidden", !nextPageToken);
 });
 // clear the error when user starts typing again
@@ -151,7 +180,7 @@ async function renderSuggestions(data) {
   }
 
   // show the filters
-  const filters =  document.getElementById("filtersRow")
+  const filters = document.getElementById("filtersRow");
   filters.classList.contains("hidden") && filters.classList.remove("hidden");
 
   // photos come back as a resource name, not a URL - need our own key

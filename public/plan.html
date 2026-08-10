@@ -267,6 +267,7 @@
                    populated by buildFilters() in filters.js -->
               <div class="dropdown dropdown-start">
                 <div
+                  id="filterTrigger"
                   tabindex="0"
                   role="button"
                   class="flex items-center gap-1 px-3 h-10 text-[#534ab7]"
@@ -297,6 +298,7 @@
               <!-- right side: sorting (price low-high/high-low) - same source -->
               <div class="dropdown dropdown-end">
                 <div
+                  id="sortTrigger"
                   tabindex="0"
                   role="button"
                   class="flex items-center gap-1 px-3 h-10 text-[#534ab7]"
@@ -334,14 +336,22 @@
               <!-- sample cards end -->
             </section>
 
-            <!-- load more - fetches and appends the next page of results -->
-            <div class="flex flex-row justify-center my-3 hidden" id="loadMoreWrap">
-              <button
-                id="loadMore"
-                class="px-4 h-10 flex items-center justify-center text-[#534ab7] disabled:text-gray-400 disabled:cursor-not-allowed"
+            <!-- load more - fetches and appends the next page of results -
+                 same card/pill styling as the old Previous/1/Next pagination -->
+            <div
+              class="flex flex-row justify-center items-center my-3 h-10 hidden"
+              id="loadMoreWrap"
+            >
+              <div
+                class="card bg-base-100 flex flex-row items-center border-0 has-checked:outline-none focus-visible:outline-none overflow-hidden h-full"
               >
-                Load More
-              </button>
+                <button
+                  id="loadMore"
+                  class="px-4 h-full flex items-center justify-center text-[#534ab7] disabled:text-gray-400 disabled:cursor-not-allowed"
+                >
+                  Load More
+                </button>
+              </div>
             </div>
           </div>
         </section>

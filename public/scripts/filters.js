@@ -554,8 +554,9 @@ const typeLists = {
 
 //  build the category filters on the go based on the response from API
 // filterContainer = "Filters" dropdown (All, Most Popular, category pills)
-// sortContainer = "Sort" dropdown (price low-high/high-low) - same radio
-// group (name="metaframeworks") across both, so they stay mutually exclusive
+// sortContainer = "Sort" dropdown (price low-high/high-low) - each has its
+// own radio group name (filterPill / sortPill) so a filter and a sort can
+// both be checked at once instead of being mutually exclusive
 const filterContainer = document.getElementById("filterContainer");
 const sortContainer = document.getElementById("sortContainer");
 function buildFilters(suggestionCards) {
@@ -564,14 +565,14 @@ function buildFilters(suggestionCards) {
             <input
                 class="btn btn-xs rounded-full"
                 type="radio"
-                name="metaframeworks"
+                name="filterPill"
                 aria-label="All"
                 checked
             />
             <input
                 class="btn btn-xs rounded-full"
                 type="radio"
-                name="metaframeworks"
+                name="filterPill"
                 aria-label="🔥 Most Popular"
               />`;
 
@@ -579,13 +580,13 @@ function buildFilters(suggestionCards) {
             <input
                 class="btn btn-xs rounded-full"
                 type="radio"
-                name="metaframeworks"
+                name="sortPill"
                 aria-label="💰 price: low-high"
               />
               <input
                 class="btn btn-xs rounded-full"
                 type="radio"
-                name="metaframeworks"
+                name="sortPill"
                 aria-label="💸 price: high-low"
               />`;
 
@@ -601,7 +602,7 @@ function buildFilters(suggestionCards) {
               <input
                 class="btn btn-xs rounded-full"
                 type="radio"
-                name="metaframeworks"
+                name="filterPill"
                 aria-label="${result}"
               />`;
     filterContainer.insertAdjacentHTML("beforeend", element);
@@ -626,62 +627,93 @@ function checkAndFindType(element) {
 // activating actual filtering with click - attaching a listener using
 // delegation to both containers now that the pills are split between them
 // (same handler, nothing about the filtering logic itself changed)
+const suggestionContainer = document.getElementById("suggestionContainer");
 function handleFilterClick(event) {
-  const filterBtn = event.target.closest("input[type='radio']");
-  const container = document.getElementById("suggestionContainer");
+  const Btn = event.target.closest("input[type='radio']");
 
-  if (!filterBtn) return;
-  container.innerHTML = "";
-  const allResults = builtResults;
-  if (filterBtn.ariaLabel === "All") {
-    allResults.forEach((result) =>
-      container.insertAdjacentElement("beforeend", result),
-    );
-  } else if (filterBtn.ariaLabel === "💰 price: low-high") {
-    // sort ascending based on weightedPrice data attribute
-    // elements with weightedAverage dataset with the value of 0 are the ones that have missing field because of the api
-    // they should go to the end of the list
+  if (!Btn) return;
 
-    const filterOutMissingFields = [...allResults].filter(
-      (item) => item.dataset.weightedPrice === "0",
-    );
-    const remainingResults = [...allResults].filter(
-      (item) => item.dataset.weightedPrice !== "0",
-    );
-    const sortedResults = [...remainingResults].sort(
-      (a, b) =>
-        Number(a.dataset.weightedPrice) - Number(b.dataset.weightedPrice),
-    );
-    insertArrayElements(sortedResults, container);
-    // add the missing ones to the end
-    insertArrayElements(filterOutMissingFields, container);
-  } else if (filterBtn.ariaLabel === "💸 price: high-low") {
-    // sort descending based on weightedPrice data attribute
-    const sortedResults = [...allResults].sort(
-      (a, b) =>
-        Number(b.dataset.weightedPrice) - Number(a.dataset.weightedPrice),
-    );
+  // read both groups' checked state directly, not just the pill that was
+  // clicked - a click in one group shouldn't lose whatever's still checked
+  // in the other
+  const filterBtn = document.querySelector("#filterContainer input:checked");
+  const sortBtn = document.querySelector("#sortContainer input:checked");
 
-    insertArrayElements(sortedResults, container);
-  } else if (filterBtn.ariaLabel === "🔥 Most Popular") {
-    // sort in descending order - sort a copy, so other filter pills (All, category pills) keep seeing the original order
-    const sortedResults = [...allResults].sort(
-      (a, b) =>
-        Number(b.dataset.weightedAverage) - Number(a.dataset.weightedAverage),
-    );
-
-    insertArrayElements(sortedResults, container);
-  } else {
-    const filteredresults = allResults.filter((result) => {
-      const answer = checkAndFindType(result);
-      if (answer === undefined) return false;
-      else if (answer === filterBtn.ariaLabel) return true;
-      return false;
-    });
-
-    insertArrayElements(filteredresults, container);
-  }
+  buildFilteredResults(filterBtn, sortBtn);
 }
+
+function buildFilteredResults(filterBtn, sortBtn) {
+  suggestionContainer.innerHTML = "";
+  // filter and sort both just narrow/reorder allResults in place - neither
+  // touches the DOM directly, so a single insert at the end renders the
+  // combined result instead of the filter and sort steps each inserting
+  // their own (duplicate) set
+  let allResults = builtResults;
+  if (filterBtn) {
+    if (filterBtn.ariaLabel === "All") {
+      // no-op - allResults already holds every result
+    } else if (filterBtn.ariaLabel === "🔥 Most Popular") {
+      // sort in descending order - sort a copy, so other filter pills (All, category pills) keep seeing the original order
+      allResults = [...allResults].sort(
+        (a, b) =>
+          Number(b.dataset.weightedAverage) - Number(a.dataset.weightedAverage),
+      );
+    } else {
+      allResults = allResults.filter((result) => {
+        const answer = checkAndFindType(result);
+        if (answer === undefined) return false;
+        else if (answer === filterBtn.ariaLabel) return true;
+        return false;
+      });
+    }
+  }
+  if (sortBtn) {
+    if (sortBtn.ariaLabel === "💰 price: low-high") {
+      // sort ascending based on weightedPrice data attribute
+      // elements with weightedAverage dataset with the value of 0 are the ones that have missing field because of the api
+      // they should go to the end of the list
+
+      const filterOutMissingFields = allResults.filter(
+        (item) => item.dataset.weightedPrice === "0",
+      );
+      const remainingResults = allResults.filter(
+        (item) => item.dataset.weightedPrice !== "0",
+      );
+      const sortedResults = [...remainingResults].sort(
+        (a, b) =>
+          Number(a.dataset.weightedPrice) - Number(b.dataset.weightedPrice),
+      );
+      // add the missing ones to the end
+      allResults = [...sortedResults, ...filterOutMissingFields];
+    } else if (sortBtn.ariaLabel === "💸 price: high-low") {
+      // sort descending based on weightedPrice data attribute
+      allResults = [...allResults].sort(
+        (a, b) =>
+          Number(b.dataset.weightedPrice) - Number(a.dataset.weightedPrice),
+      );
+    }
+  }
+  insertArrayElements(allResults, suggestionContainer);
+
+  // highlight the Filters/Sort trigger itself (solid pill, like a checked
+  // pill inside the dropdown) whenever something other than the default is
+  // actually applied, so an active filter/sort is noticeable without
+  // having to open the dropdown
+  setTriggerActive(filterTrigger, !!filterBtn && filterBtn.ariaLabel !== "All");
+  setTriggerActive(sortTrigger, !!sortBtn);
+}
+
+// swaps a dropdown trigger between its plain-text default look and a solid
+// pill matching the checked-pill style inside its own dropdown
+const filterTrigger = document.getElementById("filterTrigger");
+const sortTrigger = document.getElementById("sortTrigger");
+function setTriggerActive(trigger, active) {
+  trigger.classList.toggle("bg-[#534ab7]", active);
+  trigger.classList.toggle("text-white", active);
+  trigger.classList.toggle("rounded-full", active);
+  trigger.classList.toggle("text-[#534ab7]", !active);
+}
+
 filterContainer.addEventListener("click", handleFilterClick);
 sortContainer.addEventListener("click", handleFilterClick);
 
