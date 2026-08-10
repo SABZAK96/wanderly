@@ -82,6 +82,15 @@
           white-space: normal;
           overflow: visible;
         }
+        /* bigger touch target than FullCalendar's default (~8px) for the
+           drag-to-resize handle at the bottom edge of a day-view event -
+           the event's own height is duration-driven, not content-driven, so
+           pushing the "View on Map" link away from the edge with margin
+           doesn't reliably help on short events; growing the handle itself
+           does, regardless of event length */
+        .fc-event-resizer {
+          height: 14px;
+        }
         /* stack the whole toolbar (prev/next/today, title, view buttons)
            instead of squeezing all three side by side, which is what made
            this look cramped/broken on narrow screens */

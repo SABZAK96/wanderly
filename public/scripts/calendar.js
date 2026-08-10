@@ -150,7 +150,7 @@ async function initCalendar() {
       // .rel noopener comes with _blank target
       mapLink.rel = "noopener";
       mapLink.className =
-        "text-xs underline mb-2 inline-flex items-center gap-1 shrink-0";
+        "text-xs underline mb-5 inline-flex items-center gap-1 shrink-0";
       // heroicons "arrow-top-right-on-square" - signals this opens elsewhere (a new tab), matching target="_blank" above
       mapLink.innerHTML = `
         View on Map
