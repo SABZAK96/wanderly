@@ -262,7 +262,7 @@
 
           <!-- filters and pagination -->
           <div class="flex-1">
-            <div class="flex flex-row justify-between items-center">
+            <div id="filtersRow" class="flex flex-row justify-between items-center hidden">
               <!-- left side : filters (All, Most Popular, category pills) -
                    populated by buildFilters() in filters.js -->
               <div class="dropdown dropdown-start">
@@ -325,43 +325,6 @@
               </div>
             </div>
 
-            <!-- pagination - same hidden-radio/label/peer-checked pattern as the
-                 Ask AI/Suggestions mode toggle above, just without the aura glow -->
-            <div
-              class="flex flex-row justify-center items-center my-3 h-10 hidden"
-              id="pagination"
-            >
-              <div
-                class="card bg-base-100 flex flex-row items-center border-0 has-checked:outline-none focus-visible:outline-none overflow-hidden h-full"
-              >
-                <button
-                  id="prevPage"
-                  class="hidden px-3 h-full flex items-center justify-center text-[#534ab7]"
-                >
-                  Previous
-                </button>
-                <input
-                  type="radio"
-                  name="options"
-                  id="page-1"
-                  class="hidden peer/page1"
-                  aria-label="1"
-                  checked
-                />
-                <label
-                  for="page-1"
-                  class="px-3 h-full flex items-center justify-center text-[#534ab7] peer-checked/page1:bg-[#e0dbfb]"
-                >
-                  1
-                </label>
-                <button
-                  id="nextPage"
-                  class="px-3 h-full flex items-center justify-center text-[#534ab7] disabled:text-gray-400 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
             <!-- container of the suggestions -->
             <section
               id="suggestionContainer"
@@ -370,6 +333,16 @@
               <!-- sample cards -->
               <!-- sample cards end -->
             </section>
+
+            <!-- load more - fetches and appends the next page of results -->
+            <div class="flex flex-row justify-center my-3 hidden" id="loadMoreWrap">
+              <button
+                id="loadMore"
+                class="px-4 h-10 flex items-center justify-center text-[#534ab7] disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                Load More
+              </button>
+            </div>
           </div>
         </section>
 

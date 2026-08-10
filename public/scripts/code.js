@@ -29,11 +29,8 @@ suggestModal.addEventListener("close", () => {
 const msg = document.getElementById("suggError");
 const emptySuggestionContainer = document.getElementById("emptySuggestion");
 let finalQuery;
-let currentPage = 1;
 let builtResults = [];
 let nextPageToken;
-let lastPageNumber = 1; // page number confirmed to be the last one once a fetch comes back with no nextPageToken
-let builtResultsPerPage = {};
 
 const suggestionInput = document.getElementById("suggestionSearch");
 document.getElementById("searchSuggest").addEventListener("click", async () => {
@@ -47,132 +44,22 @@ document.getElementById("searchSuggest").addEventListener("click", async () => {
     const destination = document.getElementById("destName").textContent;
     finalQuery = query + " in " + destination;
     builtResults = [];
-    builtResultsPerPage = {};
-    currentPage = 1;
-    lastPageNumber = 1;
-    nextBtn.disabled = false;
-    nextPageToken = await googleSuggestion(finalQuery, "", currentPage);
-    // fewer than 20 total results - page 1 is already the last page
-    if (!nextPageToken) {
-      lastPageNumber = currentPage;
-      nextBtn.disabled = true;
-    }
-    document.getElementById("pagination").classList.remove("hidden");
+    document.getElementById("suggestionContainer").innerHTML = "";
+    nextPageToken = await googleSuggestion(finalQuery, "");
+    loadMoreWrap.classList.toggle("hidden", !nextPageToken);
   }
 });
 
-// attaching a listener on next button- should attach the current page to the container(and make it checked), call google suggestion function
-
-const nextBtn = document.getElementById("nextPage");
-const prevBtn = document.getElementById("prevPage");
-nextBtn.addEventListener("click", async () => {
-  // no more results and the next page isn't something we already have
-  // cached - nothing to fetch, don't send an empty token (Google treats
+// attaching a listener on the load more button - fetches and appends the next page of results
+const loadMoreWrap = document.getElementById("loadMoreWrap");
+const loadMoreBtn = document.getElementById("loadMore");
+loadMoreBtn.addEventListener("click", async () => {
+  // no more results to fetch - don't send an empty token (Google treats
   // that as "start over from page 1")
-  if (nextBtn.disabled) return;
-  [...document.querySelectorAll("#pagination input")].map(
-    (element) => (element.checked = false),
-  );
-  currentPage += 1;
-  // lastPageNumber > 1 excludes the unset default (1) - only disable once
-  // we've actually confirmed a last page and we're sitting on it
-  if (lastPageNumber > 1 && currentPage === lastPageNumber)
-    nextBtn.disabled = true;
-
-  if (currentPage === 1) {
-    prevBtn.classList.add("hidden");
-  } else {
-    prevBtn.classList.remove("hidden");
-  }
-  // page already fetched before (e.g. user went back then forward again) - reuse it, no new API call
-  if (Object.hasOwn(builtResultsPerPage, currentPage)) {
-    document.querySelector(
-      `#pagination input[aria-label='${currentPage}']`,
-    ).checked = true;
-    renderBuiltPage(builtResultsPerPage[currentPage]);
-    return;
-  } else {
-    // same hidden-radio + label pair as the static page-1 pill in plan.html -
-    // each page gets its own peer name (peer/pageN) so peer-checked only
-    // highlights that page's own label, not every label after it
-    let newEl = `<input
-                type="radio"
-                name="options"
-                id="page-${currentPage}"
-                class="hidden peer/page${currentPage}"
-                aria-label="${currentPage}"
-                checked
-              />
-              <label
-                for="page-${currentPage}"
-                class="px-3 h-full flex items-center justify-center text-[#534ab7] peer-checked/page${currentPage}:bg-[#e0dbfb]"
-              >
-                ${currentPage}
-              </label>`;
-    nextBtn.insertAdjacentHTML("beforebegin", newEl);
-    nextPageToken = await googleSuggestion(
-      finalQuery,
-      nextPageToken,
-      currentPage,
-    );
-    // this fetch just confirmed there's nothing after this page - remember it, so this doesn't need re-fetching to relearn it every time we land back here
-    if (!nextPageToken) {
-      lastPageNumber = currentPage;
-      nextBtn.disabled = true;
-      return;
-    }
-  }
+  if (!nextPageToken) return;
+  nextPageToken = await googleSuggestion(finalQuery, nextPageToken);
+  loadMoreWrap.classList.toggle("hidden", !nextPageToken);
 });
-
-// hide previous button on the first page
-
-// attaching a listener to prevBtn
-prevBtn.addEventListener("click", () => {
-  [...document.querySelectorAll("#pagination input")].map(
-    (element) => (element.checked = false),
-  );
-
-  currentPage -= 1;
-  // re-disable if we've landed back on the known last page, otherwise make sure a stale disabled state from a previous visit there doesn't stick around
-  if (lastPageNumber > 1 && currentPage === lastPageNumber)
-    nextBtn.disabled = true;
-  else if (nextBtn.disabled) nextBtn.disabled = false;
-  if (currentPage === 1) {
-    prevBtn.classList.add("hidden");
-  } else {
-    prevBtn.classList.remove("hidden");
-  }
-  document.querySelector(
-    `#pagination input[aria-label='${currentPage}']`,
-  ).checked = true;
-  renderBuiltPage(builtResultsPerPage[currentPage]);
-});
-
-// attaching a listener to each input field-using delegation
-document.getElementById("pagination").addEventListener("click", (event) => {
-  const targetInput = event.target.closest("input");
-  if (!targetInput) return;
-  currentPage = Number(targetInput.getAttribute("aria-label"));
-  // same last-page check as nextBtn/prevBtn, since jumping to a page number directly skips both of those handlers
-  if (lastPageNumber > 1 && currentPage === lastPageNumber)
-    nextBtn.disabled = true;
-  else if (nextBtn.disabled) nextBtn.disabled = false;
-  if (currentPage === 1) {
-    prevBtn.classList.add("hidden");
-  } else {
-    prevBtn.classList.remove("hidden");
-  }
-  renderBuiltPage(builtResultsPerPage[currentPage]);
-});
-
-// render already built results for each page
-function renderBuiltPage(elementsArray) {
-  const container = document.getElementById("suggestionContainer");
-  container.innerHTML = "";
-  elementsArray.forEach((element) =>
-    container.insertAdjacentElement("beforeend", element),
-  );
-}
 // clear the error when user starts typing again
 suggestionInput.addEventListener("input", () => {
   msg.textContent = "";
@@ -216,7 +103,7 @@ function weightedRating(item, allItems, m) {
 // /googleAPI proxy, which forwards it to Google Places Text Search
 // (fetch function only - no DOM/rendering here)
 
-async function googleSuggestion(query, token, page) {
+async function googleSuggestion(query, token) {
   const errorMsg = document.getElementById("suggError");
   errorMsg.textContent = "";
 
@@ -242,8 +129,6 @@ async function googleSuggestion(query, token, page) {
     builtResults = [...builtResults, ...rendered];
     buildFilters(builtResults);
 
-    builtResultsPerPage[page] = rendered;
-
     nextPageToken = data.nextPageToken;
     return nextPageToken;
   } else {
@@ -258,7 +143,6 @@ async function googleSuggestion(query, token, page) {
 async function renderSuggestions(data) {
   let newResults = [];
   const container = document.getElementById("suggestionContainer");
-  container.innerHTML = "";
 
   if (!data.places || data.places.length === 0) {
     msg.textContent = "No results found. Try a different search.";
@@ -267,7 +151,7 @@ async function renderSuggestions(data) {
   }
 
   // show the filters
-  const filters = document.getElementById("filterContainer");
+  const filters =  document.getElementById("filtersRow")
   filters.classList.contains("hidden") && filters.classList.remove("hidden");
 
   // photos come back as a resource name, not a URL - need our own key

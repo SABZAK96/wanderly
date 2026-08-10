@@ -632,8 +632,7 @@ function handleFilterClick(event) {
 
   if (!filterBtn) return;
   container.innerHTML = "";
-  // Object.values(builtResultsPerPage) gives an array of arrays like [[page1 cards], [page2 cards], [page3 cards]] -> with .flat() we convert it to a single array
-  const allResults = Object.values(builtResultsPerPage).flat();
+  const allResults = builtResults;
   if (filterBtn.ariaLabel === "All") {
     allResults.forEach((result) =>
       container.insertAdjacentElement("beforeend", result),
