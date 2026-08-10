@@ -192,9 +192,7 @@ async function initCalendar() {
       }
     },
 
-    // confirms a drag (reschedule to a different day) before saving it -
-    // resize (day view, edge-drag) is what owns time/duration changes, so
-    // this only ever sends `date`, not startTime/endTime
+    // confirms a drag (reschedule to a different date/time) before saving it
     eventDrop: function (info) {
       errorMsg.classList.add("hidden");
       modal.showModal();
@@ -213,7 +211,10 @@ async function initCalendar() {
       // again, not silently stop responding to clicks
       async function onConfirm() {
         if (confirmBtn.dataset.loading === "true") return;
+        // these are always the post-drop values
         const dateStr = toLocalDateStr(info.event.start);
+        const startTime = toLocalTimeStr(info.event.start);
+        const endTime = toLocalTimeStr(info.event.end);
 
         const originalLabel = confirmBtn.textContent;
         confirmBtn.dataset.loading = "true";
@@ -222,7 +223,7 @@ async function initCalendar() {
           const response = await fetch(`/editActivity/${info.event.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ date: dateStr }),
+            body: JSON.stringify({ date: dateStr, startTime: startTime, endTime: endTime }),
           });
           if (response.ok) {
             // only remove cancel's listener once actually done - on

@@ -1014,7 +1014,7 @@ app.post("/currentWeather", async (req, res) => {
       )
     ).json();
     // same as /getWeather above - Google reports "couldn't serve this
-    // location" as an `error` field in a 200 body, not an HTTP status {"error":{"code":404,"message":"Information is not supported for this location. Please try a different location.","status":"NOT_FOUND"}}
+    // location" as an `error` field in a 200 body, not an HTTP status
     if (apiCall.error) {
       res.status(apiCall.error.code || 502).json(apiCall);
     } else {
