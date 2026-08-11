@@ -148,6 +148,11 @@ function weightedRating(item, allItems, m) {
   return score;
 }
 
+// helper that turns a search's parameters into one single string that acts as the "ID" for that search in the cache
+function buildCacheKey(query, lat, lng) {
+  return `${query}|${lat.toFixed(2)}|${lng.toFixed(2)}`.toLowerCase();
+}
+
 // sends the constructed "<search term> in <destination>" query to our own
 // /googleAPI proxy, which forwards it to Google Places Text Search
 // (fetch function only - no DOM/rendering here)
@@ -164,12 +169,20 @@ async function googleSuggestion(query, token) {
   const lat = tripHeader.dataset.lat;
   const lng = tripHeader.dataset.lng;
 
+  const cacheQuery = buildCacheKey(query, lat, lng);
+
   const response = await fetch(`/googleAPI`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userQuery: query, nextToken: token, lat, lng }),
+    body: JSON.stringify({
+      cache: cacheQuery,
+      userQuery: query,
+      nextToken: token,
+      lat,
+      lng,
+    }),
   });
 
   if (response.ok) {

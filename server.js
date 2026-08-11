@@ -199,9 +199,16 @@ const activitySchema = new mongoose.Schema({
   },
 });
 
+const placesCacheSchema = new mongoose.Schema({
+  query: { type: String, required: true, unique: true }, // e.g. "coffee shops|vancouver" (normalized)
+  results: { type: Object, required: true }, // the Google API response data
+  createdAt: { type: Date, default: Date.now, expires: 3600 }, // <-- TTL: 3600s = 1 hour
+});
+
 const userModel = mongoose.model("users", userSchema);
 const tripModel = mongoose.model("trips", tripSchema);
 const activityModel = mongoose.model("activities", activitySchema);
+const placesCacheModel = mongoose.model("places", placesCacheSchema);
 
 // gives userId a badge color if they don't already have one, picking a color
 // not already used by anyone currently in existingPeopleIds (their trip-mates) -
@@ -811,29 +818,67 @@ app.post("/googleAPI", async (req, res) => {
         ? {
             circle: {
               center: { latitude: Number(lat), longitude: Number(lng) },
-              radius: 50000,  // 50000m (~50km) is the max radius the API allows for locationBias
+              radius: 50000, // 50000m (~50km) is the max radius the API allows for locationBias
             },
           }
         : undefined;
+    if (!req.body.nextToken) {
+      const cached = await placesCacheModel.findOne({ query: req.body.cache });
+      if (!cached) {
+        const apiCall = await (
+          await fetch("https://places.googleapis.com/v1/places:searchText", {
+            method: "POST",
+            body: JSON.stringify({
+              textQuery: req.body.userQuery,
+              pageSize: 20,
+              pageToken: "",
+              locationBias,
+            }),
+            headers: {
+              "Content-Type": "application/json",
+              "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API,
+              "X-Goog-FieldMask":
+                "places.id,places.displayName,places.formattedAddress,places.priceLevel,places.photos,places.regularOpeningHours,places.priceRange,places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri,nextPageToken",
+            },
+          })
+        ).json();
 
-    const apiCall = await (
-      await fetch("https://places.googleapis.com/v1/places:searchText", {
-        method: "POST",
-        body: JSON.stringify({
-          textQuery: req.body.userQuery,
-          pageSize: 20,
-          pageToken: req.body?.nextToken ?? "",
-          locationBias,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API,
-          "X-Goog-FieldMask":
-            "places.id,places.displayName,places.formattedAddress,places.priceLevel,places.photos,places.regularOpeningHours,places.priceRange,places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri,nextPageToken",
-        },
-      })
-    ).json();
-    res.json(apiCall);
+        // caching the results (skip caching Google error responses)
+        if (!apiCall.error) {
+          try {
+            await placesCacheModel.create({
+              query: req.body.cache,
+
+              results: apiCall,
+            });
+          } catch (cacheError) {
+            // duplicate-key race: someone else cached this same query microseconds ago
+          }
+        }
+        res.json(apiCall);
+      } else {
+        res.json(cached.results);
+      }
+    } else {
+      const apiCall = await (
+        await fetch("https://places.googleapis.com/v1/places:searchText", {
+          method: "POST",
+          body: JSON.stringify({
+            textQuery: req.body.userQuery,
+            pageSize: 20,
+            pageToken: req.body.nextToken,
+            locationBias,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API,
+            "X-Goog-FieldMask":
+              "places.id,places.displayName,places.formattedAddress,places.priceLevel,places.photos,places.regularOpeningHours,places.priceRange,places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri,nextPageToken",
+          },
+        })
+      ).json();
+      res.json(apiCall);
+    }
   } catch (error) {
     res.status(500).send("error connecting to the api.");
   }
