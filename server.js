@@ -274,6 +274,32 @@ async function requireActivityMember(req, res, next) {
   }
 }
 
+// validates req.body.date falls within the trip's date range - looks the
+// trip up via req.params.tripId (add-activity routes) or, if that's not
+// present, via the activity's tripId (edit route), and stashes it on
+// req.trip so the route handler can reuse it instead of re-fetching
+async function validateActivityDate(req, res, next) {
+  try {
+    let tripId = req.params.tripId;
+    if (!tripId) {
+      const activity = await activityModel.findById(req.params.activityId);
+      tripId = activity.tripId;
+    }
+    const trip = await tripModel.findById(tripId);
+    const startDate = new Date(trip.startDate).toISOString().slice(0, 10);
+    const endDate = new Date(trip.endDate).toISOString().slice(0, 10);
+    // some editActivity calls only change startTime/endTime and don't send a
+    // date at all (resize handlers in calendar.js) - nothing to validate then
+    if (req.body.date !== undefined && (req.body.date > endDate || req.body.date < startDate)) {
+      return res.status(400).send("Date must be within the trip's dates.");
+    }
+    req.trip = trip;
+    next();
+  } catch (error) {
+    res.status(500).send("Server Error!");
+  }
+}
+
 main().catch((err) => console.log(err));
 
 async function main() {
@@ -885,7 +911,7 @@ app.post("/googleAPI", async (req, res) => {
 });
 
 // add to calendar routes- solo activities
-app.post("/addToCalSolo/:tripId", requireTripMember, async (req, res) => {
+app.post("/addToCalSolo/:tripId", requireTripMember, validateActivityDate, async (req, res) => {
   try {
     const soloActivity = await activityModel.create({
       tripId: req.params.tripId,
@@ -906,11 +932,10 @@ app.post("/addToCalSolo/:tripId", requireTripMember, async (req, res) => {
 });
 
 // add to calendar routes- grp activities
-app.post("/addToCalgrp/:tripId", requireTripMember, async (req, res) => {
+app.post("/addToCalgrp/:tripId", requireTripMember, validateActivityDate, async (req, res) => {
   try {
     // get all people in the specific trip - an array if _ids
-    const trip = await tripModel.findById(req.params.tripId);
-    const peopleId = trip.people.map((element) => element.person);
+    const peopleId = req.trip.people.map((element) => element.person);
 
     const grpActivity = await activityModel.create({
       tripId: req.params.tripId,
@@ -1008,9 +1033,10 @@ app.delete(
 app.put(
   "/editActivity/:activityId",
   requireActivityMember,
+  validateActivityDate,
   async (req, res) => {
     try {
-      const activity = await activityModel.findByIdAndUpdate(
+      const updatedActivity = await activityModel.findByIdAndUpdate(
         req.params.activityId,
         {
           $set: {
@@ -1021,7 +1047,7 @@ app.put(
         },
         { new: true },
       );
-      res.json(activity);
+      res.json(updatedActivity);
     } catch (error) {
       res.status(500).send("Could not update the activity.");
     }
