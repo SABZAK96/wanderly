@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wanderly</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@5"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="styles/shared.css" />
+    <style>
+      .packing-item .checkbox:checked {
+        background-color: #534ab7;
+      }
+      .packing-item:has(.checkbox:checked) .item-label {
+        text-decoration: line-through;
+      }
+    </style>
+  </head>
+  <body class="bg-base-200 min-h-dvh flex flex-col">
+    <!-- navbar -->
+    <div
+      class="navbar bg-base-100 shadow-sm sticky top-0 z-20 px-4 lg:px-8"
+      style="background-color: #534ab7; color: white"
+    >
+      <div class="navbar-start">
+        <div class="dropdown">
+          <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h8m-8 6h16"
+              />
+            </svg>
+          </div>
+          <ul
+            tabindex="-1"
+            class="menu menu-sm dropdown-content nav-dropdown bg-base-100 text-base-content rounded-2xl z-1 mt-3 w-52 p-2 gap-0.5 shadow-lg border border-base-200"
+          >
+            <li><a>Plan</a></li>
+            <li><a>Calendar</a></li>
+            <li><a>Expense</a></li>
+            <li><a>Packing</a></li>
+          </ul>
+        </div>
+        <a class="btn btn-ghost text-xl">Wanderly</a>
+        <div class="hidden lg:flex">
+          <ul class="menu menu-horizontal px-1">
+            <li><a>Plan</a></li>
+            <li><a>Calendar</a></li>
+            <li><a>Expense</a></li>
+            <li><a>Packing</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="navbar-end gap-2">
+        <div class="dropdown dropdown-end">
+          <div
+            tabindex="0"
+            role="button"
+            class="btn btn-ghost btn-circle avatar"
+          >
+            <div class="w-10 rounded-full">
+              <img
+                alt="Tailwind CSS Navbar component"
+                src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
+              />
+            </div>
+          </div>
+          <ul
+            tabindex="-1"
+            class="menu menu-sm dropdown-content bg-base-100 rounded-box text-base-content z-1 mt-3 w-52 p-2 shadow"
+          >
+            <li>
+              <a id="navProfile"> Profile </a>
+            </li>
+            <li><a id="navSettings">Settings</a></li>
+            <li><a id="navLogout">Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- navbar end -->
+
+    <!-- drawer wraps the page content so the sidebar can push/overlay it -->
+    <div
+      class="drawer drawer-end lg:drawer-open min-h-dvh"
+      style="background: #eeedfe"
+    >
+      <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
+
+      <!-- drawer-content = main panel -->
+      <div class="drawer-content flex flex-col flex-1">
+        <!-- toggle button visible only on small screens -->
+        <label
+          for="my-drawer-3"
+          class="btn drawer-button rounded-full self-start mb-4 mx-4 mt-8 lg:hidden"
+          style="background-color: #534ab7; color: #eeedfe"
+        >
+          Your Trips
+        </label>
+
+        <section class="flex flex-col items-center px-4 py-8">
+          <div class="w-full">
+            <div class="flex flex-row justify-between items-center mb-2">
+              <h1 class="text-2xl font-light">Packing List</h1>
+              <!--  trip and dates -->
+              <div
+                class="text-sm text-base-content/60 flex flex-row gap-1 justify-center items-center"
+              >
+                <span id="destName">Cancun</span>
+                <span>,</span>
+                <span id="date">Jul 17 - 19</span>
+              </div>
+            </div>
+
+            <!-- text for notifying how this list is crafted -->
+            <p class="md:text-sm text-xs text-base-content/60 text-center mb-2">
+              Generate one based on this trip's dates, weather forecast, and
+              whatever's on the itinerary so far.
+            </p>
+
+            <!-- packing progress bar -->
+            <div class="flex items-center justify-between gap-3 w-full mb-2">
+              <progress
+                class="progress progress-primary"
+                value="4"
+                max="17"
+              ></progress>
+              <div
+                class="text-xs text-base-content/60 flex flex-row gap-1 items-center"
+              >
+                <span id="totalItems"><span id="packed">4</span>/17</span>Packed
+              </div>
+            </div>
+
+            <!-- first card- documents and essentials example -->
+            <!-- all categories that should be populated are weather essentials, for your planned activities, toiletries and health -->
+            <div
+              tabindex="0"
+              class="collapse collapse-open collapse-arrow bg-base-100 border-base-300 border"
+            >
+              <div
+                class="collapse-title flex flex-row justify-between font-semibold"
+                style="color: #534ab7"
+              >
+                <span>Documents & Essentials</span>
+                <span class="text-sm">1/4</span>
+              </div>
+              <div class="collapse-content text-sm">
+                <!-- input fields containing the items -->
+                <label
+                  class="packing-item flex items-center gap-2 py-1.5 cursor-pointer"
+                >
+                  <input type="checkbox" class="checkbox checkbox-sm" />
+                  <span class="item-label text-sm flex-1">Passport / ID</span>
+                </label>
+                <!-- input field for adding items -->
+                <div class="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    placeholder="Add an item..."
+                    class="input input-sm w-full"
+                  />
+                  <button class="btn btn-sm btn-ghost" style="color: #534ab7">
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <!-- drawer-content end -->
+
+      <!-- sidebar -->
+      <div
+        class="drawer-side lg:pt-0 pt-20 flex flex-col items-center justify-center"
+        style="background-color: #534ab7"
+      >
+        <!-- invisible backdrop — clicking outside the sidebar closes it -->
+        <label
+          for="my-drawer-3"
+          aria-label="close sidebar"
+          class="drawer-overlay"
+        ></label>
+        <div class="min-h-full md:w-90 w-[90vw] p-4">
+          <!-- close button inside sidebar, only on mobile -->
+          <label
+            for="my-drawer-3"
+            class="btn btn-circle btn-sm btn-ghost lg:hidden mb-4"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </label>
+          <!-- container of all the trips -->
+          <div class="flex flex-col gap-1 mb-5">
+            <!-- one trip with name -->
+            <h2 class="text-xs uppercase tracking-wide text-white/60 px-2 mb-1">
+              Your Trips
+            </h2>
+            <div id="yourTrips"></div>
+            <button
+              id="addTrip"
+              class="btn btn-sm btn-ghost text-white justify-start gap-1.5 mt-1 px-2.5"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add a New Trip
+            </button>
+          </div>
+
+          <div id="singleTripInfo">
+            <!-- container of the name of the trip -->
+            <div id="tripHeader" class="flex flex-col gap-2"></div>
+
+            <!-- summary of the recent activities added to the trip -->
+            <div class="mt-5 flex flex-col gap-1">
+              <h2 class="text-xs uppercase tracking-wide text-white/60 px-2">
+                Recently Added Activities
+              </h2>
+              <p
+                id="activityError"
+                class="text-sm font-normal text-white mt-1 text-center hidden"
+              ></p>
+              <div id="recentActivities" class="flex flex-col gap-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- drawer-side end -->
+    </div>
+    <!-- drawer end -->
+
+    <!-- modal for inserting trip -->
+    <dialog id="my_modal_trip" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <!-- close button in its own form so it doesn't submit -->
+        <form method="dialog">
+          <button
+            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          >
+            ✕
+          </button>
+        </form>
+
+        <h3 id="tripTitle" class="text-lg font-semibold">Add a New Trip</h3>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-base-content/60">Destination</label>
+          <div id="dest-title" class="dest-autocomplete"></div>
+        </div>
+
+        <div class="flex gap-3">
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-sm text-base-content/60"
+              >Start Date</label
+            >
+            <input id="startDate" type="date" class="input w-full" />
+          </div>
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="" class="text-sm text-base-content/60">End Date</label>
+            <input id="endDate" type="date" class="input w-full" />
+          </div>
+        </div>
+        <p id="tripError" class="text-sm text-red-500 mt-1 hidden"></p>
+
+        <div class="modal-action mt-0">
+          <form method="dialog">
+            <button class="btn btn-ghost">Cancel</button>
+          </form>
+          <button
+            id="createTrip"
+            class="btn"
+            style="background-color: #534ab7; color: white"
+          >
+            Create Trip
+          </button>
+        </div>
+      </div>
+
+      <!-- click outside to close -->
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <dialog id="inviteModal" class="modal">
+      <div class="modal-box flex flex-col gap-2">
+        <!-- close button in its own form so it doesn't submit -->
+        <form method="dialog">
+          <button
+            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          >
+            ✕
+          </button>
+        </form>
+
+        <h3 class="text-lg font-semibold">Invite people</h3>
+        <p class="text-base-content/60 text-sm">
+          Share this link — opening it logs someone in (or signs them up) and
+          adds them to this trip automatically.
+        </p>
+        <div class="join w-full">
+          <input
+            id="link"
+            type="text"
+            readonly
+            class="input join-item w-full text-xs"
+          />
+          <button
+            id="joinBtn"
+            class="btn join-item"
+            style="background-color: #534ab7; color: white"
+          >
+            Copy
+          </button>
+        </div>
+        <p id="errorInvite" class="text-sm text-red-500 mt-1 hidden"></p>
+
+        <div class="modal-action mt-0">
+          <form method="dialog">
+            <button class="btn btn-ghost">Done</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- click outside to close -->
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- confirmation modal for deleting a trip -->
+    <dialog id="deleteTripConfirmModal" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <h3 class="text-lg font-semibold text-error">Delete Trip?</h3>
+        <p class="text-sm text-base-content/70">
+          This will permanently delete this trip. This cannot be undone.
+        </p>
+        <div class="flex justify-end gap-2">
+          <form method="dialog">
+            <button class="btn btn-ghost">Cancel</button>
+          </form>
+          <button id="confirmDeleteTrip" class="btn btn-error">Delete</button>
+        </div>
+        <p id="deleteTripError" class="text-sm text-red-500 hidden"></p>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- confirmation modal for deleting an activity -->
+    <dialog id="deleteActivityConfirmModal" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <h3 class="text-lg font-semibold text-error">Delete Activity?</h3>
+        <p class="text-sm text-base-content/70">
+          This will permanently delete this activity. This cannot be undone.
+        </p>
+        <div id="deleteActivityScope" class="flex flex-col gap-1 hidden">
+          <div>
+            <input
+              id="deleteForGroup"
+              type="radio"
+              name="deleteScope"
+              class="radio radio-xs"
+              style="color: #534ab7"
+              checked="checked"
+            />
+            <label class="text-xs text-base-content/60"
+              >Delete for the whole group</label
+            >
+          </div>
+          <div>
+            <input
+              id="deleteForSelf"
+              type="radio"
+              name="deleteScope"
+              class="radio radio-xs"
+              style="color: #534ab7"
+            />
+            <label class="text-xs text-base-content/60"
+              >Just remove it for myself</label
+            >
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <form method="dialog">
+            <button class="btn btn-ghost">Cancel</button>
+          </form>
+          <button id="confirmDeleteActivity" class="btn btn-error">
+            Delete
+          </button>
+        </div>
+        <p id="deleteActivityError" class="text-sm text-red-500 hidden"></p>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- confirmation modal shown after a successful password change -->
+    <dialog id="passwordSavedModal" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <h3 class="text-lg font-semibold">Password updated</h3>
+        <p class="text-sm text-base-content/70">
+          Your password has been changed.
+        </p>
+        <div class="flex justify-end">
+          <form method="dialog">
+            <button class="btn" style="background-color: #534ab7; color: white">
+              OK
+            </button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+    <script src="./scripts/navbar.js"></script>
+    <script src="./scripts/dates.js"></script>
+    <script src="./scripts/sidebar.js"></script>
+    <script src="./scripts/settings.js"></script>
+  </body>
+</html>
