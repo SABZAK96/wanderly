@@ -205,10 +205,24 @@ const placesCacheSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, expires: 3600 }, // <-- TTL: 3600s = 1 hour
 });
 
+// schema for packing
+const packingSchema = new mongoose.Schema({
+  person: String, // user _id
+  tripId: String, // tripId goes here
+  packingList: [
+    {
+      category: String,
+      title: String,
+      packed: { type: Boolean, default: false },
+    },
+  ],
+});
+
 const userModel = mongoose.model("users", userSchema);
 const tripModel = mongoose.model("trips", tripSchema);
 const activityModel = mongoose.model("activities", activitySchema);
 const placesCacheModel = mongoose.model("places", placesCacheSchema);
+const packingModel = mongoose.model("packing", packingSchema);
 
 // gives userId a badge color if they don't already have one, picking a color
 // not already used by anyone currently in existingPeopleIds (their trip-mates) -
@@ -290,7 +304,10 @@ async function validateActivityDate(req, res, next) {
     const endDate = new Date(trip.endDate).toISOString().slice(0, 10);
     // some editActivity calls only change startTime/endTime and don't send a
     // date at all (resize handlers in calendar.js) - nothing to validate then
-    if (req.body.date !== undefined && (req.body.date > endDate || req.body.date < startDate)) {
+    if (
+      req.body.date !== undefined &&
+      (req.body.date > endDate || req.body.date < startDate)
+    ) {
       return res.status(400).send("Date must be within the trip's dates.");
     }
     req.trip = trip;
@@ -348,7 +365,11 @@ app.post("/addTrip", async (req, res) => {
     await userModel.findByIdAndUpdate(req.session.userId, {
       $push: { trips: trip._id },
     });
-
+    // packing list for that trip for the user
+    await packingModel.create({
+      person: req.session.userId,
+      tripId: trip._id,
+    });
     // the creator is the first person in the trip, so there's no one else to avoid a color clash with
     await assignBadgeIfNeeded(req.session.userId, trip._id);
 
@@ -739,7 +760,10 @@ app.post("/joinPerson", async (req, res) => {
     await tripModel.findByIdAndUpdate(req.body.tripId, {
       $push: { people: { person: req.session.userId, badgeInfo: {} } },
     });
-
+    await packingModel.create({
+      person: req.session.userId,
+      tripId: req.body.tripId,
+    });
     await assignBadgeIfNeeded(req.session.userId, req.body.tripId);
 
     res.sendStatus(200);
@@ -911,49 +935,59 @@ app.post("/googleAPI", async (req, res) => {
 });
 
 // add to calendar routes- solo activities
-app.post("/addToCalSolo/:tripId", requireTripMember, validateActivityDate, async (req, res) => {
-  try {
-    const soloActivity = await activityModel.create({
-      tripId: req.params.tripId,
-      participants: req.session.userId,
-      activityName: req.body.activityName,
-      date: req.body.date,
-      startTime: req.body.startTime,
-      endTime: req.body.endTime,
-      address: req.body.address,
-      placeId: req.body.placeId,
-      location: req.body.location,
-    });
+app.post(
+  "/addToCalSolo/:tripId",
+  requireTripMember,
+  validateActivityDate,
+  async (req, res) => {
+    try {
+      const soloActivity = await activityModel.create({
+        tripId: req.params.tripId,
+        participants: req.session.userId,
+        activityName: req.body.activityName,
+        date: req.body.date,
+        startTime: req.body.startTime,
+        endTime: req.body.endTime,
+        address: req.body.address,
+        placeId: req.body.placeId,
+        location: req.body.location,
+      });
 
-    res.json(soloActivity);
-  } catch (error) {
-    res.status(500).send("Could not add activity to your schedule.");
-  }
-});
+      res.json(soloActivity);
+    } catch (error) {
+      res.status(500).send("Could not add activity to your schedule.");
+    }
+  },
+);
 
 // add to calendar routes- grp activities
-app.post("/addToCalgrp/:tripId", requireTripMember, validateActivityDate, async (req, res) => {
-  try {
-    // get all people in the specific trip - an array if _ids
-    const peopleId = req.trip.people.map((element) => element.person);
+app.post(
+  "/addToCalgrp/:tripId",
+  requireTripMember,
+  validateActivityDate,
+  async (req, res) => {
+    try {
+      // get all people in the specific trip - an array if _ids
+      const peopleId = req.trip.people.map((element) => element.person);
 
-    const grpActivity = await activityModel.create({
-      tripId: req.params.tripId,
-      participants: peopleId,
-      activityName: req.body.activityName,
-      date: req.body.date,
-      startTime: req.body.startTime,
-      endTime: req.body.endTime,
-      address: req.body.address,
-      placeId: req.body.placeId,
-      location: req.body.location,
-    });
+      const grpActivity = await activityModel.create({
+        tripId: req.params.tripId,
+        participants: peopleId,
+        activityName: req.body.activityName,
+        date: req.body.date,
+        startTime: req.body.startTime,
+        endTime: req.body.endTime,
+        address: req.body.address,
+        placeId: req.body.placeId,
+        location: req.body.location,
+      });
 
-    res.json(grpActivity);
-  } catch (error) {
-    res.status(500).send("Could not add activity to the group schedule.");
-  }
-});
+      res.json(grpActivity);
+    } catch (error) {
+      res.status(500).send("Could not add activity to the group schedule.");
+    }
+  },
+);
 
 // get activities added within the last 2 hours
 app.get("/recentActivities/:tripId", requireTripMember, async (req, res) => {
@@ -1095,3 +1129,62 @@ app.post("/currentWeather", async (req, res) => {
     res.status(500).send("error connecting to the api.");
   }
 });
+
+// get the packing list for the user for the specific trip
+app.get("/getPackingList/:tripId", requireTripMember, async (req, res) => {
+  try {
+    const userPackingList = await packingModel.findOne({
+      person: req.session.userId,
+      tripId: req.params.tripId,
+    });
+    res.json(userPackingList?.packingList ?? null); // items in the packing list would have their own _id
+  } catch (error) {
+    res.status(500).send("error connecting to the database.");
+  }
+});
+
+// add an item to the packing list for user
+app.put("/addToPackingList/:tripId", requireTripMember, async (req, res) => {
+  try {
+    const userPackingList = await packingModel.findOneAndUpdate(
+      { person: req.session.userId, tripId: req.params.tripId },
+      { $push: { packingList: req.body.item } },
+      { new: true },
+    );
+    res.json(userPackingList);
+  } catch (error) {
+    res.status(500).send("error connecting to the database.");
+  }
+});
+
+// bulk-add every item generated by "Generate my packing list" in one call
+app.put("/generatePackingListAI/:tripId", requireTripMember, async (req, res) => {
+  try {
+    const userPackingList = await packingModel.findOneAndUpdate(
+      { person: req.session.userId, tripId: req.params.tripId },
+      { $push: { packingList: { $each: req.body.items } } }, // bulk inserting with $each
+      { new: true },
+    );
+    res.json(userPackingList);
+  } catch (error) {
+    res.status(500).send("error connecting to the database.");
+  }
+});
+
+// strike through or unstrike an item from the packing list for user
+app.put("/updatePackingList/:tripId", requireTripMember, async (req, res) => {
+  try {
+    // one atomic update instead of find -> mutate in JS -> save - arrayFilters
+    // lets us target the one packingList item whose _id matches itemId
+    const userPackingList = await packingModel.findOneAndUpdate(
+      { person: req.session.userId, tripId: req.params.tripId },
+      { $set: { "packingList.$[elem].packed": req.body.isPacked } },
+      { arrayFilters: [{ "elem._id": req.body.itemId }], new: true },
+    );
+
+    res.json(userPackingList);
+  } catch (error) {
+    res.status(500).send("error connecting to the database.");
+  }
+});
+
