@@ -151,6 +151,7 @@ const userSchema = new mongoose.Schema({
 // schema for trip
 const tripSchema = new mongoose.Schema({
   destination: String,
+  destinationName: String,
   startDate: Date,
   endDate: Date,
   lat: Number,
@@ -212,8 +213,7 @@ const packingSchema = new mongoose.Schema({
   packingList: [
     {
       category: String,
-      items: [{title: String,
-      packed: { type: Boolean, default: false }}],
+      items: [{ title: String, packed: { type: Boolean, default: false } }],
     },
   ],
 });
@@ -351,6 +351,7 @@ app.post("/addTrip", async (req, res) => {
     // create the trip and put the creator in people list
     const trip = await tripModel.create({
       destination: req.body.destination,
+      destinationName: req.body.destinationName,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
       lat: req.body.lat,
@@ -426,6 +427,12 @@ app.delete("/deleteTrip/:id", requireTripMember, async (req, res) => {
       { new: true },
     );
 
+    // delete the packing list for that person for that trip
+    await packingModel.findOneAndDelete({
+      person: req.session.userId,
+      tripId: req.params.id,
+    });
+
     // delete the trip document if no person is in it
     if (trip.people.length === 0) {
       await tripModel.findByIdAndDelete(req.params.id);
@@ -444,6 +451,7 @@ app.put("/editTrip/:id", requireTripMember, async (req, res) => {
       {
         $set: {
           destination: req.body.destination,
+          destinationName: req.body.destinationName,
           startDate: req.body.startDate,
           endDate: req.body.endDate,
           lat: req.body.lat,
@@ -1166,7 +1174,7 @@ app.put("/addToPackingList/:tripId", requireTripMember, async (req, res) => {
     const userPackingList = await packingModel.findOneAndUpdate(
       { person: req.session.userId, tripId: req.params.tripId },
       { $push: { "packingList.$[elem].items": req.body.item } },
-      { arrayFilters:[{"elem.category": req.body.category}], new: true },
+      { arrayFilters: [{ "elem.category": req.body.category }], new: true },
     );
     res.json(userPackingList);
   } catch (error) {
@@ -1183,7 +1191,7 @@ app.put(
       const userPackingList = await packingModel.findOneAndUpdate(
         { person: req.session.userId, tripId: req.params.tripId },
         { $push: { "packingList.$[elem].items": { $each: req.body.items } } }, // bulk inserting with $each
-        { arrayFilters:[{"elem.category": req.body.category}], new: true },
+        { arrayFilters: [{ "elem.category": req.body.category }], new: true },
       );
       res.json(userPackingList);
     } catch (error) {
@@ -1199,8 +1207,18 @@ app.put("/updatePackingList/:tripId", requireTripMember, async (req, res) => {
     // lets us target the one packingList item whose _id matches itemId
     const userPackingList = await packingModel.findOneAndUpdate(
       { person: req.session.userId, tripId: req.params.tripId },
-      { $set: { "packingList.$[elem].items.$[nextEl].packed": req.body.isPacked } },
-      { arrayFilters: [{ "elem.category": req.body.category }, {"nextEl._id": req.body.itemId}], new: true }, // 2 - step filtering, find category and then the item to update
+      {
+        $set: {
+          "packingList.$[elem].items.$[nextEl].packed": req.body.isPacked,
+        },
+      },
+      {
+        arrayFilters: [
+          { "elem.category": req.body.category },
+          { "nextEl._id": req.body.itemId },
+        ],
+        new: true,
+      }, // 2 - step filtering, find category and then the item to update
     );
 
     res.json(userPackingList);

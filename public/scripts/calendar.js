@@ -749,7 +749,7 @@ async function renderDetailsWeather(element) {
         );
 
         // showing the correct info instead of hardcoded day x of your trip to los angeles
-        const tripName = tripdestination.destinationName;
+        const tripName = tripdestination.dataset.destinationName;
         // calculating which day of the trip
         const diffDays =
           Math.round(
@@ -873,7 +873,7 @@ async function renderDetailsWeather(element) {
       const precip = element.querySelector(".prec").textContent;
 
       const tripdestination = document.getElementById("tripHeader");
-      const tripName = tripdestination.destinationName;
+      const tripName = tripdestination.dataset.destinationName;
       const diffDays =
         Math.round(
           (new Date(element.dataset.fullDate + "T00:00:00").getTime() -

@@ -205,7 +205,13 @@ document.getElementById("addTrip").addEventListener("click", () => {
 
 // checks destination/date inputs for create and edit trip forms, returns an
 // error message to show the user or null if everything's valid
-function validateTripDates(destination, startDate, endDate, startTime, endTime) {
+function validateTripDates(
+  destination,
+  startDate,
+  endDate,
+  startTime,
+  endTime,
+) {
   // get todays date in yyyy-mm-dd format
   const todayDate = new Date().toISOString().slice(0, 10);
 
@@ -246,6 +252,8 @@ document
   .addEventListener("click", async (event) => {
     const destination =
       document.getElementById("dest-title").dataset.destination;
+    const destinationName =
+      document.getElementById("dest-title").dataset.destinationName;
     const startDate = document.getElementById("startDate").value;
     const endDate = document.getElementById("endDate").value;
     const lat = container.dataset.lat;
@@ -280,6 +288,7 @@ document
         },
         body: JSON.stringify({
           destination: destination,
+          destinationName: destinationName,
           startDate: startDate,
           endDate: endDate,
           lat: lat,
@@ -311,6 +320,7 @@ document
       },
       body: JSON.stringify({
         destination: destination,
+        destinationName: destinationName,
         startDate: startDate,
         endDate: endDate,
         lat: lat,
@@ -427,7 +437,7 @@ async function getSingleTripDetails(tripId) {
   container.dataset.tripId = tripId;
   container.dataset.lat = trip.lat;
   container.dataset.lng = trip.lng;
-  container.destinationName = trip.destination;
+  container.dataset.destinationName = trip.destinationName;
 
   const start = trip.startDate.slice(0, 10);
   container.dataset.startDate = start;
@@ -439,7 +449,7 @@ async function getSingleTripDetails(tripId) {
   let addedElement = `<h2
                 class="flex flex-row items-baseline justify-between gap-2 text-base font-semibold text-white"
               >
-                <span>${trip.destination}</span
+                <span>${trip.destinationName || trip.destination}</span
                 ><span class="text-sm font-normal text-white">${dateInfo.compact}</span>
               </h2>
               <!-- card containing the trip info -->
@@ -447,7 +457,7 @@ async function getSingleTripDetails(tripId) {
                 <div class="card-body">
                   <div class="flex flex-row items-start justify-between gap-2">
                     <div>
-                      <h2 id="destName" class="card-title">${trip.destination}</h2>
+                      <h2 id="destName" class="card-title">${trip.destinationName || trip.destination}</h2>
                       <p id="tripDate">${dateInfo.full}</p>
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
@@ -576,6 +586,7 @@ async function deleteTrip(id) {
   const response = await fetch(`/deleteTrip/${id}`, { method: "DELETE" });
   if (response.ok) {
     localStorage.removeItem("selectedTripId");
+    localStorage.removeItem(`aiGenerated_${id}`);
     document.dispatchEvent(
       new CustomEvent("tripDeleted", { detail: { tripId: id } }),
     );
@@ -644,6 +655,8 @@ async function editTripSetup(id) {
   // submit, so without this an unchanged edit would incorrectly fail its
   // "Please Enter your destination." check
   document.getElementById("dest-title").dataset.destination = data.destination;
+  document.getElementById("dest-title").dataset.destinationName =
+    data.destinationName;
   document.getElementById("startDate").value = data.startDate.slice(0, 10);
   document.getElementById("endDate").value = data.endDate.slice(0, 10);
 }
