@@ -12,19 +12,22 @@ const categories = [
   "Toiletries & Health",
 ];
 
+// keep #destName/#date in sync with the selected trip's header info -
+// tripHeaderRendered only fires once sidebar.js has actually populated
+// #tripHeader's dataset (it's async), so this covers both the initial
+// load and every later trip switch, instead of reading it too early
+document.addEventListener("tripHeaderRendered", () => {
+  const header = document.getElementById("tripHeader");
+  document.getElementById("destName").textContent =
+    header.dataset.destinationName;
+  document.getElementById("date").textContent = formatTripDates(
+    header.dataset.startDate,
+    header.dataset.endDate,
+  ).compact;
+});
 
-// restore the generated/not-generated state for the trip selected on page load
-if (localStorage.getItem(aiGeneratedKey)) {
-  generatedSection.classList.remove("hidden");
-  notGeneratedSection.classList.add("hidden");
-  getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
-}
-
-// re-sync tripId, aiGeneratedKey, and the visible section when the sidebar switches trips
-document.addEventListener("changeTrip", (e) => {
-  tripId = e.detail.tripId;
-  aiGeneratedKey = `aiGenerated_${e.detail.tripId}`;
-  if (localStorage.getItem(aiGeneratedKey)) {
+function checkLocalStorage(key, tripId) {
+  if (localStorage.getItem(key)) {
     generatedSection.classList.remove("hidden");
     notGeneratedSection.classList.add("hidden");
     getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
@@ -32,6 +35,27 @@ document.addEventListener("changeTrip", (e) => {
     generatedSection.classList.add("hidden");
     notGeneratedSection.classList.remove("hidden");
   }
+}
+// restore the generated/not-generated state for the trip selected on page load
+checkLocalStorage(aiGeneratedKey, tripId);
+
+// re-sync tripId, aiGeneratedKey, and the visible section when the sidebar switches trips
+document.addEventListener("changeTrip", (e) => {
+  tripId = e.detail.tripId;
+  aiGeneratedKey = `aiGenerated_${e.detail.tripId}`;
+  checkLocalStorage(aiGeneratedKey, tripId);
+});
+
+document.addEventListener("tripDeleted", () => {
+  tripId = null;
+  aiGeneratedKey = `aiGenerated_${tripId}`;
+  checkLocalStorage(aiGeneratedKey, tripId);
+});
+
+document.addEventListener("tripAdded", (e) => {
+  tripId = e.detail.tripId;
+  aiGeneratedKey = `aiGenerated_${tripId}`;
+  checkLocalStorage(aiGeneratedKey, tripId);
 });
 
 // start by initializing the page when user clicks on generate the packing list
@@ -45,8 +69,9 @@ document.getElementById("aiGenerate").addEventListener("click", async () => {
       ]),
     ),
   );
-  const data = await getCurrentPackingDetails(tripId);
-  renderResulst(data);
+  generatedSection.classList.remove("hidden");
+  notGeneratedSection.classList.add("hidden");
+  getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
 });
 
 // fetch the packing list (categories + items) for a trip from the server
@@ -139,7 +164,8 @@ function renderResulst(data) {
 // update the progress bar with selecting and de-selecting elements
 function updateProgressBar() {
   const bar = document.getElementById("progBar");
-  const barMax = [...packingContainer.querySelectorAll(".collapse .checkbox")].length;
+  const barMax = [...packingContainer.querySelectorAll(".collapse .checkbox")]
+    .length;
   console.log(barMax);
   const barValue = [...packingContainer.querySelectorAll(".checkbox")].filter(
     (element) => element.checked,

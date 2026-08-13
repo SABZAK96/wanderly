@@ -330,6 +330,7 @@ document
     if (response.ok) {
       const data = await response.json(); // data is the trip._id coming back from the db
       localStorage.setItem("selectedTripId", data);
+      document.dispatchEvent(new CustomEvent("tripAdded", { detail: { tripId: data } }));
       await getSingleTripDetails(data);
       getRecentActivities(data);
       // clear the form so the next "+ New Trip" opens blank, not with this trip's info
