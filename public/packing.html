@@ -115,7 +115,10 @@
         <section class="flex flex-col items-center px-4 py-8">
           <div class="w-full">
             <!-- empty state -->
-            <div id="notGenerated" class="hidden flex flex-col items-center justify-center gap-1">
+            <div
+              id="notGenerated"
+              class="flex flex-col items-center justify-center gap-1"
+            >
               <div
                 class="w-16 h-16 rounded-full flex items-center justify-center"
                 style="background: #eeedfe"
@@ -139,11 +142,11 @@
               <h2 class="font-semibold" style="color: #3c3489">
                 No packing list yet
               </h2>
-              <p class="md:text-sm text-xs text-base-content/60 max-w-xs">
+              <p class="md:text-sm text-xs text-center text-base-content/60 max-w-xs">
                 Generate one based on this trip's dates, weather forecast, and
                 whatever's on the itinerary so far.
               </p>
-              <button
+              <button id="aiGenerate"
                 class="btn btn-sm mt-2 text-white"
                 style="background: #534ab7; border: none"
               >
@@ -152,7 +155,7 @@
             </div>
 
             <!-- generated state -->
-            <div id="generated" class="">
+            <div id="generated" class="hidden">
               <div class="flex flex-row justify-between items-center mb-2">
                 <h1 class="text-2xl font-light">Packing List</h1>
                 <!--  trip and dates -->
@@ -175,7 +178,7 @@
 
               <!-- packing progress bar -->
               <div class="flex items-center justify-between gap-3 w-full mb-2">
-                <progress
+                <progress id="progBar"
                   class="progress progress-primary"
                   value="4"
                   max="17"
@@ -183,44 +186,15 @@
                 <div
                   class="text-xs text-base-content/60 flex flex-row gap-1 items-center"
                 >
-                  <span id="totalItems"><span id="packed">4</span>/17</span
+                  <span ><span id="packed"></span>/<span id="totalItems"></span></span
                   >Packed
                 </div>
               </div>
 
               <!-- first card- documents and essentials example -->
               <!-- all categories that should be populated are weather essentials, for your planned activities, toiletries and health -->
-              <div
-                tabindex="0"
-                class="collapse collapse-open collapse-arrow bg-base-100 border-base-300 border"
-              >
-                <div
-                  class="collapse-title flex flex-row justify-between font-semibold"
-                  style="color: #534ab7"
-                >
-                  <span>Documents & Essentials</span>
-                  <span class="text-sm">1/4</span>
-                </div>
-                <div class="collapse-content text-sm">
-                  <!-- input fields containing the items -->
-                  <label
-                    class="packing-item flex items-center gap-2 py-1.5 cursor-pointer"
-                  >
-                    <input type="checkbox" class="checkbox checkbox-sm" />
-                    <span class="item-label text-sm flex-1">Passport / ID</span>
-                  </label>
-                  <!-- input field for adding items -->
-                  <div class="flex gap-2 mt-2">
-                    <input
-                      type="text"
-                      placeholder="Add an item..."
-                      class="input input-sm w-full"
-                    />
-                    <button class="btn btn-sm btn-ghost" style="color: #534ab7">
-                      Add
-                    </button>
-                  </div>
-                </div>
+              <div id="packingContainer" class="flex flex-col gap-3">
+                
               </div>
             </div>
           </div>
@@ -501,6 +475,6 @@
     <script src="./scripts/navbar.js"></script>
     <script src="./scripts/dates.js"></script>
     <script src="./scripts/sidebar.js"></script>
-    <script src="./scripts/settings.js"></script>
+    <script src="./scripts/packing.js"></script>
   </body>
 </html>
