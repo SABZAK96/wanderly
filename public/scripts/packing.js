@@ -129,8 +129,9 @@ async function createInitialList(tripId, category, items) {
 // clear and redraw the packing list container from category/items data
 function renderResulst(data) {
   packingContainer.innerHTML = "";
+  let html;
   data.forEach((item) => {
-    let html = `<div
+    html = `<div
                   tabindex="0"
                   class="collapse collapse-open collapse-arrow bg-base-100 border-base-300 border"
                 >
@@ -144,8 +145,26 @@ function renderResulst(data) {
                   <div class="collapse-content text-sm">
                     <!-- input fields containing the items -->
                   `;
-    item.items.forEach((el) => {
-      html += `<label
+    if (item.items.length === 0) {
+      html += `<p class="text-center text-base-content/60 md:text-sm text-xs">No items yet in this category.</p>
+    <!-- input field for adding items -->
+                    <div class="flex gap-2 mt-2">
+                      <input
+                        type="text"
+                        placeholder="Add an item..."
+                        class="newItem input input-sm w-full"
+                      />
+                      <button
+                        class="addSingle btn btn-sm btn-ghost"
+                        style="color: #534ab7"
+                      >
+                        Add
+                      </button>
+                    </div>`;
+      
+    } else {
+      item.items.forEach((el) => {
+        html += `<label
                       class="packing-item flex items-center gap-2 py-1.5 cursor-pointer"
                     >
                       <input data-item-Id="${el._id}" type="checkbox" class="checkbox checkbox-sm" ${el.packed ? "checked" : ""} />
@@ -166,8 +185,8 @@ function renderResulst(data) {
                           />
                         </svg>
                     </label>`;
-    });
-    html += `<!-- input field for adding items -->
+      });
+      html += `<!-- input field for adding items -->
                     <div class="flex gap-2 mt-2">
                       <input
                         type="text"
@@ -183,6 +202,8 @@ function renderResulst(data) {
                     </div>
                   </div>
                 </div>`;
+    }
+
     packingContainer.insertAdjacentHTML("beforeend", html);
 
     // calculating checked items and total items after rendering each part
