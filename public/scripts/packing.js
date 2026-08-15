@@ -53,44 +53,30 @@ document.addEventListener("tripAdded", (e) => {
 
 // shows the trip-picker modal and bails out if no trip is selected yet (sidebar.js),
 // then generates the placeholder items for every category and refreshes the display
-async function generatePackingList(items1, items2, items3, items4) {
+async function generatePackingList(objOfItems) {
   if (!(await requireTripSelected())) return;
   // items1 etc. are list of objects {title:sth}
-  let initialItems = [
-    { "Documents & Essentials": items1 },
-    { "Weather Essentials": items2 },
-    { "Planned Activities": items3 },
-    { "Toiletries & Health": items4 },
-  ];
+
   tripId = localStorage.getItem("selectedTripId");
   aiGeneratedKey = `aiGenerated_${tripId}`;
   localStorage.setItem(aiGeneratedKey, true);
 
   await Promise.allSettled(
-    initialItems.map(
-      (element) =>
-        createInitialList(
-          tripId,
-          Object.keys(element)[0],
-          Object.values(element)[0],
-        ), // Object.keys returns a list, since its only one object we can index 0
-    ),
+    //object.entries -> converts object into a two-dimensional array - [key, value]
+    Object.entries(objOfItems).map(element => createInitialList(tripId, element[0], element[1]))
   );
   checkLocalStorage(aiGeneratedKey, tripId);
 }
 
-// start by initializing the page when user clicks on generate the packing list -
-// TODO: replace this placeholder call with the real AI-generated items per
-// category once that's wired up; generatePackingList itself is what the AI
-// call should invoke, this click handler is just a stand-in caller for now
+// start by initializing the page when user clicks on generate the packing list 
 document
   .getElementById("aiGenerate")
   .addEventListener("click", () =>
     generatePackingList(
-      [{ title: "passport" }, { title: "visa" }],
-      [{ title: "passport" }, { title: "visa" }],
-      [{ title: "passport" }, { title: "visa" }],
-      [{ title: "passport" }, { title: "visa" }],
+      {"Documents & Essentials": [{ title: "passport" }, { title: "visa" }],
+      "Weather Essentials": [{ title: "passport" }, { title: "visa" }],
+      "Planned Activities" :[{ title: "passport" }, { title: "visa" }],
+      "Toiletries & Health" :[{ title: "passport" }, { title: "visa" }]}
     ),
   );
 
