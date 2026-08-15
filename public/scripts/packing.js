@@ -96,18 +96,28 @@ document
 
 // fetch the packing list (categories + items) for a trip from the server
 async function getCurrentPackingDetails(tripId) {
+  const packingError = document.getElementById("packingError");
   try {
     const response = await fetch(`/getPackingList/${tripId}`);
     if (response.ok) {
+      packingError.textContent = "";
+      packingError.classList.add("hidden");
       const data = await response.json();
       return data;
     } else {
+      const text = await response.text();
+      packingError.textContent = text;
+      packingError.classList.remove("hidden");
     }
-  } catch (error) {}
+  } catch (error) {
+    packingError.textContent = "Something went wrong. Please try again.";
+    packingError.classList.remove("hidden");
+  }
 }
 
 // insert items for each category - this function is intended to be used by AI for generating initial packing list, items is an array
 async function createInitialList(tripId, category, items) {
+  const packingError = document.getElementById("packingError");
   try {
     const response = await fetch(`/generatePackingListAI/${tripId}`, {
       method: "PUT",
@@ -120,9 +130,14 @@ async function createInitialList(tripId, category, items) {
     if (response.ok) {
     } else {
       // error message
+      const text = await response.text();
+      packingError.textContent = text;
+      packingError.classList.remove("hidden");
     }
   } catch (error) {
     // error message
+    packingError.textContent = "Something went wrong. Please try again.";
+    packingError.classList.remove("hidden");
   }
 }
 
@@ -161,7 +176,6 @@ function renderResulst(data) {
                         Add
                       </button>
                     </div>`;
-      
     } else {
       item.items.forEach((el) => {
         html += `<label
@@ -170,20 +184,22 @@ function renderResulst(data) {
                       <input data-item-Id="${el._id}" type="checkbox" class="checkbox checkbox-sm" ${el.packed ? "checked" : ""} />
                       <span class="title item-label text-sm flex-1"
                         >${el.title}</span>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4 deleteItem text-error"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-                          />
-                        </svg>
+                        <button type="button" class="deleteItem btn btn-ghost btn-xs btn-square text-error">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                            />
+                          </svg>
+                        </button>
                     </label>`;
       });
       html += `<!-- input field for adding items -->
@@ -200,6 +216,7 @@ function renderResulst(data) {
                         Add
                       </button>
                     </div>
+                    <p class="listError mt-2 text-start text-error md:text-sm text-xs hidden "></p>
                   </div>
                 </div>`;
     }
@@ -237,9 +254,24 @@ packingContainer.addEventListener("click", async (event) => {
   const addBtn = event.target.closest(".addSingle");
   if (!addBtn) return;
   const closestParent = addBtn.closest(".collapse");
+
+  const errorMsg = closestParent.querySelector(".listError");
+  errorMsg.textContent = "";
+  errorMsg.classList.add("hidden");
+
+  const originalLabel = addBtn.textContent;
+  if (addBtn.dataset.loading === "true") return;
+
+  addBtn.innerHTML = `<span class="loading loading-spinner loading-sm"></span>`;
+  addBtn.dataset.loading = "true";
+
   const newAddedTitle = closestParent.querySelector(".newItem").value;
   if (newAddedTitle.trim() === "") {
-    // message
+    // message for showing error
+    errorMsg.textContent = "Please enter a name for the item.";
+    errorMsg.classList.remove("hidden");
+    addBtn.textContent = originalLabel;
+    addBtn.dataset.loading = "false";
     return;
   }
   const category = closestParent.querySelector(".category").textContent;
@@ -258,9 +290,18 @@ packingContainer.addEventListener("click", async (event) => {
       getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
     } else {
       // error
+      const text = await response.text();
+      errorMsg.textContent = text;
+      errorMsg.classList.remove("hidden");
       return;
     }
-  } catch (error) {}
+  } catch (error) {
+    errorMsg.textContent = "Something went wrong. Please try again.";
+    errorMsg.classList.remove("hidden");
+  } finally {
+    addBtn.textContent = originalLabel;
+    addBtn.dataset.loading = "false";
+  }
 });
 
 // packing an element - delegation
@@ -269,6 +310,10 @@ packingContainer.addEventListener("change", async (event) => {
   if (!inputBtn) return;
   const closestParent = inputBtn.closest(".collapse");
   const category = closestParent.querySelector(".category").textContent;
+
+  const errorMsg = closestParent.querySelector(".listError");
+  errorMsg.textContent = "";
+  errorMsg.classList.add("hidden");
 
   try {
     const response = await fetch(`/updatePackingList/${tripId}`, {
@@ -284,8 +329,17 @@ packingContainer.addEventListener("change", async (event) => {
     });
     if (response.ok) {
       getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
+    } else {
+      const text = await response.text();
+      errorMsg.textContent = text;
+      errorMsg.classList.remove("hidden");
+      inputBtn.checked = !inputBtn.checked; // revert the toggle since the server didn't persist it
     }
-  } catch (error) {}
+  } catch (error) {
+    errorMsg.textContent = "Something went wrong. Please try again.";
+    errorMsg.classList.remove("hidden");
+    inputBtn.checked = !inputBtn.checked;
+  }
 });
 
 // deleting an item from the packing list
@@ -294,10 +348,20 @@ packingContainer.addEventListener("click", async (event) => {
   if (!delBtn) return;
   event.preventDefault(); // stop the label from also toggling its checkbox (strike-through)
   const parentItem = delBtn.closest(".collapse");
+
+  const errorMsg = parentItem.querySelector(".listError");
+  errorMsg.textContent = "";
+  errorMsg.classList.add("hidden");
+
+  const originalIcon = delBtn.innerHTML;
+  if (delBtn.dataset.loading === "true") return;
+
+  delBtn.innerHTML = `<span class="loading loading-spinner loading-sm"></span>`;
+  delBtn.dataset.loading = "true";
+
   const category = parentItem.querySelector(".category").textContent;
   const itemId = delBtn.closest(".packing-item").querySelector(".checkbox")
     .dataset.itemId;
-  console.log(itemId);
 
   try {
     const response = await fetch(`/deleteItem/${tripId}`, {
@@ -310,6 +374,16 @@ packingContainer.addEventListener("click", async (event) => {
     if (response.ok) {
       getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
     } else {
+      const text = await response.text();
+      errorMsg.textContent = text;
+      errorMsg.classList.remove("hidden");
+      return;
     }
-  } catch (error) {}
+  } catch (error) {
+    errorMsg.textContent = "Something went wrong. Please try again.";
+    errorMsg.classList.remove("hidden");
+  } finally {
+    delBtn.innerHTML = originalIcon;
+    delBtn.dataset.loading = "false";
+  }
 });

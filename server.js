@@ -1164,7 +1164,7 @@ app.get("/getPackingList/:tripId", requireTripMember, async (req, res) => {
     });
     res.json(userPackingList?.packingList ?? null); // items in the packing list would have their own _id
   } catch (error) {
-    res.status(500).send("error connecting to the database.");
+    res.status(500).send("Failed to load your packing list.");
   }
 });
 
@@ -1178,7 +1178,7 @@ app.put("/addToPackingList/:tripId", requireTripMember, async (req, res) => {
     );
     res.json(userPackingList);
   } catch (error) {
-    res.status(500).send("error connecting to the database.");
+    res.status(500).send("Failed to add the item to your packing list.");
   }
 });
 
@@ -1195,7 +1195,7 @@ app.put(
       );
       res.json(userPackingList);
     } catch (error) {
-      res.status(500).send("error connecting to the database.");
+      res.status(500).send("Failed to generate your packing list.");
     }
   },
 );
@@ -1223,7 +1223,7 @@ app.put("/updatePackingList/:tripId", requireTripMember, async (req, res) => {
 
     res.json(userPackingList);
   } catch (error) {
-    res.status(500).send("error connecting to the database.");
+    res.status(500).send("Failed to update the item.");
   }
 });
 
@@ -1236,5 +1236,7 @@ app.put("/deleteItem/:tripId", requireTripMember, async (req, res) => {
       { arrayFilters: [{ "elem.category": req.body.category }], new: true },
     );
     res.json(item);
-  } catch (error) {}
+  } catch (error) {
+    res.status(500).send("Failed to delete the item.");
+  }
 });
