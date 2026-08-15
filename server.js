@@ -1226,3 +1226,15 @@ app.put("/updatePackingList/:tripId", requireTripMember, async (req, res) => {
     res.status(500).send("error connecting to the database.");
   }
 });
+
+// delete an item from the packing list
+app.put("/deleteItem/:tripId", requireTripMember, async (req, res) => {
+  try {
+    const item = await packingModel.findOneAndUpdate(
+      { person: req.session.userId, tripId: req.params.tripId },
+      { $pull: { "packingList.$[elem].items": { _id: req.body.itemId } } },
+      { arrayFilters: [{ "elem.category": req.body.category }], new: true },
+    );
+    res.json(item);
+  } catch (error) {}
+});

@@ -183,6 +183,9 @@ if (suggestModal) {
 // updates the sidebar after a trip is picked from the "pick a trip first"
 // modal - see notes/suggest-modal-trip-picker.md
 function onTripPickedFromSuggestModal(tripId) {
+  document.dispatchEvent(
+    new CustomEvent("changeTrip", { detail: { tripId } }),
+  );
   getSingleTripDetails(tripId);
   getRecentActivities(tripId);
   const element = document.querySelector(`#yourTrips [id="${tripId}"]`);

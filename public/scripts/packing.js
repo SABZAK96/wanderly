@@ -5,13 +5,6 @@ const packingContainer = document.getElementById("packingContainer");
 const generatedSection = document.getElementById("generated");
 const notGeneratedSection = document.getElementById("notGenerated");
 
-const categories = [
-  "Documents & Essentials",
-  "Weather Essentials",
-  "Planned Activities",
-  "Toiletries & Health",
-];
-
 // keep #destName/#date in sync with the selected trip's header info -
 // tripHeaderRendered only fires once sidebar.js has actually populated
 // #tripHeader's dataset (it's async), so this covers both the initial
@@ -27,7 +20,7 @@ document.addEventListener("tripHeaderRendered", () => {
 });
 
 function checkLocalStorage(key, tripId) {
-  if (localStorage.getItem(key)) {
+  if (localStorage.getItem(key) && tripId) {
     generatedSection.classList.remove("hidden");
     notGeneratedSection.classList.add("hidden");
     getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
@@ -58,21 +51,48 @@ document.addEventListener("tripAdded", (e) => {
   checkLocalStorage(aiGeneratedKey, tripId);
 });
 
-// start by initializing the page when user clicks on generate the packing list
-document.getElementById("aiGenerate").addEventListener("click", async () => {
+// shows the trip-picker modal and bails out if no trip is selected yet (sidebar.js),
+// then generates the placeholder items for every category and refreshes the display
+async function generatePackingList(items1, items2, items3, items4) {
+  if (!(await requireTripSelected())) return;
+  // items1 etc. are list of objects {title:sth}
+  let initialItems = [
+    { "Documents & Essentials": items1 },
+    { "Weather Essentials": items2 },
+    { "Planned Activities": items3 },
+    { "Toiletries & Health": items4 },
+  ];
+  tripId = localStorage.getItem("selectedTripId");
+  aiGeneratedKey = `aiGenerated_${tripId}`;
   localStorage.setItem(aiGeneratedKey, true);
+
   await Promise.allSettled(
-    categories.map((category) =>
-      createInitialList(tripId, category, [
-        { title: "passport" },
-        { title: "visa" },
-      ]),
+    initialItems.map(
+      (element) =>
+        createInitialList(
+          tripId,
+          Object.keys(element)[0],
+          Object.values(element)[0],
+        ), // Object.keys returns a list, since its only one object we can index 0
     ),
   );
-  generatedSection.classList.remove("hidden");
-  notGeneratedSection.classList.add("hidden");
-  getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
-});
+  checkLocalStorage(aiGeneratedKey, tripId);
+}
+
+// start by initializing the page when user clicks on generate the packing list -
+// TODO: replace this placeholder call with the real AI-generated items per
+// category once that's wired up; generatePackingList itself is what the AI
+// call should invoke, this click handler is just a stand-in caller for now
+document
+  .getElementById("aiGenerate")
+  .addEventListener("click", () =>
+    generatePackingList(
+      [{ title: "passport" }, { title: "visa" }],
+      [{ title: "passport" }, { title: "visa" }],
+      [{ title: "passport" }, { title: "visa" }],
+      [{ title: "passport" }, { title: "visa" }],
+    ),
+  );
 
 // fetch the packing list (categories + items) for a trip from the server
 async function getCurrentPackingDetails(tripId) {
@@ -131,6 +151,20 @@ function renderResulst(data) {
                       <input data-item-Id="${el._id}" type="checkbox" class="checkbox checkbox-sm" ${el.packed ? "checked" : ""} />
                       <span class="title item-label text-sm flex-1"
                         >${el.title}</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4 deleteItem text-error"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                          />
+                        </svg>
                     </label>`;
     });
     html += `<!-- input field for adding items -->
@@ -229,6 +263,32 @@ packingContainer.addEventListener("change", async (event) => {
     });
     if (response.ok) {
       getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
+    }
+  } catch (error) {}
+});
+
+// deleting an item from the packing list
+packingContainer.addEventListener("click", async (event) => {
+  const delBtn = event.target.closest(".deleteItem");
+  if (!delBtn) return;
+  event.preventDefault(); // stop the label from also toggling its checkbox (strike-through)
+  const parentItem = delBtn.closest(".collapse");
+  const category = parentItem.querySelector(".category").textContent;
+  const itemId = delBtn.closest(".packing-item").querySelector(".checkbox")
+    .dataset.itemId;
+  console.log(itemId);
+
+  try {
+    const response = await fetch(`/deleteItem/${tripId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ category: category, itemId: itemId }),
+    });
+    if (response.ok) {
+      getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
+    } else {
     }
   } catch (error) {}
 });
