@@ -1240,3 +1240,30 @@ app.put("/deleteItem/:tripId", requireTripMember, async (req, res) => {
     res.status(500).send("Failed to delete the item.");
   }
 });
+
+app.post("/addcategory/:tripId", requireTripMember, async (req, res) => {
+  try {
+    const userList = await packingModel.findOne({
+      person: req.session.userId,
+      tripId: req.params.tripId,
+    });
+    const exists = userList.packingList.find(
+      (element) =>
+        element.category.toLowerCase() === req.body.category.toLowerCase(),
+    );
+    if (exists) {
+      res.status(409).send("This category already exists.");
+    } else {
+      const newDoc = await packingModel.findOneAndUpdate(
+        { person: req.session.userId, tripId: req.params.tripId },
+        {
+          $push: { packingList: { category: req.body.category, items: [] } },
+        },
+        { new: true },
+      );
+      res.json(newDoc);
+    }
+  } catch (error) {
+    res.status(500).send("Failed to add the category.");
+  }
+});

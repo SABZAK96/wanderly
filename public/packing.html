@@ -195,8 +195,16 @@
               <!-- first card- documents and essentials example -->
               <!-- all categories that should be populated are weather essentials, for your planned activities, toiletries and health -->
               <div id="packingContainer" class="flex flex-col gap-3">
-                
+
               </div>
+
+              <button
+                id="addCategory"
+                class="btn btn-sm btn-ghost self-start mt-3 mb-6 lg:mb-0"
+                style="color: #534ab7"
+              >
+                + Add a category
+              </button>
             </div>
           </div>
         </section>
@@ -287,6 +295,50 @@
     <!-- drawer end -->
 
     <!-- modal for inserting trip -->
+    <dialog id="addCategoryModal" class="modal">
+      <div class="modal-box flex flex-col gap-4">
+        <!-- close button in its own form so it doesn't submit -->
+        <form method="dialog">
+          <button
+            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          >
+            ✕
+          </button>
+        </form>
+
+        <h3 class="text-lg font-semibold">Add a Category</h3>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-base-content/60">Category name</label>
+          <input
+            id="newCategoryName"
+            type="text"
+            placeholder="e.g. Beach Gear"
+            class="input w-full"
+          />
+        </div>
+        <p id="addCategoryError" class="text-sm text-red-500 mt-1 hidden"></p>
+
+        <div class="modal-action mt-0">
+          <form method="dialog">
+            <button class="btn btn-ghost">Cancel</button>
+          </form>
+          <button
+            id="confirmAddCategory"
+            class="btn"
+            style="background-color: #534ab7; color: white"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      <!-- click outside to close -->
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
     <dialog id="my_modal_trip" class="modal">
       <div class="modal-box flex flex-col gap-4">
         <!-- close button in its own form so it doesn't submit -->

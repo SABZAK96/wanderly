@@ -63,22 +63,22 @@ async function generatePackingList(objOfItems) {
 
   await Promise.allSettled(
     //object.entries -> converts object into a two-dimensional array - [key, value]
-    Object.entries(objOfItems).map(element => createInitialList(tripId, element[0], element[1]))
+    Object.entries(objOfItems).map((element) =>
+      createInitialList(tripId, element[0], element[1]),
+    ),
   );
   checkLocalStorage(aiGeneratedKey, tripId);
 }
 
-// start by initializing the page when user clicks on generate the packing list 
-document
-  .getElementById("aiGenerate")
-  .addEventListener("click", () =>
-    generatePackingList(
-      {"Documents & Essentials": [{ title: "passport" }, { title: "visa" }],
-      "Weather Essentials": [{ title: "passport" }, { title: "visa" }],
-      "Planned Activities" :[{ title: "passport" }, { title: "visa" }],
-      "Toiletries & Health" :[{ title: "passport" }, { title: "visa" }]}
-    ),
-  );
+// start by initializing the page when user clicks on generate the packing list
+document.getElementById("aiGenerate").addEventListener("click", () =>
+  generatePackingList({
+    "Documents & Essentials": [{ title: "passport" }, { title: "visa" }],
+    "Weather Essentials": [{ title: "passport" }, { title: "visa" }],
+    "Planned Activities": [{ title: "passport" }, { title: "visa" }],
+    "Toiletries & Health": [{ title: "passport" }, { title: "visa" }],
+  }),
+);
 
 // fetch the packing list (categories + items) for a trip from the server
 async function getCurrentPackingDetails(tripId) {
@@ -371,5 +371,66 @@ packingContainer.addEventListener("click", async (event) => {
   } finally {
     delBtn.innerHTML = originalIcon;
     delBtn.dataset.loading = "false";
+  }
+});
+
+// add a new category listener
+const addCategoryModal = document.getElementById("addCategoryModal");
+const categoryNameInput = document.getElementById("newCategoryName");
+const categoryNewError = document.getElementById("addCategoryError");
+
+document.getElementById("addCategory").addEventListener("click", () => {
+  // clean up the modal and pop it up
+  categoryNameInput.value = "";
+  categoryNewError.textContent = "";
+  categoryNewError.classList.add("hidden");
+  addCategoryModal.showModal();
+});
+
+const confirmBtn = document.getElementById("confirmAddCategory");
+confirmBtn.addEventListener("click", async () => {
+  const originalLabel = confirmBtn.textContent;
+  if (confirmBtn.dataset.loading === "true") return;
+
+  confirmBtn.innerHTML = `<span class="loading loading-spinner loading-sm"></span>`;
+  confirmBtn.dataset.loading = "true";
+
+  const trimmedName = categoryNameInput.value.trim();
+
+  if (trimmedName === "") {
+    categoryNewError.textContent = "Please enter a category.";
+    categoryNewError.classList.remove("hidden");
+
+    confirmBtn.textContent = originalLabel;
+    confirmBtn.dataset.loading = "false";
+
+    return;
+  }
+
+  try {
+    const response = await fetch(`/addcategory/${tripId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        category: trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1),
+      }),
+    });
+    if (response.ok) {
+      addCategoryModal.close();
+      getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
+    } else {
+      const text = await response.text();
+      categoryNewError.textContent = text;
+      categoryNewError.classList.remove("hidden");
+      return;
+    }
+  } catch (error) {
+    categoryNewError.textContent = "Something went wrong. Please try again.";
+    categoryNewError.classList.remove("hidden");
+  } finally {
+    confirmBtn.textContent = originalLabel;
+    confirmBtn.dataset.loading = "false";
   }
 });
