@@ -5,6 +5,19 @@ const packingContainer = document.getElementById("packingContainer");
 const generatedSection = document.getElementById("generated");
 const notGeneratedSection = document.getElementById("notGenerated");
 
+function loadingPage(mode) {
+  document.getElementById("pageLoading").classList.remove("hidden");
+  if (mode === "initial") {
+    document.getElementById("pageLoadingText").textContent =
+      "Looking at the forecast and your itinerary...";
+    document.getElementById("pageLoadingText").classList.remove("hidden");
+  }
+}
+function removeLoading() {
+  document.getElementById("pageLoading").classList.add("hidden");
+  document.getElementById("pageLoadingText").textContent = "";
+  document.getElementById("pageLoadingText").classList.add("hidden");
+}
 // keep #destName/#date in sync with the selected trip's header info -
 // tripHeaderRendered only fires once sidebar.js has actually populated
 // #tripHeader's dataset (it's async), so this covers both the initial
@@ -21,6 +34,7 @@ document.addEventListener("tripHeaderRendered", () => {
 
 function checkLocalStorage(key, tripId) {
   if (localStorage.getItem(key) && tripId) {
+    loadingPage("notInitial");
     generatedSection.classList.remove("hidden");
     notGeneratedSection.classList.add("hidden");
     getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
@@ -55,6 +69,7 @@ document.addEventListener("tripAdded", (e) => {
 // then generates the placeholder items for every category and refreshes the display
 async function generatePackingList(objOfItems) {
   if (!(await requireTripSelected())) return;
+  loadingPage("initial");
   // items1 etc. are list of objects {title:sth}
 
   tripId = localStorage.getItem("selectedTripId");
@@ -71,14 +86,14 @@ async function generatePackingList(objOfItems) {
 }
 
 // start by initializing the page when user clicks on generate the packing list
-document.getElementById("aiGenerate").addEventListener("click", () =>
+document.getElementById("aiGenerate").addEventListener("click", () => {
   generatePackingList({
     "Documents & Essentials": [{ title: "passport" }, { title: "visa" }],
     "Weather Essentials": [{ title: "passport" }, { title: "visa" }],
     "Planned Activities": [{ title: "passport" }, { title: "visa" }],
     "Toiletries & Health": [{ title: "passport" }, { title: "visa" }],
-  }),
-);
+  });
+});
 
 // fetch the packing list (categories + items) for a trip from the server
 async function getCurrentPackingDetails(tripId) {
@@ -217,6 +232,7 @@ function renderResulst(data) {
     newEl.querySelector(".total").textContent = totalInputs.length;
   });
   updateProgressBar();
+  removeLoading();
 }
 
 // update the progress bar with selecting and de-selecting elements
