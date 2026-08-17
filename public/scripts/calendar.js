@@ -223,7 +223,11 @@ async function initCalendar() {
           const response = await fetch(`/editActivity/${info.event.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ date: dateStr, startTime: startTime, endTime: endTime }),
+            body: JSON.stringify({
+              date: dateStr,
+              startTime: startTime,
+              endTime: endTime,
+            }),
           });
           if (response.ok) {
             // only remove cancel's listener once actually done - on
@@ -528,7 +532,20 @@ function spinnerHtml() {
 }
 // shows the spinner in both weather containers at once, before the initial fetch kicks off
 function showSectionLoading() {
-  document.getElementById("carouselContainer").innerHTML = spinnerHtml();
+  const carouselContainer = document.getElementById("carouselContainer");
+  // undo the error-state card styling from a previous failed fetch, so a retry that succeeds doesn't inherit it
+  carouselContainer.classList.remove(
+    "card",
+    "items-start",
+    "p-4",
+    "md:p-6",
+    "gap-3",
+    "md:gap-4",
+  );
+  carouselContainer.classList.add("md:h-[200px]", "h-[140px]", "mb-1");
+  carouselContainer.style.backgroundColor = "";
+  carouselContainer.style.boxShadow = "";
+  carouselContainer.innerHTML = spinnerHtml();
   document.getElementById("selectedDayWeather").innerHTML = spinnerHtml();
 }
 
@@ -538,6 +555,7 @@ async function requestWeatherData() {
   const tripdestination = document.getElementById("tripHeader");
   const lat = tripdestination.dataset?.lat;
   const lng = tripdestination.dataset?.lng;
+  const carouselContainer = document.getElementById("carouselContainer");
   try {
     const response = await fetch(`/getWeather`, {
       method: "POST",
@@ -568,18 +586,40 @@ async function requestWeatherData() {
       const data = await response.json();
       const message =
         data.error?.message ?? "Failed to load data. Please try again.";
-      document.getElementById("carouselContainer").innerHTML =
-        `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
+      carouselContainer.classList.remove("md:h-[200px]", "h-[140px]", "mb-1");
+      carouselContainer.classList.add(
+        "card",
+        "items-start",
+        "gap-3",
+        "md:gap-4",
+      );
+      carouselContainer.style.backgroundColor = "#e0dbfb";
+      carouselContainer.style.boxShadow =
+        "0 12px 28px -6px rgba(83, 74, 183, 0.35)";
+      carouselContainer.innerHTML = `<p class="card-body md:text-sm text-xs text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
       document.getElementById("selectedDayWeather").innerHTML =
-        `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
+        `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
+        <p class="md:text-sm text-xs text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>
+        </div>`;
     }
   } catch (error) {
     // show a network error - no response to read a message from here
     const message = "Could not reach the server. Try again.";
-    document.getElementById("carouselContainer").innerHTML =
-      `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
+    carouselContainer.classList.remove("md:h-[200px]", "h-[140px]", "mb-1");
+    carouselContainer.classList.add(
+      "card",
+      "items-start",
+      "gap-3",
+      "md:gap-4",
+    );
+    carouselContainer.style.backgroundColor = "#e0dbfb";
+    carouselContainer.style.boxShadow =
+      "0 12px 28px -6px rgba(83, 74, 183, 0.35)";
+    carouselContainer.innerHTML = `<p class="card-body md:text-sm text-xs text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
     document.getElementById("selectedDayWeather").innerHTML =
-      `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
+      `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
+      <p class="md:text-sm text-xs text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>
+      </div>`;
   }
 }
 
@@ -864,7 +904,10 @@ async function renderDetailsWeather(element) {
         const data = await response.json();
         const message =
           data.error?.message ?? "Failed to load data. Please try again.";
-        container.innerHTML = `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>`;
+        container.innerHTML = `
+        <div class="card-body items-start p-5 md:p-6 gap-3 md:gap-4">
+        <p class="md:text-sm text-xs text-base-content/60 text-center w-full h-full flex items-center justify-center">${message}</p>
+        </div>`;
       }
     } else {
       const iconEl = element.querySelector("img");
@@ -986,7 +1029,9 @@ async function renderDetailsWeather(element) {
     // covers both branches above (the current-day fetch throwing, or the
     // upcoming-day branch choking on a malformed carousel dataset) - no
     // single response to pull a specific message from either way
-    container.innerHTML = `<p class="text-md text-base-content/60 text-center w-full h-full flex items-center justify-center">Failed to load data. Please try again.</p>`;
+    container.innerHTML = `<div class="card-body items-start p-4 md:p-6 gap-3 md:gap-4">
+    <p class="md:text-sm text-xs text-base-content/60 text-center w-full h-full flex items-center justify-center">Failed to load data. Please try again.</p>
+    </div>`;
   }
 }
 // attach a listener to the carousel using delegation
