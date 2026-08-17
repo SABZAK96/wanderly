@@ -150,7 +150,7 @@ function weightedRating(item, allItems, m) {
 
 // helper that turns a search's parameters into one single string that acts as the "ID" for that search in the cache
 function buildCacheKey(query, lat, lng) {
-  return `${query}|${lat.toFixed(2)}|${lng.toFixed(2)}`.toLowerCase();
+  return `${query}|${Number(lat).toFixed(2)}|${Number(lng).toFixed(2)}`.toLowerCase();
 }
 
 // sends the constructed "<search term> in <destination>" query to our own
@@ -584,4 +584,26 @@ addToCalBtn.addEventListener("click", async () => {
     addToCalBtn.textContent = originalBtnContent;
     addToCalBtn.dataset.loading = "false";
   }
+});
+
+// activating scroll to top button for suggestion
+const scrollBtn = document.getElementById("scrollToTop");
+window.addEventListener("scroll", () => {
+  const scrolledDistance = window.scrollY || document.documentElement.scrollTop;
+
+  // popping up the button after 300 px scroll
+  if (scrolledDistance > 300) {
+    scrollBtn.classList.remove("hidden");
+  } else {
+    scrollBtn.classList.add("hidden");
+  }
+});
+
+scrollBtn.addEventListener("click", () => {
+  // jump to the start of non-AI contianer when button is clicked
+  const targetElement = document.getElementById("non-AI");
+  targetElement.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
 });

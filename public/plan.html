@@ -186,7 +186,7 @@
         <!-- non-AI (suggestions) view -->
         <section
           id="non-AI"
-          class="hidden group-has-[#mode-suggestions:checked]:flex flex-col gap-2"
+          class="hidden relative group-has-[#mode-suggestions:checked]:flex flex-col gap-2"
         >
           <!-- input field with aura effect -->
           <div class="w-full aura aura-holo mx-auto">
@@ -240,6 +240,23 @@
           </div>
 
           <p id="suggError" class="text-sm text-red-500 mt-1 text-center"></p>
+          <!-- button for scrolling up -->
+           <button id="scrollToTop" class="rounded-full p-2 fixed bottom-3 right-3 lg:right-[25rem] lg:bottom-10 z-50 cursor-pointer hidden" style="background-color: #534ab7; color: white">
+             <svg
+               xmlns="http://www.w3.org/2000/svg"
+               class="h-5 w-5"
+               fill="none"
+               viewBox="0 0 24 24"
+               stroke="currentColor"
+             >
+               <path
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 stroke-width="2"
+                 d="M4.5 15.75l7.5-7.5 7.5 7.5"
+               />
+             </svg>
+           </button>
 
           <!-- container for suggestion view empty -->
           <div
