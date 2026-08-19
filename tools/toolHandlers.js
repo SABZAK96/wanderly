@@ -9,6 +9,7 @@ module.exports = function createToolHandlers({
 }) {
   return {
     // create trip
+    // returns trip._id (plain string, not wrapped in an object)
     create_trip: async (input, user) => {
       const trip = await tripModel.create({
         destination: input.destination,
@@ -41,6 +42,10 @@ module.exports = function createToolHandlers({
     },
 
     // get weather forecast
+    // returns { forecastDays: [ { maxTemperature: { degrees }, minTemperature: { degrees },
+    //   daytimeForecast: { weatherCondition: { description: { text } }, precipitation: { probability: { percent } },
+    //     wind: { speed: { value }, direction: { cardinal } } },
+    //   nighttimeForecast: {...same shape as daytimeForecast...} } ] }
     get_weather_forecast: async (input) => {
       const apiCall = await (
         await fetch(
@@ -52,6 +57,9 @@ module.exports = function createToolHandlers({
     },
 
     // get current weather
+    // returns { weatherCondition: { description: { text } }, temperature: { degrees },
+    //   feelsLikeTemperature: { degrees }, relativeHumidity, uvIndex,
+    //   precipitation: { probability: { percent } }, wind: { speed: { value }, direction: { cardinal } } }
     get_current_weather: async (input) => {
       const apiCall = await (
         await fetch(
@@ -63,6 +71,7 @@ module.exports = function createToolHandlers({
     },
 
     //add group activity - user carries {userId: ... , tripId: ...}
+    // returns { _id, tripId, participants, activityName, date, startTime, endTime, address, placeId, location } or { error }
     add_activity_group: async (input, user) => {
       // do the activity date validation first - retrieve the trip start and end date
       const trip = await tripModel.findById(user.tripId);
@@ -91,6 +100,7 @@ module.exports = function createToolHandlers({
     },
 
     // add activity solo
+    // returns { _id, tripId, participants, activityName, date, startTime, endTime, address, placeId, location } or { error }
     add_activity_solo: async (input, user) => {
       const trip = await tripModel.findById(user.tripId);
       const validation = invalidDateReason(input.date, trip);
@@ -119,6 +129,7 @@ module.exports = function createToolHandlers({
     },
 
     // edit activity
+    // returns { _id, tripId, participants, activityName, date, startTime, endTime, address, placeId, location } or { error }
     edit_activity: async (input, user) => {
       // check activity membership
       const membership = await activityMembership(
@@ -166,6 +177,7 @@ module.exports = function createToolHandlers({
     },
 
     // delete activity solo
+    // returns { _id, tripId, participants, activityName, date, startTime, endTime, address, placeId, location } (participants minus the user) or { error }
     delete_activity_solo: async (input, user) => {
       const membership = await activityMembership(
         activityModel,
@@ -187,6 +199,7 @@ module.exports = function createToolHandlers({
     },
 
     // delete activity grp
+    // returns { _id, tripId, participants, activityName, date, startTime, endTime, address, placeId, location } (the now-deleted doc) or { error }
     delete_activity_group: async (input, user) => {
       const membership = await activityMembership(
         activityModel,
@@ -201,6 +214,7 @@ module.exports = function createToolHandlers({
     },
 
     // list activities
+    // returns [ { _id, activityName, date, startTime, endTime, address, placeId, location } ]
     list_activities: async (input, user) => {
       const activities = await activityModel.find({ tripId: user.tripId });
       const userActivities = activities.filter((activity) =>
@@ -210,6 +224,7 @@ module.exports = function createToolHandlers({
     },
 
     // add packing items
+    // returns { packingList: [ { category, items: [ { title } ] } ] } — full list, all categories
     add_packing_items: async (input, user) => {
       const userPackingList = await packingModel.findOneAndUpdate(
         { person: user.userId, tripId: user.tripId },
@@ -220,6 +235,10 @@ module.exports = function createToolHandlers({
     },
 
     // search places
+    // returns { places: [ { id, displayName: { text }, formattedAddress, location: { latitude, longitude },
+    //   priceLevel, priceRange: { startPrice, endPrice }, rating, userRatingCount, primaryType,
+    //   editorialSummary: { text }, regularOpeningHours: { periods, weekdayDescriptions },
+    //   photos: [ { name, widthPx, heightPx } ], websiteUri } ], nextPageToken }
     search_places: async (input, user) => {
       const locationBias = {
         circle: {
