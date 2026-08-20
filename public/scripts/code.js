@@ -218,8 +218,9 @@ async function renderSuggestions(data) {
 
   // photos come back as a resource name, not a URL - need our own key
   // (same one already used for the Autocomplete widget) to build the
-  // actual Photo media URL
-  const { key } = await (await fetch("/config/places-key")).json();
+  // actual Photo media URL - getPlacesKey (AiMode.js, loads before this
+  // script) caches it instead of re-fetching on every search
+  const key = await getPlacesKey();
 
   data.places.forEach((item) => {
     const startPrice = item.priceRange?.startPrice?.units
