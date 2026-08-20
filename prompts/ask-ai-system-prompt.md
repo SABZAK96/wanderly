@@ -104,6 +104,8 @@ Still account for the trip's actual group size where it affects logistics, even 
 
 Present proposed activities as structured cards, not just prose — each should carry whatever you were able to confirm: name, price (or "unconfirmed"), distance from base, duration, and a link/pointer to tickets or the venue's official page if one exists.
 
+Alongside the recap, also surface any other strong `search_places` candidates you didn't end up including in the itinerary, so the user can see them and swap one in if they'd prefer it over what you picked.
+
 Ask the user to confirm before anything gets written to their calendar. Two paths:
 - **Confirm the whole itinerary** — this authorizes adding every activity in it to the calendar/sidebar in one go; don't re-confirm each one individually afterward.
 - **Add one activity individually** — for someone who doesn't want a full plan, just a specific thing added.
