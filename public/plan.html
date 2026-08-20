@@ -130,7 +130,7 @@
       <!-- drawer-content = main panel -->
       <div
         id="mainContent"
-        class="drawer-content flex flex-col flex-1 px-4 md:px-8 py-8 group"
+        class="relative drawer-content flex flex-col flex-1 px-4 md:px-8 py-8 group"
       >
         <!-- toggle button visible only on small screens -->
         <label
@@ -241,22 +241,26 @@
 
           <p id="suggError" class="text-sm text-red-500 mt-1 text-center"></p>
           <!-- button for scrolling up -->
-           <button id="scrollToTop" class="rounded-full p-2 fixed bottom-3 right-3 lg:right-[25rem] lg:bottom-10 z-50 cursor-pointer hidden" style="background-color: #534ab7; color: white">
-             <svg
-               xmlns="http://www.w3.org/2000/svg"
-               class="h-5 w-5"
-               fill="none"
-               viewBox="0 0 24 24"
-               stroke="currentColor"
-             >
-               <path
-                 stroke-linecap="round"
-                 stroke-linejoin="round"
-                 stroke-width="2"
-                 d="M4.5 15.75l7.5-7.5 7.5 7.5"
-               />
-             </svg>
-           </button>
+          <button
+            id="scrollToTop"
+            class="rounded-full p-2 fixed bottom-3 right-3 lg:right-[25rem] lg:bottom-10 z-50 cursor-pointer hidden"
+            style="background-color: #534ab7; color: white"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4.5 15.75l7.5-7.5 7.5 7.5"
+              />
+            </svg>
+          </button>
 
           <!-- container for suggestion view empty -->
           <div
@@ -279,7 +283,10 @@
 
           <!-- filters and pagination -->
           <div class="flex-1">
-            <div id="filtersRow" class="flex flex-row justify-between items-center hidden">
+            <div
+              id="filtersRow"
+              class="flex flex-row justify-between items-center hidden"
+            >
               <!-- left side : filters (All, Most Popular, category pills) -
                    populated by buildFilters() in filters.js -->
               <div class="dropdown dropdown-start">
@@ -376,20 +383,12 @@
         <!-- AI view -->
         <section
           id="AI"
-          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4"
+          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4 h-[calc(100dvh-14rem)]"
         >
+          <!-- scrollable region: conversation + suggestion cards -->
+          <div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4">
           <!-- conversation thread -->
-          <div class="flex flex-col gap-4">
-            <!-- user query -->
-            <div class="chat chat-end">
-              <div
-                class="chat-bubble"
-                style="background: #534ab7; color: white"
-              >
-                Top attractions in LA for our trip
-              </div>
-            </div>
-
+          <div id="convoThread" class="flex flex-col gap-4">
             <!-- ai response -->
             <div class="chat chat-start">
               <div class="chat-image avatar">
@@ -403,224 +402,31 @@
                 </div>
               </div>
               <div class="chat-header text-xs opacity-60">Claude</div>
-              <div class="chat-bubble bg-base-100 text-base-content/80">
-                Here are the top picks in Los Angeles for Jul 12-17, sorted for
-                a group of 4. Tell me to refine if these don't look right.
+              <div
+                class="chat-bubble md:text-md text-sm"
+                style="background: #534ab7; color: white"
+              >
+                Hi, I'm your trip assistant. I can help you find places to
+                eat, see, check the weather, build out a full itinerary, and add
+                things straight to your calendar and suggest a packing list for you upcoming trip. Just ask!
               </div>
             </div>
-          </div>
+
+            <!-- user query -->
+            
           <!-- filters -->
           <div class="flex-1">
-            <!-- container of filters -->
-            <div class="filter-pills flex flex-wrap gap-2 pt-8 pb-3">
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="All"
-              />
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="attractions"
-              />
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="food & dining"
-              />
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="beaches"
-              />
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="outdoor"
-              />
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="nightlife"
-              />
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="most popular"
-              />
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="price: low-high"
-              />
-              <input
-                class="btn btn-xs rounded-full"
-                type="radio"
-                name="metaframeworks"
-                aria-label="duration"
-              />
-            </div>
-            <!-- container of the suggestions -->
-            <section
-              class="grid grid-cols-1 md:px-0 px-10 md:grid-cols-2 xl:grid-cols-3 content-start items-start gap-5 py-1 w-full"
-            >
-              <div class="card bg-base-100 shadow-sm border border-base-200">
-                <figure class="relative">
-                  <img
-                    src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                    alt="Disneyland Resort"
-                    class="w-full h-44 object-cover"
-                  />
-                  <div class="absolute top-2 left-2">
-                    <span
-                      class="badge text-white text-xs font-medium px-2 py-1"
-                      style="background: #534ab7; border: none"
-                      >#1</span
-                    >
-                  </div>
-                  <div class="absolute top-2 right-2">
-                    <span
-                      class="badge text-xs font-medium px-2 py-1"
-                      style="background: #eeedfe; color: #534ab7; border: none"
-                      >ticket required</span
-                    >
-                  </div>
-                </figure>
-                <div class="card-body p-4 gap-2">
-                  <div class="flex items-start justify-between gap-2">
-                    <h2
-                      class="card-title text-sm font-medium leading-tight"
-                      style="color: #3c3489"
-                    >
-                      Disneyland Resort
-                    </h2>
-                    <div class="flex items-center gap-0.5 shrink-0">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="#854F0B"
-                        class="size-3.5"
-                      >
-                        <path
-                          d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                        />
-                      </svg>
-                      <span class="text-xs" style="color: #854f0b">4.8</span>
-                    </div>
-                  </div>
-                  <p
-                    class="text-xs text-base-content/60 leading-relaxed line-clamp-2"
-                  >
-                    The original Disney park — classic rides, parades, and the
-                    iconic Sleeping Beauty Castle. Great for all ages.
-                  </p>
-                  <div class="flex flex-col gap-1.5 mt-1">
-                    <div class="flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="#534AB7"
-                        class="size-4 shrink-0"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"
-                        />
-                      </svg>
-                      <span class="text-xs text-base-content/70"
-                        >$109-$189 / person</span
-                      >
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="#534AB7"
-                        class="size-4 shrink-0"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                        />
-                      </svg>
-                      <span class="text-xs text-base-content/70"
-                        >10-12 hrs · full day</span
-                      >
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="#534AB7"
-                        class="size-4 shrink-0"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                        />
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
-                        />
-                      </svg>
-                      <span class="text-xs text-base-content/70"
-                        >Anaheim · 30 min from LA</span
-                      >
-                    </div>
-                  </div>
-                  <div class="card-actions justify-end mt-1">
-                    <button
-                      class="btn btn-sm text-white text-xs font-medium gap-1.5"
-                      style="background: #534ab7; border: none"
-                      onmouseover="this.style.background = '#3C3489'"
-                      onmouseout="this.style.background = '#534AB7'"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="size-4"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
-                        />
-                      </svg>
-                      Add to calendar
-                    </button>
-                  </div>
-                </div>
-              </div>
 
-              <!-- sample cards -->
-              <!-- sample cards end -->
-            </section>
+       
           </div>
+          </div>
+          <!-- /scrollable region -->
 
-          <!-- refine-with-ai composer -->
-          <div class="w-full rounded-3xl aura aura-holo sticky bottom-4 mt-4">
-            <label class="input w-full rounded-3xl shadow-md">
+          <!-- refine-with-ai composer - swaps between #composerInput (a
+               trip is selected) and #pickTripComposerBtn (none selected
+               yet), toggled in JS based on localStorage.selectedTripId -->
+          <div class="w-full rounded-3xl aura aura-holo mt-4 shrink-0">
+            <label id="composerInput" class="input w-full rounded-3xl shadow-md hidden">
               <svg
                 class="h-[1em] opacity-50"
                 xmlns="http://www.w3.org/2000/svg"
@@ -642,6 +448,13 @@
                 placeholder="Ask AI to refine these results..."
               />
             </label>
+            <button
+              id="pickTripComposerBtn"
+              class="btn w-full rounded-3xl shadow-md"
+              style="background-color: white; color: #534ab7"
+            >
+              Pick a Trip or Create a New One
+            </button>
           </div>
         </section>
       </div>
@@ -1059,6 +872,7 @@
     <script src="scripts/dates.js"></script>
     <script src="scripts/sidebar.js"></script>
     <script src="scripts/filters.js"></script>
+    <script src="scripts/AiMode.js"></script>
     <script src="scripts/code.js"></script>
   </body>
 </html>
