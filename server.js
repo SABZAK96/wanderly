@@ -1292,69 +1292,11 @@ app.post("/addcategory/:tripId", requireTripMember, async (req, res) => {
   }
 });
 
-app.post("/askai", async (req, res) => {
-  try {
-    const user = { userId: req.session.userId };
-    let messages = req.body.messages;
-    let response;
-    // a confused model could keep calling tools indefinitely
-    let iterations = 0;
-    const MAX_ITERATIONS = 15;
-    const subTools = askAiTools.filter((tool) =>
-      ["create_trip", "list_trips", "web_search"].includes(tool.name),
-    );
-    do {
-      response = await anthropic.messages.create({
-        model: "claude-opus-5",
-        max_tokens: 4096,
-        system: ASK_AI_SYSTEM_PROMPT,
-        tools: subTools,
-        messages,
-      });
-      messages = [
-        ...messages,
-        { role: "assistant", content: response.content },
-      ];
-      if (response.stop_reason === "tool_use") {
-        const toolResults = await Promise.all(
-          response.content
-            .filter((element) => element.type === "tool_use")
-            .map(async (element) => {
-              try {
-                const result = await toolHandlers[element.name](
-                  element.input,
-                  user,
-                );
-                return {
-                  type: "tool_result",
-                  tool_use_id: element.id,
-                  content: JSON.stringify(result),
-                };
-              } catch (err) {
-                return {
-                  type: "tool_result",
-                  tool_use_id: element.id,
-                  content: "Something went wrong running this tool.",
-                  is_error: true,
-                };
-              }
-            }),
-        );
-        messages = [...messages, { role: "user", content: toolResults }];
-      }
-
-      iterations++;
-    } while (
-      response.stop_reason === "tool_use" &&
-      iterations < MAX_ITERATIONS
-    );
-    res.json({ messages, stopReason: response.stop_reason });
-  } catch (error) {
-    res.status(500).send("Could not reach the AI assistant.");
-  }
-});
 // Ask AI chat endpoint - trip-scoped, so gated the same way every other
-// trip route is
+// trip route is. No "no trip selected" route anymore - the composer
+// itself only accepts input once a trip is selected (see AiMode.js /
+// plan.html's #pickTripComposerBtn), so there's nothing to chat about
+// before then.
 app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
   try {
     const user = { userId: req.session.userId, tripId: req.params.tripId };
