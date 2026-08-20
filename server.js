@@ -1,5 +1,18 @@
+const askAiTools = require("./tools/askAiTools.js");
+const createToolHandlers = require("./tools/toolHandlers.js"); // just a fucntion sitting in a variable
+
 // MONGO set up
 require("dotenv").config({ quiet: true });
+
+// claude set up
+// const Anthropic = require("@anthropic-ai/sdk");
+// const anthropic = new Anthropic(); // reads ANTHROPIC_API_KEY from .env
+const fs = require("fs");
+const ASK_AI_SYSTEM_PROMPT = fs.readFileSync(
+  "./prompts/ask-ai-system-prompt.md",
+  "utf8",
+);
+
 const port = process.env.PORT || 5000;
 const db = process.env.MONGO_URI;
 const secret = process.env.SESSION_SECRET;
@@ -252,6 +265,17 @@ async function assignBadgeIfNeeded(userId, tripId) {
   // save the parent doc
   await trip.save();
 }
+
+// real Ask AI tool handlers, built once with the real models injected —
+// toolHandlers.js exports a factory, not the handlers themselves
+const toolHandlers = createToolHandlers({
+  tripModel,
+  userModel,
+  packingModel,
+  assignBadgeIfNeeded,
+  activityModel,
+  placesCacheModel,
+});
 
 // blocks a trip-scoped route unless the logged-in user is actually a member
 // of the trip named in the URL (:tripId or :id) - without this, any
@@ -1265,5 +1289,140 @@ app.post("/addcategory/:tripId", requireTripMember, async (req, res) => {
     }
   } catch (error) {
     res.status(500).send("Failed to add the category.");
+  }
+});
+
+app.post("/askai", async (req, res) => {
+  try {
+    const user = { userId: req.session.userId };
+    let messages = req.body.messages;
+    let response;
+    // a confused model could keep calling tools indefinitely
+    let iterations = 0;
+    const MAX_ITERATIONS = 15;
+    const subTools = askAiTools.filter((tool) =>
+      ["create_trip", "list_trips", "web_search"].includes(tool.name),
+    );
+    do {
+      response = await anthropic.messages.create({
+        model: "claude-opus-5",
+        max_tokens: 4096,
+        system: ASK_AI_SYSTEM_PROMPT,
+        tools: subTools,
+        messages,
+      });
+      messages = [
+        ...messages,
+        { role: "assistant", content: response.content },
+      ];
+      if (response.stop_reason === "tool_use") {
+        const toolResults = await Promise.all(
+          response.content
+            .filter((element) => element.type === "tool_use")
+            .map(async (element) => {
+              try {
+                const result = await toolHandlers[element.name](
+                  element.input,
+                  user,
+                );
+                return {
+                  type: "tool_result",
+                  tool_use_id: element.id,
+                  content: JSON.stringify(result),
+                };
+              } catch (err) {
+                return {
+                  type: "tool_result",
+                  tool_use_id: element.id,
+                  content: "Something went wrong running this tool.",
+                  is_error: true,
+                };
+              }
+            }),
+        );
+        messages = [...messages, { role: "user", content: toolResults }];
+      }
+
+      iterations++;
+    } while (
+      response.stop_reason === "tool_use" &&
+      iterations < MAX_ITERATIONS
+    );
+    res.json({ messages, stopReason: response.stop_reason });
+  } catch (error) {
+    res.status(500).send("Could not reach the AI assistant.");
+  }
+});
+// Ask AI chat endpoint - trip-scoped, so gated the same way every other
+// trip route is
+app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
+  try {
+    const user = { userId: req.session.userId, tripId: req.params.tripId };
+    // a confused model could keep calling tools indefinitely
+    let iterations = 0;
+    const MAX_ITERATIONS = 15;
+
+    let messages = req.body.messages;
+    let response;
+
+    do {
+      response = await anthropic.messages.create({
+        model: "claude-opus-5",
+        max_tokens: 4096,
+        system: ASK_AI_SYSTEM_PROMPT,
+        tools: askAiTools,
+        messages,
+      });
+
+      messages = [
+        ...messages,
+        { role: "assistant", content: response.content },
+      ];
+
+      // dispatch tool
+      if (response.stop_reason === "tool_use") {
+        const toolResults = await Promise.all(
+          // reference for response shape : notes/response-content-worked-example.md
+          // filter the response to only keep the ones that used a tool
+          response.content
+            .filter((item) => item.type === "tool_use")
+            .map(async (item) => {
+              // put the code in try catch for unexpected errors with mongo, api , etc.
+              try {
+                // inside each item in the filtered response from claude , is name, and input, based on the schema we defined in askAiTools, which we should send to the toolHandler
+                // toolHandlers is an object , the key of it matches the name that comes from the response
+                const result = await toolHandlers[item.name](item.input, user);
+                // what is stored in toolResults
+                return {
+                  type: "tool_result",
+                  tool_use_id: item.id,
+                  content: JSON.stringify(result),
+                };
+              } catch (err) {
+                return {
+                  type: "tool_result",
+                  tool_use_id: item.id,
+                  content: "Something went wrong running this tool.",
+                  is_error: true,
+                };
+              }
+            }),
+        );
+        // role must be "user" (API has no "tool" role — anything not Claude's own
+        // output goes here); this is what reports the tool's outcome back to Claude
+        //  this is the mechanism that lets the conversation keep going at all. Claude's previous turn ended with stop_reason: "tool_use"
+        messages = [...messages, { role: "user", content: toolResults }];
+      }
+
+      iterations++;
+    } while (
+      response.stop_reason === "tool_use" &&
+      iterations < MAX_ITERATIONS
+    );
+
+    //response holds the last iteration of response, we send the reason why its ended for handling the frontend
+    res.json({ messages, stopReason: response.stop_reason });
+  } catch (error) {
+    res.status(500).send("Could not reach the AI assistant.");
   }
 });
