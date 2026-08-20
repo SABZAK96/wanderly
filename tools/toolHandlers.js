@@ -234,6 +234,9 @@ module.exports = function createToolHandlers({
       return userPackingList;
     },
 
+    attach_place_details: async (input, user) => {
+      return input;
+    },
     // search places
     // returns { places: [ { id, displayName: { text }, formattedAddress, location: { latitude, longitude },
     //   priceLevel, priceRange: { startPrice, endPrice }, rating, userRatingCount, primaryType,

@@ -238,6 +238,23 @@ const search_web = {
   max_uses: 15,
 };
 
+const attach_place_details = {
+  name: "attach_place_details",
+  description:
+    "Attaches researched details (ticket pricing, visit duration, ticket requirement) to a specific search_places candidate, so the app can show them on that candidate's card. Call this once per candidate, right after you've web_search'd its pricing/duration/requirements (per 'Research grounding') — don't only describe these in your own reply. If a search didn't surface a detail, pass 'unconfirmed' for it rather than guessing.",
+  input_schema: {
+    type: "object",
+    properties: {
+      placeId: { type: "string", description: "The candidate's id from search_places' result — links this back to the right card." },
+      priceInfo: { type: "string", description: "e.g. '$109-$189 / person', or 'unconfirmed'" },
+      duration: { type: "string", description: "e.g. '10-12 hrs', or 'unconfirmed'" },
+      ticketRequired: { type: "boolean" },
+      ticketLink: { type: "string", description: "Omit if none found." },
+    },
+    required: ["placeId", "priceInfo", "duration", "ticketRequired"],
+  },
+};
+
 module.exports = [
   create_trip,
   list_trips,
@@ -252,4 +269,5 @@ module.exports = [
   list_activities,
   add_packing_items,
   search_web,
+  attach_place_details,
 ];
