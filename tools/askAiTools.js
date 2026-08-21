@@ -253,6 +253,9 @@ const attach_place_details = {
     },
     required: ["placeId", "priceInfo", "duration", "ticketRequired"],
   },
+  // caches the whole tools array (it's the last one) since it's identical on every call
+  // not marking individual items we want cached — we're dropping one bookmark, and everything before that bookmark (from the very start of the request) gets cached as one chunk.
+  cache_control: { type: "ephemeral" },
 };
 
 module.exports = [

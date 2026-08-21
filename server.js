@@ -5,8 +5,8 @@ const createToolHandlers = require("./tools/toolHandlers.js"); // just a fucntio
 require("dotenv").config({ quiet: true });
 
 // claude set up
-// const Anthropic = require("@anthropic-ai/sdk");
-// const anthropic = new Anthropic(); // reads ANTHROPIC_API_KEY from .env
+const Anthropic = require("@anthropic-ai/sdk");
+const anthropic = new Anthropic(); // reads ANTHROPIC_API_KEY from .env
 const fs = require("fs");
 const ASK_AI_SYSTEM_PROMPT = fs.readFileSync(
   "./prompts/ask-ai-system-prompt.md",
@@ -1308,12 +1308,41 @@ app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
     let response;
 
     do {
+      // tag the last block of the last message so the growing conversation
+      // gets cached too, not just tools/system - keeps the loop from
+      // re-paying full price for the same history on every iteration
+
+      // same principle for caching as tools, marking last message will cache the entire chat history
+      const lastMessage = messages[messages.length - 1];
+      const lastContent = Array.isArray(lastMessage.content) // A message's content can be one of two shapes in this codebase: a plain string (the initial user message, typed straight from the frontend) or an array of blocks (tool results, or Claude's own replies).
+        ? lastMessage.content
+        : [{ type: "text", text: lastMessage.content }]; // normalizing -  if it's a string, wrap it into a one-item array so it has a 'block' to tag. you can't tag  a plain string
+      const messagesWithCache = [
+        ...messages.slice(0, -1),
+        {
+          ...lastMessage, // add back the last message, but as a fresh copy
+          content: [
+            ...lastContent.slice(0, -1), // Replace its content with a new array: every block from before except the final one, unchanged
+            {
+              ...lastContent[lastContent.length - 1],
+              cache_control: { type: "ephemeral" },
+            },
+          ],
+        },
+      ];
+
       response = await anthropic.messages.create({
-        model: "claude-opus-5",
+        model: "claude-sonnet-5",
         max_tokens: 4096,
-        system: ASK_AI_SYSTEM_PROMPT,
+        system: [
+          {
+            type: "text",
+            text: ASK_AI_SYSTEM_PROMPT,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
         tools: askAiTools,
-        messages,
+        messages: messagesWithCache,
       });
 
       messages = [
