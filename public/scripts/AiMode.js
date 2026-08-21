@@ -79,17 +79,53 @@ async function aiChat(query) {
           item.content.filter((block) => block.type === "tool_use"),
         );
 
-      const toolUsed = allToolUsedBlocks.findLast((block) =>
+      const allToolResultBlocks = messages
+        .filter((item) => item.role === "user")
+        .flatMap((element) => element.content)
+        .filter((block) => block && block.type === "tool_result");
+
+      const searchPlacesToolUsed = allToolUsedBlocks.findLast((block) =>
         ["search_places"].includes(block.name),
       );
-      if (toolUsed) {
-        const allToolResultBlocks = messages
-          .filter((item) => item.role === "user")
-          .flatMap((element) => element.content)
-          .filter((block) => block && block.type === "tool_result");
-        toolResult = allToolResultBlocks.find(
-          (block) => block.tool_use_id === toolUsed.id,
+
+      const activityToolUsed = allToolUsedBlocks.findLast((block) =>
+        ["add_activity_group", "add_activity_solo"].includes(block.name),
+      );
+
+      const createTripToolUsed = allToolUsedBlocks.findLast(
+        (block) => block.name === "create_trip",
+      );
+      if (createTripToolUsed) {
+        const createResult = allToolResultBlocks.find(
+          (block) => block.tool_use_id === createTripToolUsed.id,
         );
+        if (createResult && !JSON.parse(createResult.content).error) {
+          const newTripId = JSON.parse(createResult.content);
+          // select the newly created trip, same as picking it from the sidebar
+          localStorage.setItem("selectedTripId", newTripId);
+          document.dispatchEvent(
+            new CustomEvent("tripAdded", { detail: { tripId: newTripId } }),
+          );
+          getSingleTripDetails(newTripId).then(() =>
+            getRecentActivities(newTripId),
+          );
+        }
+      }
+      if (activityToolUsed) {
+        const activityResult = allToolResultBlocks.find(
+          (block) => block.tool_use_id === activityToolUsed.id,
+        );
+        // only call the function when there is no error
+        if (activityResult && !JSON.parse(activityResult.content).error) {
+          getRecentActivities(tripId);
+        }
+      }
+
+      if (searchPlacesToolUsed) {
+        toolResult = allToolResultBlocks.find(
+          (block) => block.tool_use_id === searchPlacesToolUsed.id,
+        );
+
         const allDetailBlocks = messages
           .filter((m) => m.role === "assistant")
           .flatMap((m) =>
@@ -115,6 +151,7 @@ async function aiChat(query) {
           return { ...place, details: details ?? "unconfirmed", photoUrl };
         });
       }
+
       renderChat({ response: [lastResponse, enrichedPlaces] });
     }
   } catch (error) {

@@ -1352,6 +1352,7 @@ app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
 
       // dispatch tool
       if (response.stop_reason === "tool_use") {
+        // Promise.all(...map(...)) produces an array of tool_result objects
         const toolResults = await Promise.all(
           // reference for response shape : notes/response-content-worked-example.md
           // filter the response to only keep the ones that used a tool
