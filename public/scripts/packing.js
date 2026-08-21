@@ -1,6 +1,9 @@
 let tripId = localStorage.getItem("selectedTripId");
-let aiGeneratedKey = `aiGenerated_${tripId}`;
-
+let currentPackingList = [];
+if (tripId) {
+  getCurrentPackingDetails(tripId).then((data) => toggle(tripId, data));
+}
+toggle(tripId, currentPackingList);
 const packingContainer = document.getElementById("packingContainer");
 const generatedSection = document.getElementById("generated");
 const notGeneratedSection = document.getElementById("notGenerated");
@@ -32,67 +35,85 @@ document.addEventListener("tripHeaderRendered", () => {
   ).compact;
 });
 
-function checkLocalStorage(key, tripId) {
-  if (localStorage.getItem(key) && tripId) {
+function toggle(tripId, currentPackingList) {
+  if (tripId && currentPackingList.length !== 0) {
     loadingPage("notInitial");
     generatedSection.classList.remove("hidden");
     notGeneratedSection.classList.add("hidden");
-    getCurrentPackingDetails(tripId).then((data) => renderResulst(data));
+    // callers already have the fresh list by the time they call toggle - no need to re-fetch it here
+    renderResulst(currentPackingList);
   } else {
     generatedSection.classList.add("hidden");
     notGeneratedSection.classList.remove("hidden");
   }
 }
-// restore the generated/not-generated state for the trip selected on page load
-checkLocalStorage(aiGeneratedKey, tripId);
 
-// re-sync tripId, aiGeneratedKey, and the visible section when the sidebar switches trips
+// re-sync tripId and the visible section when the sidebar switches trips
 document.addEventListener("changeTrip", (e) => {
   tripId = e.detail.tripId;
-  aiGeneratedKey = `aiGenerated_${e.detail.tripId}`;
-  checkLocalStorage(aiGeneratedKey, tripId);
+  getCurrentPackingDetails(tripId).then((data) => {
+    currentPackingList = data;
+    toggle(tripId, currentPackingList);
+  });
 });
 
 document.addEventListener("tripDeleted", () => {
   tripId = null;
-  aiGeneratedKey = `aiGenerated_${tripId}`;
-  checkLocalStorage(aiGeneratedKey, tripId);
+  currentPackingList = [];
+  toggle(tripId, currentPackingList);
 });
 
 document.addEventListener("tripAdded", (e) => {
   tripId = e.detail.tripId;
-  aiGeneratedKey = `aiGenerated_${tripId}`;
-  checkLocalStorage(aiGeneratedKey, tripId);
+  getCurrentPackingDetails(tripId).then((data) => {
+    currentPackingList = data;
+    toggle(tripId, currentPackingList);
+  });
 });
 
-// shows the trip-picker modal and bails out if no trip is selected yet (sidebar.js),
-// then generates the placeholder items for every category and refreshes the display
-async function generatePackingList(objOfItems) {
-  if (!(await requireTripSelected())) return;
-  loadingPage("initial");
-  // items1 etc. are list of objects {title:sth}
-
-  tripId = localStorage.getItem("selectedTripId");
-  aiGeneratedKey = `aiGenerated_${tripId}`;
-  localStorage.setItem(aiGeneratedKey, true);
-
-  await Promise.allSettled(
-    //object.entries -> converts object into a two-dimensional array - [key, value]
-    Object.entries(objOfItems).map((element) =>
-      createInitialList(tripId, element[0], element[1]),
-    ),
-  );
-  checkLocalStorage(aiGeneratedKey, tripId);
-}
-
 // start by initializing the page when user clicks on generate the packing list
-document.getElementById("aiGenerate").addEventListener("click", () => {
-  generatePackingList({
-    "Documents & Essentials": [{ title: "passport" }, { title: "visa" }],
-    "Weather Essentials": [{ title: "passport" }, { title: "visa" }],
-    "Planned Activities": [{ title: "passport" }, { title: "visa" }],
-    "Toiletries & Health": [{ title: "passport" }, { title: "visa" }],
-  });
+document.getElementById("aiGenerate").addEventListener("click", async () => {
+  // mock a user request to claude
+  let messages = [
+    {
+      role: "user",
+      content:
+        "Generate a packing list for my trip, based on my activities in the calendar and the weather.",
+    },
+  ];
+  const packingError = document.getElementById("packingError");
+  loadingPage("initial");
+  try {
+    const response = await fetch(`/askAI/${tripId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ messages }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      packingError.textContent = "";
+      packingError.classList.add("hidden");
+      const packingList = await getCurrentPackingDetails(tripId);
+      toggle(tripId, packingList);
+      if (data.stopReason === "tool_use") {
+        // hit MAX_ITERATIONS without finishing — surface this instead of pretending it's done
+        packingError.textContent =
+          "The list may be incomplete — try asking to add more in the chat.";
+        packingError.classList.remove("hidden");
+      }
+    } else {
+      const text = await response.text();
+      packingError.textContent = text;
+      packingError.classList.remove("hidden");
+    }
+  } catch (error) {
+    packingError.textContent = "Something went wrong. Please try again.";
+    packingError.classList.remove("hidden");
+  } finally {
+    removeLoading();
+  }
 });
 
 // fetch the packing list (categories + items) for a trip from the server
@@ -103,40 +124,15 @@ async function getCurrentPackingDetails(tripId) {
     if (response.ok) {
       packingError.textContent = "";
       packingError.classList.add("hidden");
-      const data = await response.json();
-      return data;
-    } else {
-      const text = await response.text();
-      packingError.textContent = text;
-      packingError.classList.remove("hidden");
-    }
-  } catch (error) {
-    packingError.textContent = "Something went wrong. Please try again.";
-    packingError.classList.remove("hidden");
-  }
-}
 
-// insert items for each category - this function is intended to be used by AI for generating initial packing list, items is an array
-async function createInitialList(tripId, category, items) {
-  const packingError = document.getElementById("packingError");
-  try {
-    const response = await fetch(`/generatePackingListAI/${tripId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ category: category, items: items }),
-    });
-    // call get current packing details to get the most recent details for each category
-    if (response.ok) {
+      currentPackingList = await response.json();
+      return currentPackingList;
     } else {
-      // error message
       const text = await response.text();
       packingError.textContent = text;
       packingError.classList.remove("hidden");
     }
   } catch (error) {
-    // error message
     packingError.textContent = "Something went wrong. Please try again.";
     packingError.classList.remove("hidden");
   }
