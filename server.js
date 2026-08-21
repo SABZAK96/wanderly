@@ -1370,7 +1370,8 @@ app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
 
       iterations++;
     } while (
-      response.stop_reason === "tool_use" &&
+      (response.stop_reason === "tool_use" ||
+        response.stop_reason === "pause_turn") &&
       iterations < MAX_ITERATIONS
     );
 
