@@ -44,8 +44,17 @@ pickTripBtn.addEventListener("click", () => {
   loadTrips().then(() => suggestModal.showModal());
 });
 
-let messages = [];
+// wire up everything
+const inputField = composerInput.querySelector("input");
+inputField.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    aiChat(inputField.value);
+    inputField.value = "";
+    inputField.focus();
+  }
+});
 
+let messages = [];
 
 // sends the user's message to Claude and renders whatever comes back
 async function aiChat(query) {
@@ -111,7 +120,7 @@ async function aiChat(query) {
               getRecentActivities(newTripId),
             );
           } else {
-            // don't rely only on Claude mentioning the rejection in its own reply 
+            // don't rely only on Claude mentioning the rejection in its own reply
             renderChat({ error: parsedCreateResult.error });
           }
         }
@@ -412,3 +421,4 @@ function renderChat(block) {
     }
   }
 }
+
