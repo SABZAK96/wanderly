@@ -62,7 +62,6 @@ async function aiChat(query) {
     if (response.ok) {
       const data = await response.json();
       let toolResult;
-      let placesPayload; // stays undefined if no search_places happened this turn
       messages = data.messages;
       // filter assistant messages
       const textResponses = messages
@@ -99,25 +98,36 @@ async function aiChat(query) {
         const createResult = allToolResultBlocks.find(
           (block) => block.tool_use_id === createTripToolUsed.id,
         );
-        if (createResult && !JSON.parse(createResult.content).error) {
-          const newTripId = JSON.parse(createResult.content);
-          // select the newly created trip, same as picking it from the sidebar
-          localStorage.setItem("selectedTripId", newTripId);
-          document.dispatchEvent(
-            new CustomEvent("tripAdded", { detail: { tripId: newTripId } }),
-          );
-          getSingleTripDetails(newTripId).then(() =>
-            getRecentActivities(newTripId),
-          );
+        if (createResult) {
+          const parsedCreateResult = JSON.parse(createResult.content);
+          if (!parsedCreateResult.error) {
+            const newTripId = parsedCreateResult;
+            // select the newly created trip, same as picking it from the sidebar
+            localStorage.setItem("selectedTripId", newTripId);
+            document.dispatchEvent(
+              new CustomEvent("tripAdded", { detail: { tripId: newTripId } }),
+            );
+            getSingleTripDetails(newTripId).then(() =>
+              getRecentActivities(newTripId),
+            );
+          } else {
+            // don't rely only on Claude mentioning the rejection in its own reply 
+            renderChat({ error: parsedCreateResult.error });
+          }
         }
       }
       if (activityToolUsed) {
         const activityResult = allToolResultBlocks.find(
           (block) => block.tool_use_id === activityToolUsed.id,
         );
-        // only call the function when there is no error
-        if (activityResult && !JSON.parse(activityResult.content).error) {
-          getRecentActivities(tripId);
+        if (activityResult) {
+          const parsedActivityResult = JSON.parse(activityResult.content);
+          // only refresh the sidebar when there is no error
+          if (!parsedActivityResult.error) {
+            getRecentActivities(tripId);
+          } else {
+            renderChat({ error: parsedActivityResult.error });
+          }
         }
       }
 
@@ -153,9 +163,12 @@ async function aiChat(query) {
       }
 
       renderChat({ response: [lastResponse, enrichedPlaces] });
+    } else {
+      const text = await response.text();
+      renderChat({ error: text });
     }
   } catch (error) {
-    console.error(error);
+    renderChat({ error: "Something went wrong. Please try again." });
   }
 }
 
@@ -168,6 +181,14 @@ function renderChat(block) {
               </div>
             </div>`;
     threadContainer.insertAdjacentHTML("beforeend", userQuery);
+  }
+  if (block.error) {
+    let errorBubble = `<div class="chat chat-start">
+              <div class="chat-bubble chat-bubble-error md:text-md text-sm">
+                ${block.error}
+              </div>
+            </div>`;
+    threadContainer.insertAdjacentHTML("beforeend", errorBubble);
   }
   if (block.response) {
     block.response[0].forEach((item) => {
