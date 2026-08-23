@@ -42,6 +42,11 @@ function setUpAutocomplete(container) {
     container.dataset.placeholder || "e.g. Tokyo, Japan";
   container.appendChild(placeAutocomplete);
 
+  //  DOM elements are just JavaScript objects, and JS lets us attach arbitrary extra properties onto any object
+  //  just means "store this widget instance as a property named placeAutocomplete directly on the div.
+  // placeAutocomplete would be gone function finishes, we can store this widget and set the locationBias later to it
+  container.placeAutocomplete = placeAutocomplete;
+
   // Add the gmp-select listener
   placeAutocomplete.addEventListener(
     "gmp-select",
@@ -183,9 +188,7 @@ if (suggestModal) {
 // updates the sidebar after a trip is picked from the "pick a trip first"
 // modal - see notes/suggest-modal-trip-picker.md
 function onTripPickedFromSuggestModal(tripId) {
-  document.dispatchEvent(
-    new CustomEvent("changeTrip", { detail: { tripId } }),
-  );
+  document.dispatchEvent(new CustomEvent("changeTrip", { detail: { tripId } }));
   getSingleTripDetails(tripId);
   getRecentActivities(tripId);
   const element = document.querySelector(`#yourTrips [id="${tripId}"]`);
@@ -333,7 +336,9 @@ document
     if (response.ok) {
       const data = await response.json(); // data is the trip._id coming back from the db
       localStorage.setItem("selectedTripId", data);
-      document.dispatchEvent(new CustomEvent("tripAdded", { detail: { tripId: data } }));
+      document.dispatchEvent(
+        new CustomEvent("tripAdded", { detail: { tripId: data } }),
+      );
       await getSingleTripDetails(data);
       getRecentActivities(data);
       // clear the form so the next "+ New Trip" opens blank, not with this trip's info

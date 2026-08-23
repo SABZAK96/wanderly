@@ -436,6 +436,25 @@ document.getElementById("addEvent").addEventListener("click", async () => {
   if (!(await requireTripSelected())) return;
   // if the trip is selected show add event modal
   cleanUpAddEventModal();
+
+  // bias the destination search around the selected trip - #tripHeader's
+  // lat/lng are set by getSingleTripDetails (sidebar.js) whenever a trip is
+  // selected, so they're guaranteed present here since requireTripSelected
+  // already passed
+  const tripHeader = document.getElementById("tripHeader");
+  const lat = Number(tripHeader.dataset.lat);
+  const lng = Number(tripHeader.dataset.lng);
+  if (
+    eventDestination.placeAutocomplete &&
+    !Number.isNaN(lat) &&
+    !Number.isNaN(lng)
+  ) {
+    eventDestination.placeAutocomplete.locationBias = {
+      center: { lat, lng },
+      radius: 5000,
+    };
+  }
+
   addEventModal.showModal();
 });
 
