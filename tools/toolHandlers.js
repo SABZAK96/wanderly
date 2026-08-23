@@ -237,6 +237,66 @@ module.exports = function createToolHandlers({
     attach_place_details: async (input, user) => {
       return input;
     },
+
+    // activities_preview
+    // self-contained: searches Places per interest (+ restaurants, if wanted),
+    // merges/dedupes, ranks by popularity, and trims to a shortlist sized for
+    // the trip's actual duration/pace.
+    // returns { places: [ ...same shape as search_places' places... ] }
+    activities_preview: async (input, user) => {
+      const trip = await tripModel.findById(user.tripId);
+
+      // subtracting Date objects, gives  the difference in milliseconds.
+      const tripDays =
+        Math.round(
+          (new Date(trip.endDate) - new Date(trip.startDate)) /
+            (1000 * 60 * 60 * 24),
+        ) + 1;
+
+      let perDay = 4;
+      if (input.pace.toLowerCase() === "relaxed") perDay = 3;
+      else if (input.pace.toLowerCase() === "packed") perDay = 6;
+      // cap the results tp 30
+      const desiredCount = Math.min(30, Math.max(4, perDay * tripDays));
+
+      const radius = modeRadius(input.transportationMode);
+
+      const queries = [...input.interests];
+      if (input.restaurantInterest) queries.push("restaurants");
+
+      const results = await Promise.all(
+        queries.map((query) =>
+          searchPlacesText(
+            query,
+            input.lat,
+            input.lng,
+            radius,
+            placesCacheModel,
+          ),
+        ),
+      );
+
+      const foundPlaces = results.flatMap((apiCall) => apiCall.places || []);
+
+      const allPlaces = [];
+
+      // we might get same place when calling google api, we dont wanna duplicate results
+      foundPlaces.forEach((place) => {
+        if (!allPlaces.some((p) => p.id === place.id)) {
+          allPlaces.push(place);
+        }
+      });
+      const scored = allPlaces
+        .map((place) => ({
+          place,
+          score: weightedRating(place, allPlaces, 30),
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      return {
+        places: scored.slice(0, desiredCount).map((entry) => entry.place),
+      };
+    },
     // search places
     // returns { places: [ { id, displayName: { text }, formattedAddress, location: { latitude, longitude },
     //   priceLevel, priceRange: { startPrice, endPrice }, rating, userRatingCount, primaryType,
@@ -246,48 +306,19 @@ module.exports = function createToolHandlers({
       const locationBias = {
         circle: {
           center: { latitude: Number(input.lat), longitude: Number(input.lng) },
-          radius: 50000, // 50000m (~50km) is the max radius the API allows for locationBias
+          radius: 50000,
         },
       };
 
       // for the first call when we dont have pageToken (nextToken) - also we can cache the results with claude
       if (!input.nextToken) {
-        // build cacheKey
-        const cacheKey =
-          `${input.userQuery}|${Number(input.lat).toFixed(2)}|${Number(input.lng).toFixed(2)}`.toLowerCase();
-        const cached = await placesCacheModel.findOne({ query: cacheKey });
-        if (!cached) {
-          const apiCall = await (
-            await fetch("https://places.googleapis.com/v1/places:searchText", {
-              method: "POST",
-              body: JSON.stringify({
-                textQuery: input.userQuery,
-                pageSize: 20,
-                pageToken: "",
-                locationBias,
-              }),
-              headers: {
-                "Content-Type": "application/json",
-                "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API,
-                "X-Goog-FieldMask":
-                  "places.id,places.displayName,places.formattedAddress,places.priceLevel,places.photos,places.regularOpeningHours,places.priceRange,places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri,nextPageToken",
-              },
-            })
-          ).json();
-
-          // skip caching google api errors
-          if (!apiCall.error) {
-            try {
-              await placesCacheModel.create({
-                query: cacheKey,
-                results: apiCall,
-              });
-            } catch (cacheError) {
-              // duplicate-key race: someone else cached this same query microseconds ago
-            }
-          }
-          return apiCall;
-        } else return cached.results;
+        return await searchPlacesText(
+          input.userQuery,
+          input.lat,
+          input.lng,
+          50000, // 50000m (~50km) is the max radius the API allows for locationBias
+          placesCacheModel,
+        );
       } else {
         const apiCall = await (
           await fetch("https://places.googleapis.com/v1/places:searchText", {
@@ -311,6 +342,95 @@ module.exports = function createToolHandlers({
     },
   };
 };
+
+// same IMDB weighted-rating formula as public/scripts/code.js
+function weightedRating(item, allItems, m) {
+  // API might not return some data - we filter them out
+  const reviewedItems = allItems.filter(
+    (candidate) => candidate.rating != null,
+  );
+
+  // formula = (v / (v + m)) * R + (m / (v + m)) * C
+
+  // calculate c - average rating across the current result set
+  const setSumRating = reviewedItems.reduce(
+    (sum, element) => sum + element.rating,
+    0,
+  );
+
+  const c =
+    reviewedItems.length !== 0 ? setSumRating / reviewedItems.length : 0;
+
+  // calculating v - the place's own review count
+  const v = item.userRatingCount ?? 0;
+
+  // calculating r - the place's own average rating
+  const r = item.rating ?? c; // no rating at all -> fall back to the set average
+
+  const score = (v / (v + m)) * r + (m / (v + m)) * c;
+  return score;
+}
+
+// picks a search radius from how they're getting around - car/transit can
+// reasonably cover more ground than walking. defaults to the max (50km)
+function modeRadius(transportationMode) {
+  const modes = transportationMode.map((mode) => mode.toLowerCase());
+
+  if (modes.includes("car")) {
+    return 50000;
+  }
+
+  if (modes.includes("transit")) {
+    return 20000;
+  }
+
+  if (modes.includes("walking")) {
+    return 3000;
+  }
+
+  return 50000;
+}
+
+// single-page Places Text Search, cached the same way search_places caches its
+// first page - used by activities_preview to pull one pool of candidates per interest
+async function searchPlacesText(query, lat, lng, radius, placesCacheModel) {
+  const cacheKey =
+    `${query}|${Number(lat).toFixed(2)}|${Number(lng).toFixed(2)}|${radius}`.toLowerCase();
+  const cached = await placesCacheModel.findOne({ query: cacheKey });
+  if (cached) return cached.results;
+
+  const apiCall = await (
+    await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      body: JSON.stringify({
+        textQuery: query,
+        pageSize: 20,
+        pageToken: "",
+        locationBias: {
+          circle: {
+            center: { latitude: Number(lat), longitude: Number(lng) },
+            radius,
+          },
+        },
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": process.env.GOOGLE_PLACES_API,
+        "X-Goog-FieldMask":
+          "places.id,places.displayName,places.formattedAddress,places.priceLevel,places.photos,places.regularOpeningHours,places.priceRange,places.rating,places.userRatingCount,places.editorialSummary,places.primaryType,places.location,places.websiteUri,nextPageToken",
+      },
+    })
+  ).json();
+
+  if (!apiCall.error) {
+    try {
+      await placesCacheModel.create({ query: cacheKey, results: apiCall });
+    } catch (cacheError) {
+      // duplicate-key race: someone else cached this same query microseconds ago
+    }
+  }
+  return apiCall;
+}
 
 // returns an error string if date falls outside the trip's range, else null
 function invalidDateReason(date, trip) {

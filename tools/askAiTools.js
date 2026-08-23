@@ -238,6 +238,61 @@ const search_web = {
   max_uses: 15,
 };
 
+const activities_preview = {
+  name: "activities_preview",
+  description:
+    "Searches and curates a shortlist of real activity candidates matching the given preferences — this is self-contained, it queries Google Places and ranks/trims the results itself, so don't call search_places yourself first. Use once you've gathered all of the preference fields below from the user. " +
+    "The list length is capped to a reasonable number for the trip's actual duration (a 1-day trip shouldn't get 20 suggestions) — no need to call list_trips first, the trip's dates are already known from context. Results are ranked by popularity (rating combined with userRatingCount), highest first. " +
+    "This only returns the base Places data (name, address, location, rating, price level, etc.) — if the user wants to confirm ticket pricing, exact visit duration, or booking requirements on specific shortlisted picks, call attach_place_details separately per candidate afterward, same as after search_places.",
+  input_schema: {
+    type: "object",
+    properties: {
+      lat: {
+        type: "number",
+        description:
+          "latitude of where they're residing/staying, so activities can be distance-optimized around it. Default to the trip's own stored coordinates unless the user names a more specific place to stay (e.g. a particular hotel/neighborhood) — in that case resolve it through Places first, same as create_trip. Never invent coordinates.",
+      },
+      lng: {
+        type: "number",
+        description: "longitude of where they're residing/staying — see lat.",
+      },
+      budget: {
+        type: "number",
+        description:
+          "average budget each person in this trip wants to allocate to activities.",
+      },
+      interests: {
+        type: "array",
+        description:
+          "what categories they want included (attractions, food, outdoors, nightlife, etc.)",
+      },
+      pace: {
+        type: "string",
+        description:
+          "relaxed (2-3 things a day) vs. packed, since this drives how many candidates you shortlist per day",
+      },
+      transportationMode: {
+        type: "array",
+        description:
+          " walking, transit, or car. 'Distance' only means something once you know how they're covering it.",
+      },
+      restaurantInterest: {
+        type: "boolean",
+        description: "whether user wants to see restaurant suggestions or not.",
+      },
+    },
+    required: [
+      "lat",
+      "lng",
+      "budget",
+      "interests",
+      "pace",
+      "transportationMode",
+      "restaurantInterest",
+    ],
+  },
+};
+
 const attach_place_details = {
   name: "attach_place_details",
   description:
@@ -245,9 +300,19 @@ const attach_place_details = {
   input_schema: {
     type: "object",
     properties: {
-      placeId: { type: "string", description: "The candidate's id from search_places' result — links this back to the right card." },
-      priceInfo: { type: "string", description: "e.g. '$109-$189 / person', or 'unconfirmed'" },
-      duration: { type: "string", description: "e.g. '10-12 hrs', or 'unconfirmed'" },
+      placeId: {
+        type: "string",
+        description:
+          "The candidate's id from search_places' result — links this back to the right card.",
+      },
+      priceInfo: {
+        type: "string",
+        description: "e.g. '$109-$189 / person', or 'unconfirmed'",
+      },
+      duration: {
+        type: "string",
+        description: "e.g. '10-12 hrs', or 'unconfirmed'",
+      },
       ticketRequired: { type: "boolean" },
       ticketLink: { type: "string", description: "Omit if none found." },
     },
@@ -262,6 +327,7 @@ module.exports = [
   create_trip,
   list_trips,
   search_places,
+  activities_preview,
   get_weather_forecast,
   get_current_weather,
   add_activity_solo,
