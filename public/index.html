@@ -10,6 +10,21 @@
       type="text/css"
     />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Quicksand:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* !important: Tailwind's CDN JIT script injects its own html{font-family}
+         reset at runtime, after this stylesheet loads - same specificity, so
+         without !important it wins the cascade and silently overrides this */
+      html {
+        font-family: "Quicksand", sans-serif !important;
+        font-optical-sizing: auto;
+      }
+    </style>
   </head>
   <body class="bg-base-200 min-h-dvh flex flex-col">
     <!-- navbar: login screen has no app nav yet, just the brand, centered -->

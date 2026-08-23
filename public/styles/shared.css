@@ -1,6 +1,8 @@
 /* Fix the view on mobile browsers (esp. iOS Safari) to eliminate the white section at the bottom of the screen */
 html {
   background-color: var(--color-base-200);
+  font-family: "Quicksand", sans-serif !important;
+  font-optical-sizing: auto;
 }
 
 /* mobile nav dropdown items - shared by every gated page's navbar */
