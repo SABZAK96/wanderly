@@ -195,6 +195,7 @@ async function aiChat(query) {
       renderChat({ response: [lastResponse, enrichedPlaces, placesSource] });
 
       if (lastResponse?.text?.includes("Preference Form")) {
+        clearUpFormAi();
         //pop up the form after 1.5 secs
         setTimeout(() => {
           formAi.showModal();
@@ -686,4 +687,20 @@ document.getElementById("savePreferences").addEventListener("click", () => {
   );
 });
 
-function clearUpFormAi() {}
+// clear up the previous submitted form to Ai
+function clearUpFormAi() {
+  [...formAi.querySelectorAll("input")].forEach((element) => {
+    element.checked = false;
+  });
+
+  // restore the form's default selections (matches the HTML's "checked" attrs)
+  formAi.querySelector("input[name='prefBudget'][value='$$']").checked = true;
+  formAi.querySelector(
+    "input[name='prefPace'][value='Relaxed']",
+  ).checked = true;
+  formAi.querySelector(
+    "input[name='prefRestaurant'][value='yes']",
+  ).checked = true;
+
+  resetDestinationAutocomplete(document.getElementById("stay-place"));
+}
