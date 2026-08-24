@@ -406,8 +406,20 @@
         <!-- AI view -->
         <section
           id="AI"
-          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4 h-[calc(100dvh-14rem)]"
+          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4 h-[calc(100dvh-14rem)] relative overflow-hidden"
         >
+          <!-- page-level loading overlay, shown until the initial weather+calendar
+         load finishes (or immediately hidden if no trip is selected) -->
+          <div
+            id="pageLoading"
+            class="absolute inset-0 z-10 flex items-center justify-center"
+            style="background: #eeedfe"
+          >
+            <span
+              class="loading loading-spinner loading-lg"
+              style="color: #534ab7"
+            ></span>
+          </div>
           <!-- scrollable region: conversation + suggestion cards -->
           <div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4">
             <!-- conversation thread -->

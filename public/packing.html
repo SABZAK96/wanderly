@@ -27,19 +27,7 @@
       }
     </style>
   </head>
-  <body class="bg-base-200 min-h-dvh flex flex-col">
-    <!-- page-level loading overlay, shown until the initial data load finishes -->
-    <div
-      id="pageLoading"
-      class="fixed inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-base-200 hidden"
-    >
-      <span
-        class="loading loading-spinner loading-lg"
-        style="color: #534ab7"
-      ></span>
-      <p id="pageLoadingText" class="text-sm text-base-content/50 hidden"></p>
-    </div>
-    <!-- navbar -->
+  <body class="bg-base-200 min-h-dvh flex flex-col">    <!-- navbar -->
     <div
       class="navbar bg-base-100 shadow-sm sticky top-0 z-20 px-4 lg:px-8"
       style="background-color: #534ab7; color: white"
@@ -117,7 +105,19 @@
       <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
 
       <!-- drawer-content = main panel -->
-      <div class="drawer-content flex flex-col flex-1">
+      <div class="drawer-content flex flex-col flex-1 relative">
+        <!-- page-level loading overlay -->
+        <div
+          id="pageLoading"
+          class="sticky top-0 h-dvh z-10 flex flex-col items-center justify-center gap-3 hidden"
+          style="background: #eeedfe"
+        >
+          <span
+            class="loading loading-spinner loading-lg"
+            style="color: #534ab7"
+          ></span>
+          <p id="pageLoadingText" class="text-sm text-base-content/50 hidden"></p>
+        </div>
         <!-- toggle button visible only on small screens -->
         <label
           for="my-drawer-3"

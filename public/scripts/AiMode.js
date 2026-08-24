@@ -25,17 +25,26 @@ async function getPlacesKey() {
   return placesApiKey;
 }
 
+// briefly covers the composer/pick-trip-button swap so the user sees a
+// deliberate transition instead of the raw DOM change
+function checkToggleWithSpinner() {
+  const pageLoading = document.getElementById("pageLoading");
+  pageLoading.classList.remove("hidden");
+  checkToggle();
+  setTimeout(() => pageLoading.classList.add("hidden"), 400);
+}
+
 document.addEventListener("changeTrip", (e) => {
   tripId = e.detail.tripId;
-  checkToggle();
+  checkToggleWithSpinner();
 });
 document.addEventListener("tripDeleted", () => {
   tripId = "";
-  checkToggle();
+  checkToggleWithSpinner();
 });
 document.addEventListener("tripAdded", (e) => {
   tripId = e.detail.tripId;
-  checkToggle();
+  checkToggleWithSpinner();
 });
 
 // shows the trip-picker button or the real composer input, based on whether a trip is selected
@@ -49,6 +58,7 @@ function checkToggle() {
   }
 }
 checkToggle();
+document.getElementById("pageLoading").classList.add("hidden");
 
 pickTripBtn.addEventListener("click", () => {
   loadTrips().then(() => suggestModal.showModal());
