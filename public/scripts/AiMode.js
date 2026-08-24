@@ -1,3 +1,12 @@
+// fallback shape for a candidate Claude never called attach_place_details on -
+// matches attach_place_details' own input shape (buildPlaceDetailRows reads
+// .priceInfo/.duration/.ticketRequired off it), not a bare "unconfirmed" string
+const unconfirmedDetails = {
+  priceInfo: "unconfirmed",
+  duration: "unconfirmed",
+  ticketRequired: false,
+};
+
 let tripId = localStorage.getItem("selectedTripId");
 const pickTripBtn = document.getElementById("pickTripComposerBtn");
 const composerInput = document.getElementById("composerInput");
@@ -61,6 +70,7 @@ let messages = [];
 async function aiChat(query) {
   messages = [...messages, { role: "user", content: query }];
   renderChat({ query: query });
+  AiThinking();
   try {
     const response = await fetch(`/askAI/${tripId}`, {
       method: "POST",
@@ -69,6 +79,7 @@ async function aiChat(query) {
       },
       body: JSON.stringify({ messages }),
     });
+    document.getElementById("aiTypingIndicator")?.remove();
     if (response.ok) {
       const data = await response.json();
       messages = data.messages;
@@ -179,14 +190,18 @@ async function aiChat(query) {
                 place.photos && place.photos[0]
                   ? `https://places.googleapis.com/v1/${place.photos[0].name}/media?maxHeightPx=400&key=${key}`
                   : null;
-              return { ...place, details: details ?? "unconfirmed", photoUrl };
+              return {
+                ...place,
+                details: details ?? unconfirmedDetails,
+                photoUrl,
+              };
             });
           } else {
             enrichedPlaces = places.map((place) => {
               const details = allDetailBlocks.find(
                 (block) => block.input.placeId === place.id,
               )?.input;
-              return { ...place, details: details ?? "unconfirmed" };
+              return { ...place, details: details ?? unconfirmedDetails };
             });
           }
         }
@@ -206,6 +221,7 @@ async function aiChat(query) {
       renderChat({ error: text });
     }
   } catch (error) {
+    document.getElementById("aiTypingIndicator")?.remove();
     renderChat({ error: "Something went wrong. Please try again." });
   }
 }
@@ -222,14 +238,29 @@ function renderChat(block) {
   }
   if (block.error) {
     let errorBubble = `<div class="chat chat-start">
-              <div class="chat-bubble chat-bubble-error md:text-md text-sm">
+              <div class="chat-image avatar">
+                <div
+                  class="w-8 rounded-full flex items-center justify-center"
+                  style="background: #3c3489"
+                >
+                  <span class="text-white text-base font-bold leading-none"
+                    >W</span
+                  >
+                </div>
+              </div>
+              <div class="chat-header text-xs opacity-60">Claude</div>
+              <div class="chat-bubble md:text-md text-sm"
+              style="background: #534ab7; color: white">
                 ${block.error}
               </div>
             </div>`;
     threadContainer.insertAdjacentHTML("beforeend", errorBubble);
   }
   if (block.response) {
-    block.response[0].forEach((item) => {
+    // block.response[0] is aiChat()'s lastResponse - a single { type, text }
+    // block (from .findLast), not an array - render it directly rather than
+    // iterating it as one
+    if (block.response[0]) {
       let aiResponse = `  <div class="chat chat-start">
               <div class="chat-image avatar">
                 <div
@@ -246,11 +277,11 @@ function renderChat(block) {
                 class="chat-bubble md:text-md text-sm"
                 style="background: #534ab7; color: white"
               >
-                ${item.text}
+                ${block.response[0].text}
               </div>
             </div>`;
       threadContainer.insertAdjacentHTML("beforeend", aiResponse);
-    });
+    }
     if (block.response[1] && block.response[1].length != 0) {
       const places = block.response[1];
       const placesSource = block.response[2];
@@ -570,7 +601,7 @@ threadContainer.addEventListener("click", (event) => {
   }
 
   // search_places' one-off cards reuse the same add-to-calendar modal/flow
-  // as the non-AI Suggestions tab - handleAddToCalClick is declared in code.js 
+  // as the non-AI Suggestions tab - handleAddToCalClick is declared in code.js
   if (event.target.closest(".addToCal")) {
     handleAddToCalClick(event);
     return;
@@ -659,7 +690,9 @@ document.getElementById("savePreferences").addEventListener("click", () => {
 
   // transportation
   const transportationMode = [
-    ...document.querySelectorAll("input[type='checkbox'][name='prefTransport']"),
+    ...document.querySelectorAll(
+      "input[type='checkbox'][name='prefTransport']",
+    ),
   ]
     .filter((el) => el.checked)
     .map((item) => item.value);
@@ -708,12 +741,33 @@ function clearUpFormAi() {
 
   // restore the form's default selections (matches the HTML's "checked" attrs)
   formAi.querySelector("input[name='prefBudget'][value='$$']").checked = true;
-  formAi.querySelector(
-    "input[name='prefPace'][value='Relaxed']",
-  ).checked = true;
-  formAi.querySelector(
-    "input[name='prefRestaurant'][value='yes']",
-  ).checked = true;
+  formAi.querySelector("input[name='prefPace'][value='Relaxed']").checked =
+    true;
+  formAi.querySelector("input[name='prefRestaurant'][value='yes']").checked =
+    true;
 
   resetDestinationAutocomplete(document.getElementById("stay-place"));
+}
+
+function AiThinking(){
+  let typingBubble = `<div class="chat chat-start" id="aiTypingIndicator">
+            <div class="chat-image avatar">
+              <div
+                class="w-8 rounded-full flex items-center justify-center"
+                style="background: #3c3489"
+              >
+                <span class="text-white text-base font-bold leading-none"
+                  >W</span
+                >
+              </div>
+            </div>
+            <div class="chat-header text-xs opacity-60">Claude</div>
+            <div
+              class="chat-bubble md:text-md text-sm"
+              style="background: #534ab7; color: white"
+            >
+              <span class="loading loading-dots loading-sm" style="color: #3c3489"></span>
+            </div>
+          </div>`;
+  threadContainer.insertAdjacentHTML("beforeend", typingBubble);
 }
