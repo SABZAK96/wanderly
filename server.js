@@ -200,6 +200,7 @@ const activitySchema = new mongoose.Schema({
   tripId: String, // tripId go here
   participants: [String], //userIds go here
   activityName: String,
+  addedBy: { type: String, enum: ["user", "claude"], default: "user" },
   date: Date,
   startTime: String,
   endTime: String,

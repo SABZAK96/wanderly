@@ -84,6 +84,7 @@ module.exports = function createToolHandlers({
           const grpActivity = await activityModel.create({
             tripId: user.tripId,
             participants: peopleId,
+            addedBy: "claude",
             activityName: input.activityName,
             date: input.date,
             startTime: input.startTime,
@@ -111,6 +112,7 @@ module.exports = function createToolHandlers({
           const soloActivity = await activityModel.create({
             tripId: user.tripId,
             participants: user.userId,
+            addedBy: "claude",
             activityName: input.activityName,
             date: input.date,
             startTime: input.startTime,

@@ -51,11 +51,15 @@ async function eventsFromDB(tripId) {
           start: EventStart,
           end: EventEnd,
           display: "block",
+          backgroundColor: obj.addedBy === "claude" ? "#d1fae5" : undefined,
+          borderColor: obj.addedBy === "claude" ? "#047857" : undefined,
+          textColor: obj.addedBy === "claude" ? "#047857" : undefined,
           editable: true,
           placeId: obj.placeId,
           lat: obj.location?.lat,
           lng: obj.location?.lng,
           solo: obj.participants.length === 1,
+          addedBy: obj.addedBy,
         });
       });
     } else {
@@ -140,9 +144,17 @@ async function initCalendar() {
     // this, called once per rendered event with info.el (its DOM element)
     eventDidMount: function (info) {
       if (info.view.type !== "timeGridDay") return;
+
+      // addedBy isn't a reserved FullCalendar field, so it lands in extendedProps automatically - same as solo below
+      if (info.event.extendedProps.addedBy === "claude") {
+        const createdBy = document.createElement("p");
+        createdBy.textContent = "(By Claude)";
+        createdBy.className = "text-sm";
+        info.el.querySelector(".fc-event-main-frame")?.appendChild(createdBy);
+      }
+
       const { lat, lng, placeId } = info.event.extendedProps;
       if (!lat || !lng) return;
-
       const mapLink = document.createElement("a");
       mapLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${placeId || ""}`;
       // target blank redirects to new tab
