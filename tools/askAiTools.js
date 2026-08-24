@@ -257,9 +257,9 @@ const activities_preview = {
         description: "longitude of where they're residing/staying — see lat.",
       },
       budget: {
-        type: "number",
+        type: "string",
         description:
-          "average budget each person in this trip wants to allocate to activities.",
+          "how much each person on this trip wants to spend on activities, as a $ scale from '$' (budget-conscious) to '$$$$' (splurge-friendly) — the same tiers as Google's priceLevel. This isn't applied as a filter here; weigh it yourself against each returned candidate's priceLevel/priceRange when deciding which of the shortlisted candidates to prioritize or recommend.",
       },
       interests: {
         type: "array",
