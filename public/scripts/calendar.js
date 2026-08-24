@@ -437,9 +437,9 @@ const eventEndTime = document.getElementById("eventEndTime");
 function cleanUpAddEventModal() {
   resetDestinationAutocomplete(eventDestination);
   eventSolo.checked = true;
-  eventStartTime.value = "";
-  eventEndTime.value = "";
-  eventDate.value = "";
+  eventStartTime.value = "12:00";
+  eventEndTime.value = "14:00";
+  eventDate.value = tripHeader.dataset.startDate;
 }
 
 // popping up add event to calendar modal
