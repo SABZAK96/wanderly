@@ -46,19 +46,19 @@
             tabindex="-1"
             class="menu menu-sm dropdown-content nav-dropdown bg-base-100 text-base-content rounded-2xl z-1 mt-3 w-52 p-2 gap-0.5 shadow-lg border border-base-200"
           >
-            <li><a>Plan</a></li>
-            <li><a>Calendar</a></li>
-            <li><a>Expense</a></li>
-            <li><a>Packing</a></li>
+            <li><a href="plan.html">Plan</a></li>
+            <li><a href="calendar.html">Calendar</a></li>
+            <li><a href="expense.html">Expense</a></li>
+            <li><a href="packing.html">Packing</a></li>
           </ul>
         </div>
-        <a class="btn btn-ghost text-xl">Wanderly</a>
+        <a href="plan.html" class="btn btn-ghost text-xl">Wanderly</a>
         <div class="hidden lg:flex">
           <ul class="menu menu-horizontal px-1">
-            <li><a>Plan</a></li>
-            <li><a>Calendar</a></li>
-            <li><a>Expense</a></li>
-            <li><a>Packing</a></li>
+            <li><a href="plan.html">Plan</a></li>
+            <li><a href="calendar.html">Calendar</a></li>
+            <li><a href="expense.html">Expense</a></li>
+            <li><a href="packing.html">Packing</a></li>
           </ul>
         </div>
       </div>
@@ -114,29 +114,11 @@
         <div class="card bg-base-100 shadow-sm border border-base-200">
           <div class="card-body gap-3">
             <div class="flex items-center gap-4">
-              <div class="avatar">
-                <div class="w-20 rounded-full">
-                  <img
-                    id="account-avatar-preview"
-                    alt="Profile photo"
-                    src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
-                  />
-                </div>
-              </div>
-              <div class="flex flex-col gap-1">
-                <button
-                  id="changePhoto"
-                  type="button"
-                  class="btn btn-sm btn-outline"
-                >
-                  Change photo
-                </button>
-                <input
-                  id="account-avatar-input"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                />
+              <div
+                class="w-20 h-20 rounded-full font-semibold flex items-center justify-center text-3xl"
+                style="background-color: #44228f;"
+              >
+                <span id="account-initial" style="color: #e0dbfb;"></span>
               </div>
             </div>
 

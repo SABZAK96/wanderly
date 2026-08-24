@@ -18,7 +18,6 @@
     />
     <link rel="stylesheet" href="styles/shared.css" />
     <style>
-      
       /* plain flex-wrap row (not daisyUI .filter) so pills keep their own
          width and stay left-aligned when wrapped instead of collapsing */
       .filter-pills {
@@ -99,19 +98,19 @@
             tabindex="-1"
             class="menu menu-sm dropdown-content nav-dropdown bg-base-100 text-base-content rounded-2xl z-1 mt-3 w-52 p-2 gap-0.5 shadow-lg border border-base-200"
           >
-            <li><a>Plan</a></li>
-            <li><a>Calendar</a></li>
-            <li><a>Expense</a></li>
-            <li><a>Packing</a></li>
+            <li><a href="plan.html">Plan</a></li>
+            <li><a href="calendar.html">Calendar</a></li>
+            <li><a href="expense.html">Expense</a></li>
+            <li><a href="packing.html">Packing</a></li>
           </ul>
         </div>
-        <a class="btn btn-ghost text-xl">Wanderly</a>
+        <a href="plan.html" class="btn btn-ghost text-xl">Wanderly</a>
         <div class="hidden lg:flex">
           <ul class="menu menu-horizontal px-1">
-            <li><a>Plan</a></li>
-            <li><a>Calendar</a></li>
-            <li><a>Expense</a></li>
-            <li><a>Packing</a></li>
+            <li><a href="plan.html">Plan</a></li>
+            <li><a href="calendar.html">Calendar</a></li>
+            <li><a href="expense.html">Expense</a></li>
+            <li><a href="packing.html">Packing</a></li>
           </ul>
         </div>
       </div>
@@ -123,8 +122,11 @@
             role="button"
             class="btn btn-ghost btn-circle avatar"
           >
-            <div class="w-10 h-10 rounded-full font-semibold flex items-center justify-center" style="background-color: #44228f;">
-              <span id="initial" class="text-lg" style="color: #e0dbfb;"></span>
+            <div
+              class="w-10 h-10 rounded-full font-semibold flex items-center justify-center"
+              style="background-color: #44228f"
+            >
+              <span id="initial" class="text-lg" style="color: #e0dbfb"></span>
             </div>
           </div>
           <ul
@@ -408,38 +410,34 @@
         >
           <!-- scrollable region: conversation + suggestion cards -->
           <div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4">
-          <!-- conversation thread -->
-          <div id="convoThread" class="flex flex-col gap-4">
-            <!-- ai response -->
-            <div class="chat chat-start">
-              <div class="chat-image avatar">
-                <div
-                  class="w-8 rounded-full flex items-center justify-center"
-                  style="background: #3c3489"
-                >
-                  <span class="text-white text-base font-bold leading-none"
-                    >W</span
+            <!-- conversation thread -->
+            <div id="convoThread" class="flex flex-col gap-4">
+              <!-- ai response -->
+              <div class="chat chat-start">
+                <div class="chat-image avatar">
+                  <div
+                    class="w-8 rounded-full flex items-center justify-center"
+                    style="background: #3c3489"
                   >
+                    <span class="text-white text-base font-bold leading-none"
+                      >W</span
+                    >
+                  </div>
+                </div>
+                <div class="chat-header text-xs opacity-60">Claude</div>
+                <div
+                  class="chat-bubble md:text-md text-sm"
+                  style="background: #534ab7; color: white"
+                >
+                  Hi, I'm your trip assistant. I can help you find places to
+                  eat, see, check the weather, build out a full itinerary, and
+                  add things straight to your calendar and suggest a packing
+                  list for you upcoming trip. Just ask!
                 </div>
               </div>
-              <div class="chat-header text-xs opacity-60">Claude</div>
-              <div
-                class="chat-bubble md:text-md text-sm"
-                style="background: #534ab7; color: white"
-              >
-                Hi, I'm your trip assistant. I can help you find places to
-                eat, see, check the weather, build out a full itinerary, and add
-                things straight to your calendar and suggest a packing list for you upcoming trip. Just ask!
-              </div>
+
+              <!-- user query -->
             </div>
-
-            <!-- user query -->
-            
-          <!-- filters -->
-          <div class="flex-1">
-
-       
-          </div>
           </div>
           <!-- /scrollable region -->
 
@@ -447,7 +445,10 @@
                trip is selected) and #pickTripComposerBtn (none selected
                yet), toggled in JS based on localStorage.selectedTripId -->
           <div class="w-full rounded-3xl aura aura-holo mt-4 shrink-0">
-            <label id="composerInput" class="input w-full rounded-3xl shadow-md hidden">
+            <label
+              id="composerInput"
+              class="input w-full rounded-3xl shadow-md hidden"
+            >
               <svg
                 class="h-[1em] opacity-50"
                 xmlns="http://www.w3.org/2000/svg"
@@ -709,7 +710,7 @@
       </form>
     </dialog>
 
-        <!-- modal for inserting an activity to calendar -->
+    <!-- modal for inserting an activity to calendar -->
     <dialog id="my_modal_Ai" class="modal">
       <div class="modal-box flex flex-col gap-4">
         <!-- close button in its own form so it doesn't submit -->
@@ -721,12 +722,12 @@
           </button>
         </form>
 
-        <h3 class="text-lg font-semibold">
-          Plan My Trip
-        </h3>
+        <h3 class="text-lg font-semibold">Plan My Trip</h3>
         <!-- place of stay -->
-      <div class="flex flex-col gap-1">
-          <label class="text-sm text-base-content/60">Where You're Staying</label>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-base-content/60"
+            >Where You're Staying</label
+          >
           <div
             id="stay-place"
             class="dest-autocomplete"
@@ -794,7 +795,9 @@
                 class="checkbox checkbox-xs"
                 style="color: #534ab7"
               />
-              <label class="text-xs text-base-content/60">Museums & Culture</label>
+              <label class="text-xs text-base-content/60"
+                >Museums & Culture</label
+              >
             </div>
             <div>
               <input
@@ -804,7 +807,9 @@
                 class="checkbox checkbox-xs"
                 style="color: #534ab7"
               />
-              <label class="text-xs text-base-content/60">Outdoors & Nature</label>
+              <label class="text-xs text-base-content/60"
+                >Outdoors & Nature</label
+              >
             </div>
             <div>
               <input
@@ -814,7 +819,9 @@
                 class="checkbox checkbox-xs"
                 style="color: #534ab7"
               />
-              <label class="text-xs text-base-content/60">Nightlife & Bars</label>
+              <label class="text-xs text-base-content/60"
+                >Nightlife & Bars</label
+              >
             </div>
             <div>
               <input
@@ -834,7 +841,9 @@
                 class="checkbox checkbox-xs"
                 style="color: #534ab7"
               />
-              <label class="text-xs text-base-content/60">Entertainment & Shows</label>
+              <label class="text-xs text-base-content/60"
+                >Entertainment & Shows</label
+              >
             </div>
             <div>
               <input
@@ -844,7 +853,9 @@
                 class="checkbox checkbox-xs"
                 style="color: #534ab7"
               />
-              <label class="text-xs text-base-content/60">Wellness & Relaxation</label>
+              <label class="text-xs text-base-content/60"
+                >Wellness & Relaxation</label
+              >
             </div>
           </div>
         </div>
