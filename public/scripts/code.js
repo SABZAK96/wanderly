@@ -455,7 +455,10 @@ async function renderSuggestions(data) {
 const calModal = document.getElementById("my_modal_calendar");
 const title = document.getElementById("activityTitle");
 const calError = document.getElementById("addToCalError");
-document.getElementById("non-AI").addEventListener("click", (event) => {
+
+// declared (not inline) so AiMode.js can reuse the exact same modal-opening
+// logic for its own .addToCal cards - see AiMode.js's threadContainer listener
+function handleAddToCalClick(event) {
   const btn = event.target.closest(".addToCal");
   if (!btn) return;
 
@@ -474,7 +477,8 @@ document.getElementById("non-AI").addEventListener("click", (event) => {
   const date = document.getElementById("tripHeader").dataset.startDate;
   document.getElementById("startDateCal").value = date;
   calModal.showModal();
-});
+}
+document.getElementById("non-AI").addEventListener("click", handleAddToCalClick);
 
 // resets the add-to-calendar modal's time inputs and radio selection so stale values from a previous activity don't leak into the next one
 function cleanUpCalendarModal() {
@@ -485,9 +489,11 @@ function cleanUpCalendarModal() {
   startTime.value = "";
   endTime.value = "";
 }
-// submitting the add to calendar
+// submitting the add to calendar - declared (not inline) so it reads the
+// same as handleAddToCalClick above; only one addToCalBtn/calModal exists on
+// the page, so this already works for both non-AI and AI-mode cards as-is
 const addToCalBtn = document.getElementById("addToCal");
-addToCalBtn.addEventListener("click", async () => {
+async function submitAddToCal() {
   const originalBtnContent = addToCalBtn.textContent;
   if (addToCalBtn.dataset.loading === "true") return;
 
@@ -585,7 +591,8 @@ addToCalBtn.addEventListener("click", async () => {
     addToCalBtn.textContent = originalBtnContent;
     addToCalBtn.dataset.loading = "false";
   }
-});
+}
+addToCalBtn.addEventListener("click", submitAddToCal);
 
 // activating scroll to top button for suggestion
 const scrollBtn = document.getElementById("scrollToTop");

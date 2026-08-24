@@ -353,7 +353,10 @@ function renderSearchPlacesCards(places) {
     let card = `
               <div
                   data-id="${place.id}"
-                  class="card bg-base-100 shadow-sm border border-base-200"
+                  data-lat="${place.location.latitude}"
+                  data-lng="${place.location.longitude}"
+                  data-address="${place.formattedAddress}"
+                  class="parent card bg-base-100 shadow-sm border border-base-200"
                 >
                 <figure class="relative">
                   <img
@@ -400,7 +403,7 @@ function renderSearchPlacesCards(places) {
                 </div>
                 <div class="card-actions justify-end mt-1 p-4 pt-0">
                   <button
-                    class="btn btn-sm text-white text-xs font-medium gap-1.5"
+                    class="addToCal btn btn-sm text-white text-xs font-medium gap-1.5"
                     style="background: #534ab7; border: none"
                     onmouseover="this.style.background = '#3C3489'"
                     onmouseout="this.style.background = '#534AB7'"
@@ -566,6 +569,13 @@ threadContainer.addEventListener("click", (event) => {
     return;
   }
 
+  // search_places' one-off cards reuse the same add-to-calendar modal/flow
+  // as the non-AI Suggestions tab - handleAddToCalClick is declared in code.js 
+  if (event.target.closest(".addToCal")) {
+    handleAddToCalClick(event);
+    return;
+  }
+
   // only activities_preview's cards are pickable - they're the only ones
   // rendered as <label>, search_places' plain <div class="card"> cards
   // aren't part of this selection flow
@@ -587,16 +597,19 @@ threadContainer.addEventListener("click", (event) => {
   });
 });
 
+// highlight selected cards
 function highlightCards(element) {
   element.classList.add("border-2");
   element.style.borderColor = "#534ab7";
 }
 
+// remove highlights from the cards
 function removeHighlight(element) {
   element.classList.remove("border-2");
   element.style.borderColor = "";
 }
 
+// submit the form to claude handler
 document.getElementById("savePreferences").addEventListener("click", () => {
   const preferencesError = document.getElementById("preferencesError");
   preferencesError.classList.add("hidden");
