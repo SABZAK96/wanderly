@@ -2,6 +2,7 @@ let tripId = localStorage.getItem("selectedTripId");
 const pickTripBtn = document.getElementById("pickTripComposerBtn");
 const composerInput = document.getElementById("composerInput");
 const threadContainer = document.getElementById("convoThread");
+const formAi = document.getElementById("my_modal_Ai");
 
 // caches the Places API key across calls (and across code.js reusing this
 // same function) instead of re-fetching
@@ -194,7 +195,10 @@ async function aiChat(query) {
       renderChat({ response: [lastResponse, enrichedPlaces, placesSource] });
 
       if (lastResponse?.text?.includes("Preference Form")) {
-        document.getElementById("my_modal_Ai").showModal();
+        //pop up the form after 1.5 secs
+        setTimeout(() => {
+          formAi.showModal();
+        }, 1500);
       }
     } else {
       const text = await response.text();
@@ -592,3 +596,94 @@ function removeHighlight(element) {
   element.style.borderColor = "";
 }
 
+document.getElementById("savePreferences").addEventListener("click", () => {
+  const preferencesError = document.getElementById("preferencesError");
+  preferencesError.classList.add("hidden");
+
+  const lat = document.getElementById("stay-place").dataset.lat;
+  const lng = document.getElementById("stay-place").dataset.lng;
+
+  if (!lat && !lng) {
+    preferencesError.textContent = "Please select where you're staying.";
+    preferencesError.classList.remove("hidden");
+    return;
+  }
+
+  // budget
+  const budgetEl = [
+    ...document.querySelectorAll("input[type='radio'][name='prefBudget']"),
+  ].filter((el) => el.checked);
+  if (budgetEl.length === 0) {
+    preferencesError.textContent = "Please select an estimated budget.";
+    preferencesError.classList.remove("hidden");
+    return;
+  }
+
+  // interests
+  const interests = [
+    ...document.querySelectorAll("input[type='checkbox'][name='prefInterest']"),
+  ]
+    .filter((el) => el.checked)
+    .map((item) => item.value);
+  if (interests.length === 0) {
+    preferencesError.textContent = "Please select at least one interest.";
+    preferencesError.classList.remove("hidden");
+    return;
+  }
+
+  // pace
+  const pace = [
+    ...document.querySelectorAll("input[type='radio'][name='prefPace']"),
+  ]
+    .filter((el) => el.checked)
+    .map((item) => item.value);
+  if (pace.length === 0) {
+    preferencesError.textContent = "Please select a pace for the plan.";
+    preferencesError.classList.remove("hidden");
+    return;
+  }
+
+  // transportation
+  const transportationMode = [
+    ...document.querySelectorAll("input[type='checkbox'][name='prefTransport']"),
+  ]
+    .filter((el) => el.checked)
+    .map((item) => item.value);
+  if (transportationMode.length === 0) {
+    preferencesError.textContent =
+      "Please select at least one preferred transportation method.";
+    preferencesError.classList.remove("hidden");
+    return;
+  }
+
+  // restaurant
+  const restaurant = [
+    ...document.querySelectorAll("input[type='radio'][name='prefRestaurant']"),
+  ]
+    .filter((el) => el.checked)
+    .map((item) => item.value);
+  if (restaurant.length === 0) {
+    preferencesError.textContent =
+      "Please select whether you'd like restaurant suggestions.";
+    preferencesError.classList.remove("hidden");
+    return;
+  }
+  const restaurantInterest = restaurant[0] === "yes" ? true : false;
+
+  const preferences = {
+    lat: Number(lat),
+    lng: Number(lng),
+    budget: budgetEl[0].value,
+    interests: interests,
+    pace: pace[0],
+    transportationMode: transportationMode,
+    restaurantInterest: restaurantInterest,
+  };
+
+  formAi.close();
+  aiChat(
+    `Here's my Preference Form: ${JSON.stringify(preferences)}. Use these to build my itinerary.`,
+  );
+});
+
+function clearUpFormAi() {}
