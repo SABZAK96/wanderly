@@ -70,7 +70,6 @@ async function aiChat(query) {
     });
     if (response.ok) {
       const data = await response.json();
-      let toolResult;
       messages = data.messages;
       // filter assistant messages
       const textResponses = messages
@@ -92,8 +91,11 @@ async function aiChat(query) {
         .flatMap((element) => element.content)
         .filter((block) => block && block.type === "tool_result");
 
-      const searchPlacesToolUsed = allToolUsedBlocks.findLast((block) =>
-        ["search_places"].includes(block.name),
+      const searchPlacesToolUsed = allToolUsedBlocks.findLast(
+        (block) => block.name === "search_places",
+      );
+      const activitiesPreviewToolUsed = allToolUsedBlocks.findLast(
+        (block) => block.name === "activities_preview",
       );
 
       const activityToolUsed = allToolUsedBlocks.findLast((block) =>
@@ -140,38 +142,60 @@ async function aiChat(query) {
         }
       }
 
-      if (searchPlacesToolUsed) {
-        toolResult = allToolResultBlocks.find(
-          (block) => block.tool_use_id === searchPlacesToolUsed.id,
+      // whichever places-returning tool ran this turn (at most one normally) -
+      // search_places is a quick one-off browse, activities_preview is the
+      // full-itinerary shortlist; renderChat uses placesSource to pick which
+      // card template (add-to-calendar vs pick-and-confirm) to render
+      const placesToolUsed = searchPlacesToolUsed || activitiesPreviewToolUsed;
+      let enrichedPlaces = [];
+      let placesSource = null;
+      if (placesToolUsed) {
+        const toolResult = allToolResultBlocks.find(
+          (block) => block.tool_use_id === placesToolUsed.id,
         );
+        if (toolResult) {
+          placesSource = placesToolUsed.name;
+          const allDetailBlocks = messages
+            .filter((m) => m.role === "assistant")
+            .flatMap((m) =>
+              m.content.filter(
+                (b) =>
+                  b.type === "tool_use" && b.name === "attach_place_details",
+              ),
+            );
 
-        const allDetailBlocks = messages
-          .filter((m) => m.role === "assistant")
-          .flatMap((m) =>
-            m.content.filter(
-              (b) => b.type === "tool_use" && b.name === "attach_place_details",
-            ),
-          );
-
-        // merge results
-        const places = JSON.parse(toolResult.content).places;
-        // photos come back as a resource name, not a URL - need our own
-        // key (same one used for the Autocomplete widget/Suggestions
-        // cards, see code.js) to build the actual Photo media URL
-        const key = await getPlacesKey();
-        const enrichedPlaces = places.map((place) => {
-          const details = allDetailBlocks.find(
-            (block) => block.input.placeId === place.id,
-          )?.input;
-          const photoUrl =
-            place.photos && place.photos[0]
-              ? `https://places.googleapis.com/v1/${place.photos[0].name}/media?maxHeightPx=400&key=${key}`
-              : null;
-          return { ...place, details: details ?? "unconfirmed", photoUrl };
-        });
+          const places = JSON.parse(toolResult.content).places;
+          if (placesSource === "search_places") {
+            // photos come back as a resource name, not a URL - need our own
+            // key (same one used for the Autocomplete widget/Suggestions
+            // cards, see code.js) to build the actual Photo media URL
+            const key = await getPlacesKey();
+            enrichedPlaces = places.map((place) => {
+              const details = allDetailBlocks.find(
+                (block) => block.input.placeId === place.id,
+              )?.input;
+              const photoUrl =
+                place.photos && place.photos[0]
+                  ? `https://places.googleapis.com/v1/${place.photos[0].name}/media?maxHeightPx=400&key=${key}`
+                  : null;
+              return { ...place, details: details ?? "unconfirmed", photoUrl };
+            });
+          } else {
+            enrichedPlaces = places.map((place) => {
+              const details = allDetailBlocks.find(
+                (block) => block.input.placeId === place.id,
+              )?.input;
+              return { ...place, details: details ?? "unconfirmed" };
+            });
+          }
+        }
       }
 
-      renderChat({ response: [lastResponse, enrichedPlaces] });
+      renderChat({ response: [lastResponse, enrichedPlaces, placesSource] });
+
+      if (lastResponse?.text?.includes("Preference Form")) {
+        document.getElementById("my_modal_Ai").showModal();
+      }
     } else {
       const text = await response.text();
       renderChat({ error: text });
@@ -224,12 +248,108 @@ function renderChat(block) {
     });
     if (block.response[1] && block.response[1].length != 0) {
       const places = block.response[1];
-      places.forEach((place) => {
-        let suggestions = `<!-- container of the suggestions -->
-            <section
-              class="grid grid-cols-1 md:px-0 px-10 md:grid-cols-2 xl:grid-cols-3 content-start items-start gap-5 py-1 w-full"
-            >
-              <div data-id="${place.id}" class="card bg-base-100 shadow-sm border border-base-200">
+      const placesSource = block.response[2];
+
+      if (placesSource === "activities_preview") {
+        renderActivitiesPreviewCards(places);
+      } else if (placesSource === "search_places") {
+        renderSearchPlacesCards(places);
+      }
+    }
+  }
+}
+
+// activities_preview: full-itinerary shortlist - multi-select checkbox cards,
+// one shared grid + one "Confirm activities" button, replaced (not stacked)
+// on every new shortlist so only one is ever active at a time
+function renderActivitiesPreviewCards(places) {
+  threadContainer
+    .querySelectorAll(".suggestions-block")
+    .forEach((el) => el.remove());
+  selectedCards = [];
+
+  threadContainer.insertAdjacentHTML(
+    "beforeend",
+    `<!-- container of the activities_preview shortlist -->
+            <div class="suggestions-block w-full flex flex-col gap-2">
+              <section
+                class="cards-grid grid grid-cols-1 md:px-0 px-10 md:grid-cols-2 xl:grid-cols-3 content-start items-start gap-5 py-1 w-full"
+              ></section>
+
+              <div class="justify-end mt-auto px-10 md:px-0">
+                <button id="sendActivities" class="hidden btn btn-sm text-white text-xs font-medium gap-1.5">Confirm activities</button>
+              </div>
+            </div>`,
+  );
+  const grid = threadContainer.querySelector(".cards-grid");
+
+  places.forEach((place) => {
+    let card = `
+              <label
+                  data-id="${place.id}"
+                  data-name="${place.displayName.text}"
+                  data-address="${place.formattedAddress}"
+                  data-lat="${place.location.latitude}"
+                  data-lng="${place.location.longitude}"
+                  class="card bg-base-100 shadow-sm border border-base-200 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    value="${place.id}"
+                    class="place-checkbox hidden"
+                  />
+                <div class="card-body p-4 gap-2">
+                  <div class="flex items-start justify-between gap-2">
+                    <h2
+                      class="card-title text-sm font-medium leading-tight"
+                      style="color: #3c3489"
+                    >
+                      ${place.displayName.text}
+                    </h2>
+                    <div class="flex items-center gap-0.5 shrink-0">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="#854F0B"
+                        class="size-3.5"
+                      >
+                        <path
+                          d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                        />
+                      </svg>
+                      <span class="text-xs" style="color: #854f0b">4.8</span>
+                    </div>
+                  </div>
+                  <span
+                    class="badge text-xs font-medium px-2 py-1 self-start"
+                    style="background: #eeedfe; color: #534ab7; border: none"
+                    >ticket: ${place?.details?.ticketRequired === true ? "required" : "not Required"}</span
+                  >
+                  <p
+                    class="text-xs text-base-content/60 leading-relaxed line-clamp-2"
+                  >
+                    ${place.editorialSummary?.text ?? ""}
+                  </p>
+                  ${buildPlaceDetailRows(place)}
+                </div>
+              </label>`;
+    grid.insertAdjacentHTML("beforeend", card);
+  });
+}
+
+// search_places-  plain cards with an "Add to
+// calendar" button each
+function renderSearchPlacesCards(places) {
+  const grid = document.createElement("section");
+  grid.className =
+    "grid grid-cols-1 md:px-0 px-10 md:grid-cols-2 xl:grid-cols-3 content-start items-start gap-5 py-1 w-full";
+
+  places.forEach((place) => {
+    let card = `
+              <div
+                  data-id="${place.id}"
+                  class="card bg-base-100 shadow-sm border border-base-200"
+                >
                 <figure class="relative">
                   <img
                     src="${place.photoUrl || "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"}"
@@ -271,6 +391,43 @@ function renderChat(block) {
                   >
                     ${place.editorialSummary?.text ?? ""}
                   </p>
+                  ${buildPlaceDetailRows(place)}
+                </div>
+                <div class="card-actions justify-end mt-1 p-4 pt-0">
+                  <button
+                    class="btn btn-sm text-white text-xs font-medium gap-1.5"
+                    style="background: #534ab7; border: none"
+                    onmouseover="this.style.background = '#3C3489'"
+                    onmouseout="this.style.background = '#534AB7'"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="size-4"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
+                      />
+                    </svg>
+                    Add to calendar
+                  </button>
+                </div>
+              </div>`;
+    grid.insertAdjacentHTML("beforeend", card);
+  });
+
+  threadContainer.appendChild(grid);
+}
+
+// shared by both card templates (search_places one-off cards and
+// activities_preview picking cards)
+function buildPlaceDetailRows(place) {
+  return `
                   <div class="flex flex-col gap-1.5 mt-1">
                     <div class="flex items-center gap-2">
                       <svg
@@ -385,40 +542,53 @@ function renderChat(block) {
                     </div>`
                         : ""
                     }
-                  </div>
-                  <div class="card-actions justify-end mt-1">
-                    <button
-                      class="btn btn-sm text-white text-xs font-medium gap-1.5"
-                      style="background: #534ab7; border: none"
-                      onmouseover="this.style.background = '#3C3489'"
-                      onmouseout="this.style.background = '#534AB7'"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="size-4"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
-                        />
-                      </svg>
-                      Add to calendar
-                    </button>
-                  </div>
-                </div>
-              </div>
+                  </div>`;
+}
 
-              <!-- sample cards -->
-              <!-- sample cards end -->
-            </section>`;
-        threadContainer.insertAdjacentHTML("beforeend", suggestions);
-      });
-    }
+let selectedCards = [];
+threadContainer.addEventListener("click", (event) => {
+  const sendBtn = event.target.closest("#sendActivities");
+  if (sendBtn) {
+    const picks = selectedCards.map((card) => ({
+      name: card.dataset.name,
+      placeId: card.dataset.id,
+      address: card.dataset.address,
+      location: { lat: card.dataset.lat, lng: card.dataset.lng },
+    }));
+    aiChat(
+      `I've picked these activities from your suggestions: ${JSON.stringify(picks)}. Build an optimized day-by-day plan for my trip using these.`,
+    );
+    return;
   }
+
+  // only activities_preview's cards are pickable - they're the only ones
+  // rendered as <label>, search_places' plain <div class="card"> cards
+  // aren't part of this selection flow
+  const card = event.target.closest("label.card");
+  if (!card) return;
+
+  if (!selectedCards.includes(card)) {
+    highlightCards(card);
+    selectedCards.push(card);
+  } else {
+    const index = selectedCards.indexOf(card);
+    removeHighlight(card);
+    selectedCards.splice(index, 1);
+  }
+
+  // toggle every rendered "Confirm activities" button (one per activities_preview turn)
+  document.querySelectorAll("#sendActivities").forEach((btn) => {
+    btn.classList.toggle("hidden", selectedCards.length === 0);
+  });
+});
+
+function highlightCards(element) {
+  element.classList.add("border-2");
+  element.style.borderColor = "#534ab7";
+}
+
+function removeHighlight(element) {
+  element.classList.remove("border-2");
+  element.style.borderColor = "";
 }
 
