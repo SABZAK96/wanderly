@@ -1,6 +1,7 @@
-
 const initial = document.getElementById("initial");
-initial.textContent = localStorage.getItem("userName") ? localStorage.getItem("userName")[0].toUpperCase() : "U";
+initial.textContent = localStorage.getItem("userName")
+  ? localStorage.getItem("userName")[0].toUpperCase()
+  : "U";
 
 async function getUSerInfo() {
   try {
@@ -34,3 +35,71 @@ document.getElementById("navLogout").addEventListener("click", async () => {
     console.error("Logout failed.");
   }
 });
+
+const allNavbarLi = [...document.querySelectorAll(".navbar li")];
+if (window.location.pathname.includes("plan")) {
+  const selectedEl = allNavbarLi
+    .filter((el) => el.querySelector("a").textContent.toLowerCase() === "plan")
+    .forEach((el) => {
+      ((el.style.backgroundColor = "#e0dbfb"),
+        (el.style.color = "#534ab7"),
+        el.classList.add("rounded-sm", "font-semibold"));
+    });
+}
+if (window.location.pathname.includes("calendar")) {
+  const selectedEl = allNavbarLi
+    .filter(
+      (el) => el.querySelector("a").textContent.toLowerCase() === "calendar",
+    )
+    .forEach((el) => {
+      ((el.style.backgroundColor = "#e0dbfb"),
+        (el.style.color = "#534ab7"),
+        el.classList.add("rounded-sm", "font-semibold"));
+    });
+}
+if (window.location.pathname.includes("expense")) {
+  const selectedEl = allNavbarLi
+    .filter(
+      (el) => el.querySelector("a").textContent.toLowerCase() === "expense",
+    )
+    .forEach((el) => {
+      ((el.style.backgroundColor = "#e0dbfb"),
+        (el.style.color = "#534ab7"),
+        el.classList.add("rounded-sm", "font-semibold"));
+    });
+}
+if (window.location.pathname.includes("packing")) {
+  const selectedEl = allNavbarLi
+    .filter(
+      (el) => el.querySelector("a").textContent.toLowerCase() === "packing",
+    )
+    .forEach((el) => {
+      ((el.style.backgroundColor = "#e0dbfb"),
+        (el.style.color = "#534ab7"),
+        el.classList.add("rounded-sm", "font-semibold"));
+    });
+}
+if (window.location.pathname.includes("account")) {
+  const selectedEl = allNavbarLi
+    .filter(
+      (el) =>
+        el.querySelector("a").textContent.trim().toLowerCase() === "profile",
+    )
+    .forEach((el) => {
+      ((el.style.backgroundColor = "#e0dbfb"),
+        (el.style.color = "#534ab7"),
+        el.classList.add("rounded-sm", "font-semibold"));
+    });
+}
+if (window.location.pathname.includes("settings")) {
+  const selectedEl = allNavbarLi
+    .filter(
+      (el) =>
+        el.querySelector("a").textContent.trim().toLowerCase() === "settings",
+    )
+    .forEach((el) => {
+      ((el.style.backgroundColor = "#e0dbfb"),
+        (el.style.color = "#534ab7"),
+        el.classList.add("rounded-sm", "font-semibold"));
+    });
+}
