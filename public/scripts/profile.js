@@ -1,11 +1,13 @@
 const userName = document.getElementById("account-name");
 const userEmail = document.getElementById("account-email");
+const accountInitial = document.getElementById("account-initial");
 
 // pre-fills the form with the logged-in user's current name/email
 async function getUserInfo() {
   const data = await (await fetch("/userInfo")).json();
   userName.value = data.name;
   userEmail.value = data.email;
+  accountInitial.textContent = data.name[0].toUpperCase();
 }
 getUserInfo();
 
