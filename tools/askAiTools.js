@@ -124,7 +124,7 @@ const add_activity_solo = {
 const list_trips = {
   name: "list_trips",
   description:
-    "Returns all of the current user's trips (id, destination, destinationName, startDate, endDate, lat, lng). Use when no trip is selected and you need to offer a pick-list, or to resolve a trip name the user mentioned to its id.",
+    "Returns all of the current user's trips (id, destination, destinationName, startDate, endDate, lat, lng, isCurrentTrip). The conversation is always already scoped to one trip - the entry with isCurrentTrip: true is it. Call this to resolve \"this trip\"/\"my trip\" to its details yourself instead of asking the user which trip they mean. Also use it to resolve a different trip name the user explicitly mentions to its id.",
   input_schema: {
     type: "object",
     properties: {},

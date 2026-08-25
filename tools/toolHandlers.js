@@ -175,7 +175,13 @@ module.exports = function createToolHandlers({
       const userTripsIds = await Promise.all(
         userDoc.trips.map((id) => tripModel.findById(id)),
       );
-      return userTripsIds;
+      // the conversation is already scoped to user.tripId (from the /askAI/:tripId
+      // URL) - flag it here so the model can resolve "this trip" itself instead
+      // of asking the user to disambiguate
+      return userTripsIds.map((trip) => ({
+        ...trip.toObject(), // convert mongoose document to a js object and add a new field to each document
+        isCurrentTrip: String(trip._id) === String(user.tripId),
+      }));
     },
 
     // delete activity solo
