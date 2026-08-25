@@ -11,6 +11,7 @@ let tripId = localStorage.getItem("selectedTripId");
 const pickTripBtn = document.getElementById("pickTripComposerBtn");
 const composerInput = document.getElementById("composerInput");
 const threadContainer = document.getElementById("convoThread");
+const conversationScroll = document.getElementById("conversationScroll");
 const formAi = document.getElementById("my_modal_Ai");
 
 // caches the Places API key across calls (and across code.js reusing this
@@ -95,9 +96,12 @@ async function aiChat(query) {
     document.getElementById("aiTypingIndicator")?.remove();
     if (response.ok) {
       const data = await response.json();
+      // only get the new portion of response to check the tools used
+      let currentMessage = data.messages.slice(messages.length);
+      
       messages = data.messages;
       // filter assistant messages
-      const textResponses = messages
+      const textResponses = currentMessage
         .filter((element) => element.role === "assistant")
         .flatMap((element) => element.content)
         .filter((element) => element && element.type === "text");
@@ -105,13 +109,13 @@ async function aiChat(query) {
       const lastResponse = textResponses.findLast(
         (element) => element.type === "text",
       );
-      const allToolUsedBlocks = messages
+      const allToolUsedBlocks = currentMessage
         .filter((item) => item.role === "assistant")
         .flatMap((item) =>
           item.content.filter((block) => block.type === "tool_use"),
         );
 
-      const allToolResultBlocks = messages
+      const allToolResultBlocks = currentMessage
         .filter((item) => item.role === "user")
         .flatMap((element) => element.content)
         .filter((block) => block && block.type === "tool_result");
@@ -310,6 +314,7 @@ function renderChat(block) {
       }
     }
   }
+  conversationScroll.scrollTop = conversationScroll.scrollHeight;
 }
 
 // activities_preview: full-itinerary shortlist - multi-select checkbox cards,
@@ -330,7 +335,7 @@ function renderActivitiesPreviewCards(places) {
               ></section>
 
               <div class="justify-end mt-auto px-10 md:px-0">
-                <button id="sendActivities" class="hidden btn btn-sm text-white text-xs font-medium gap-1.5">Confirm activities</button>
+                <button id="sendActivities" class="hidden btn btn-sm text-white text-xs font-medium gap-1.5" style="background: #534ab7">Confirm activities</button>
               </div>
             </div>`,
   );
@@ -338,19 +343,17 @@ function renderActivitiesPreviewCards(places) {
 
   places.forEach((place) => {
     let card = `
-              <label
+              <div
                   data-id="${place.id}"
                   data-name="${place.displayName.text}"
                   data-address="${place.formattedAddress}"
                   data-lat="${place.location.latitude}"
                   data-lng="${place.location.longitude}"
+                  data-price-info="${place?.details?.priceInfo}"
+                  data-duration="${place?.details?.duration}"
+                  data-ticket-required="${place?.details?.ticketRequired}"
                   class="card bg-base-100 shadow-sm border border-base-200 cursor-pointer"
                 >
-                  <input
-                    type="checkbox"
-                    value="${place.id}"
-                    class="place-checkbox hidden"
-                  />
                 <div class="card-body p-4 gap-2">
                   <div class="flex items-start justify-between gap-2">
                     <h2
@@ -385,7 +388,7 @@ function renderActivitiesPreviewCards(places) {
                   </p>
                   ${buildPlaceDetailRows(place)}
                 </div>
-              </label>`;
+              </div>`;
     grid.insertAdjacentHTML("beforeend", card);
   });
 }
@@ -485,7 +488,9 @@ function renderSearchPlacesCards(places) {
 function buildPlaceDetailRows(place) {
   return `
                   <div class="flex flex-col gap-1.5 mt-1">
-                    <div class="flex items-center gap-2">
+                    ${
+                      place?.details?.priceInfo !== "unconfirmed"
+                        ? `<div class="flex items-center gap-2">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -501,9 +506,14 @@ function buildPlaceDetailRows(place) {
                         />
                       </svg>
                       <span class="text-xs text-base-content/70"
-                        >Ticket price : ${place?.details?.priceInfo}</span
+                        >Ticket price : ${place.details.priceInfo}</span
                       >
-                    </div>
+                    </div>`
+                        : ""
+                    }
+                    ${
+                      place?.details?.duration !== "unconfirmed"
+                        ? `
                     <div class="flex items-center gap-2">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -520,9 +530,12 @@ function buildPlaceDetailRows(place) {
                         />
                       </svg>
                       <span class="text-xs text-base-content/70"
-                        >Duration: ${place?.details?.duration}</span
+                        >Duration: ${place.details.duration}</span
                       >
-                    </div>
+                    </div>`
+                        : ""
+                    }
+
                     <div class="flex items-center gap-2">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -588,7 +601,7 @@ function buildPlaceDetailRows(place) {
                         />
                       </svg>
                       <a
-                        href="${place?.details?.ticketLink}"
+                        href="${place.details.ticketLink}"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="text-xs"
@@ -615,6 +628,11 @@ threadContainer.addEventListener("click", (event) => {
       placeId: card.dataset.id,
       address: card.dataset.address,
       location: { lat: card.dataset.lat, lng: card.dataset.lng },
+      details: {
+        priceInfo: card.dataset.priceInfo,
+        duration: card.dataset.duration,
+        ticketRequired: card.dataset.ticketRequired === "true",
+      },
     }));
     aiChat(
       `I've picked these activities from your suggestions: ${JSON.stringify(picks)}. Build an optimized day-by-day plan for my trip using these.`,
@@ -629,10 +647,7 @@ threadContainer.addEventListener("click", (event) => {
     return;
   }
 
-  // only activities_preview's cards are pickable - they're the only ones
-  // rendered as <label>, search_places' plain <div class="card"> cards
-  // aren't part of this selection flow
-  const card = event.target.closest("label.card");
+  const card = event.target.closest(".cards-grid .card");
   if (!card) return;
 
   if (!selectedCards.includes(card)) {
