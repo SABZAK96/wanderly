@@ -9,6 +9,8 @@
       rel="stylesheet"
       type="text/css"
     />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -67,6 +69,34 @@
       }
       #stay-place gmp-place-autocomplete::part(input)::placeholder {
         font-size: 0.75rem;
+      }
+
+      /* Tailwind's preflight strips default list/heading styling, so
+         marked's parsed markdown (ul/li/h1-h6/etc) renders with no bullets,
+         indentation, or spacing inside the AI response bubble - restore just
+         enough to make it readable */
+      #convoThread .chat-bubble :is(ul, ol) {
+        margin: 0.5em 0;
+        padding-left: 1.5em;
+      }
+      #convoThread .chat-bubble ul {
+        list-style: disc;
+      }
+      #convoThread .chat-bubble ol {
+        list-style: decimal;
+      }
+      #convoThread .chat-bubble p {
+        margin: 0.5em 0;
+      }
+      #convoThread .chat-bubble :is(h1, h2, h3, h4, h5, h6) {
+        font-weight: 600;
+        margin: 0.75em 0 0.25em;
+      }
+      #convoThread .chat-bubble > :first-child {
+        margin-top: 0;
+      }
+      #convoThread .chat-bubble > :last-child {
+        margin-bottom: 0;
       }
     </style>
   </head>

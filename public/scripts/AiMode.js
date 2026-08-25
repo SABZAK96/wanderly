@@ -79,7 +79,10 @@ let messages = [];
 // sends the user's message to Claude and renders whatever comes back
 async function aiChat(query) {
   messages = [...messages, { role: "user", content: query }];
-  renderChat({ query: query });
+  if (!query.includes("Preference Form") && !query.includes("optimized")) {
+    renderChat({ query: query });
+  }
+
   AiThinking();
   try {
     const response = await fetch(`/askAI/${tripId}`, {
@@ -271,6 +274,10 @@ function renderChat(block) {
     // block (from .findLast), not an array - render it directly rather than
     // iterating it as one
     if (block.response[0]) {
+      // the marked cdn script gives a global marked object , converts everything that looks like markup
+      const rawHtml = marked.parse(block.response[0].text);
+      // dompurify cleans up output from potential unwanted tags claude might return
+      const finalHtml = DOMPurify.sanitize(rawHtml);
       let aiResponse = `  <div class="chat chat-start">
               <div class="chat-image avatar">
                 <div
@@ -287,7 +294,7 @@ function renderChat(block) {
                 class="chat-bubble md:text-md text-sm"
                 style="background: #534ab7; color: white"
               >
-                ${block.response[0].text}
+                ${finalHtml}
               </div>
             </div>`;
       threadContainer.insertAdjacentHTML("beforeend", aiResponse);
@@ -759,7 +766,7 @@ function clearUpFormAi() {
   resetDestinationAutocomplete(document.getElementById("stay-place"));
 }
 
-function AiThinking(){
+function AiThinking() {
   let typingBubble = `<div class="chat chat-start" id="aiTypingIndicator">
             <div class="chat-image avatar">
               <div
