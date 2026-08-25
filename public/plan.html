@@ -436,7 +436,7 @@
         <!-- AI view -->
         <section
           id="AI"
-          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4 h-[calc(100dvh-14rem)] relative overflow-hidden"
+          class="hidden group-has-[#mode-ai:checked]:flex flex-col gap-4 h-[calc(100dvh-14rem)] relative overflow-hidden md:px-4 px-0"
         >
           <!-- page-level loading overlay, shown until the initial weather+calendar
          load finishes (or immediately hidden if no trip is selected) -->
@@ -486,10 +486,10 @@
           <!-- refine-with-ai composer - swaps between #composerInput (a
                trip is selected) and #pickTripComposerBtn (none selected
                yet), toggled in JS based on localStorage.selectedTripId -->
-          <div class="w-full rounded-3xl aura aura-holo mt-4 shrink-0">
+          <div class="w-full rounded-3xl aura aura-holo mt-4 shrink-0 p-1">
             <label
               id="composerInput"
-              class="input w-full rounded-3xl shadow-md hidden"
+              class="input w-full rounded-3xl hidden"
             >
               <svg
                 class="h-[1em] opacity-50"
@@ -514,7 +514,7 @@
             </label>
             <button
               id="pickTripComposerBtn"
-              class="btn w-full rounded-3xl shadow-md"
+              class="btn w-full rounded-3xl"
               style="background-color: white; color: #534ab7"
             >
               Pick a Trip or Create a New One

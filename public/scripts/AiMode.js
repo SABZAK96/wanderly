@@ -227,7 +227,7 @@ async function aiChat(query) {
         //pop up the form after 1.5 secs
         setTimeout(() => {
           formAi.showModal();
-        }, 1500);
+        }, 3500);
       }
     } else {
       const text = await response.text();
@@ -326,7 +326,7 @@ function renderActivitiesPreviewCards(places) {
     `<!-- container of the activities_preview shortlist -->
             <div class="suggestions-block w-full flex flex-col gap-2">
               <section
-                class="cards-grid grid grid-cols-1 md:px-0 px-10 md:grid-cols-2 xl:grid-cols-3 content-start items-start gap-5 py-1 w-full"
+                class="cards-grid grid grid-cols-1 md:px-0 px-10 md:grid-cols-2 xl:grid-cols-3 content-start gap-5 py-1 w-full"
               ></section>
 
               <div class="justify-end mt-auto px-10 md:px-0">
@@ -395,7 +395,7 @@ function renderActivitiesPreviewCards(places) {
 function renderSearchPlacesCards(places) {
   const grid = document.createElement("section");
   grid.className =
-    "grid grid-cols-1 md:px-0 px-10 md:grid-cols-2 xl:grid-cols-3 content-start items-start gap-5 py-1 w-full";
+    "grid grid-cols-1 md:px-0 px-10 md:grid-cols-2 xl:grid-cols-3 content-start gap-5 py-1 w-full";
 
   places.forEach((place) => {
     let card = `
@@ -603,6 +603,11 @@ function buildPlaceDetailRows(place) {
 
 let selectedCards = [];
 threadContainer.addEventListener("click", (event) => {
+  // toggle every rendered "Confirm activities" button (one per activities_preview turn)
+  document
+    .getElementById("sendActivities")
+    .classList.toggle("hidden", selectedCards.length === 0);
+
   const sendBtn = event.target.closest("#sendActivities");
   if (sendBtn) {
     const picks = selectedCards.map((card) => ({
@@ -638,11 +643,6 @@ threadContainer.addEventListener("click", (event) => {
     removeHighlight(card);
     selectedCards.splice(index, 1);
   }
-
-  // toggle every rendered "Confirm activities" button (one per activities_preview turn)
-  document.querySelectorAll("#sendActivities").forEach((btn) => {
-    btn.classList.toggle("hidden", selectedCards.length === 0);
-  });
 });
 
 // highlight selected cards
@@ -783,7 +783,7 @@ function AiThinking() {
               class="chat-bubble md:text-md text-sm"
               style="background: #534ab7; color: white"
             >
-              <span class="loading loading-dots loading-sm" style="color: #3c3489"></span>
+              <span class="loading loading-dots loading-sm" style="color: #d9d6f8"></span>
             </div>
           </div>`;
   threadContainer.insertAdjacentHTML("beforeend", typingBubble);
