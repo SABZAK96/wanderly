@@ -98,7 +98,7 @@ async function aiChat(query) {
       const data = await response.json();
       // only get the new portion of response to check the tools used
       let currentMessage = data.messages.slice(messages.length);
-      
+
       messages = data.messages;
       // filter assistant messages
       const textResponses = currentMessage
@@ -506,7 +506,7 @@ function buildPlaceDetailRows(place) {
                         />
                       </svg>
                       <span class="text-xs text-base-content/70"
-                        >Ticket price : ${place.details.priceInfo}</span
+                        >${place?.details?.ticketRequired ? "Ticket price" : "Est. cost"} : ${place.details.priceInfo}</span
                       >
                     </div>`
                         : ""
@@ -606,7 +606,7 @@ function buildPlaceDetailRows(place) {
                         rel="noopener noreferrer"
                         class="text-xs"
                         style="color: #534ab7; text-decoration: underline"
-                        >Buy tickets</a
+                        >${place?.details?.ticketRequired ? "Buy tickets" : "Visit Website"}</a
                       >
                     </div>`
                         : ""
