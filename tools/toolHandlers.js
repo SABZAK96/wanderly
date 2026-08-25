@@ -254,6 +254,10 @@ module.exports = function createToolHandlers({
     activities_preview: async (input, user) => {
       const trip = await tripModel.findById(user.tripId);
 
+      const currentActivities = await activityModel.find({
+        tripId: user.tripId,
+      });
+
       // subtracting Date objects, gives  the difference in milliseconds.
       const tripDays =
         Math.round(
@@ -294,10 +298,15 @@ module.exports = function createToolHandlers({
           allPlaces.push(place);
         }
       });
-      const scored = allPlaces
+      
+      //dont suggest stuff that is already in users activities (they decided to keep) and dont suggest places with same address (such as different rides in universal studios)
+      const newPlaces = allPlaces.filter(
+        (place) => !currentActivities.some((el) => el.placeId === place.id || el.address.trim().toLowerCase() === place.formattedAddress.trim().toLowerCase()),
+      );
+      const scored = newPlaces
         .map((place) => ({
           place,
-          score: weightedRating(place, allPlaces, 30),
+          score: weightedRating(place, newPlaces, 30),
         }))
         .sort((a, b) => b.score - a.score);
 
