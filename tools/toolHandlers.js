@@ -276,6 +276,9 @@ module.exports = function createToolHandlers({
       const queries = [...input.interests];
       if (input.restaurantInterest) queries.push("restaurants");
 
+      const countPerQuery = Math.floor(desiredCount / queries.length);
+      const extraSlotCount = desiredCount % queries.length; // first extraSlotCount queries get one extra slot so we dont lose leftover slots to rounding
+
       const results = await Promise.all(
         queries.map((query) =>
           searchPlacesText(
@@ -288,30 +291,51 @@ module.exports = function createToolHandlers({
         ),
       );
 
-      const foundPlaces = results.flatMap((apiCall) => apiCall.places || []);
+      const foundPlaces = results.map((apiCall) => apiCall.places || []);
 
       const allPlaces = [];
+      const seenPlaces = [];
+      // we might get same place when calling google api, we dont wanna duplicate results - foundPlaces is looking like this : [ [museum1, museum2, museum3], [park1, park2, park3], [restaurant1, restaurant2, restaurant3]], stored per query
+      foundPlaces.forEach((queryArr) => {
+        // keep the arrays of queries and remove the duplicates
+        const uniquePlaces = [];
 
-      // we might get same place when calling google api, we dont wanna duplicate results
-      foundPlaces.forEach((place) => {
-        if (!allPlaces.some((p) => p.id === place.id)) {
-          allPlaces.push(place);
-        }
+        queryArr.forEach((place) => {
+          if (!seenPlaces.some((item) => item.id === place.id)) {
+            uniquePlaces.push(place);
+            seenPlaces.push(place);
+          }
+        });
+        allPlaces.push(uniquePlaces);
       });
-      
+
       //dont suggest stuff that is already in users activities (they decided to keep) and dont suggest places with same address (such as different rides in universal studios)
-      const newPlaces = allPlaces.filter(
-        (place) => !currentActivities.some((el) => el.placeId === place.id || el.address.trim().toLowerCase() === place.formattedAddress.trim().toLowerCase()),
+      const newPlaces = allPlaces.map((queryArr) =>
+        queryArr.filter(
+          (place) =>
+            !currentActivities.some(
+              (el) =>
+                el.placeId === place.id ||
+                el.address.trim().toLowerCase() ===
+                  place.formattedAddress.trim().toLowerCase(),
+            ),
+        ),
       );
-      const scored = newPlaces
-        .map((place) => ({
-          place,
-          score: weightedRating(place, newPlaces, 30),
-        }))
-        .sort((a, b) => b.score - a.score);
+
+      const scored = newPlaces.map((queryArr, index) =>
+        queryArr
+          .map((place) => ({
+            place,
+            score: weightedRating(place, queryArr, 30), // we need m=30 , at least 30 ratings to trust this rating
+          }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, countPerQuery + (index < extraSlotCount ? 1 : 0)), // if this group's position is less than the number of extras available, add 1 to its slice size
+      );
 
       return {
-        places: scored.slice(0, desiredCount).map((entry) => entry.place),
+        places: scored.flatMap((queryArr) =>
+          queryArr.map((entry) => entry.place),
+        ),
       };
     },
     // search places
