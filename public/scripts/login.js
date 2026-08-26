@@ -137,6 +137,8 @@ signupBtn.addEventListener("click", async () => {
       if (response.ok) {
         if (!location.search.includes("trip=")) {
           window.location.href = "/plan.html";
+          if (localStorage.getItem("selectedTripId"))
+            localStorage.removeItem("selectedTripId");
         } else {
           handleInviteLogin();
         }
