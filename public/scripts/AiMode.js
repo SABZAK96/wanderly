@@ -175,21 +175,23 @@ async function aiChat(query) {
       // search_places is a quick one-off browse, activities_preview is the
       // full-itinerary shortlist; renderChat uses placesSource to pick which
       // card template (add-to-calendar vs pick-and-confirm) to render
-       let placesToolUsed = [];
-      if(searchPlacesToolUsed.length !== 0){
-         placesToolUsed = searchPlacesToolUsed
+      let placesToolUsed = [];
+      if (searchPlacesToolUsed.length !== 0) {
+        placesToolUsed = searchPlacesToolUsed;
       } else if (activitiesPreviewToolUsed.length !== 0) {
-         placesToolUsed =  activitiesPreviewToolUsed;
+        placesToolUsed = activitiesPreviewToolUsed;
       }
 
       let enrichedPlaces = [];
       let placesSource = null;
       if (placesToolUsed.length !== 0) {
         const toolResult = placesToolUsed
-          .map(block => allToolResultBlocks.find(el => el.tool_use_id === block.id))
+          .map((block) =>
+            allToolResultBlocks.find((el) => el.tool_use_id === block.id),
+          )
           .filter(Boolean); // filter(Boolean) is for filtering any falsey values such as undefined
         if (toolResult.length !== 0) {
-          placesSource = placesToolUsed.map(block => block.name);
+          placesSource = placesToolUsed.map((block) => block.name);
           const allDetailBlocks = messages
             .filter((m) => m.role === "assistant")
             .flatMap((m) =>
@@ -203,13 +205,13 @@ async function aiChat(query) {
           // return overlapping places - dedupe by id like activities_preview does
           const seenPlaceIds = [];
           const places = toolResult
-            .flatMap(block => JSON.parse(block.content).places || [])
-            .filter(place => {
+            .flatMap((block) => JSON.parse(block.content).places || [])
+            .filter((place) => {
               if (seenPlaceIds.includes(place.id)) return false;
               seenPlaceIds.push(place.id);
               return true;
             });
-            
+
           if (placesSource.includes("search_places")) {
             // photos come back as a resource name, not a URL - need our own
             // key (same one used for the Autocomplete widget/Suggestions
@@ -635,7 +637,7 @@ threadContainer.addEventListener("click", (event) => {
   // toggle every rendered "Confirm activities" button (one per activities_preview turn)
   document
     .getElementById("sendActivities")
-    .classList.toggle("hidden", selectedCards.length === 0);
+    ?.classList.toggle("hidden", selectedCards.length === 0);
 
   const sendBtn = event.target.closest("#sendActivities");
   if (sendBtn) {
@@ -658,7 +660,7 @@ threadContainer.addEventListener("click", (event) => {
 
   // search_places' one-off cards reuse the same add-to-calendar modal/flow
   // as the non-AI Suggestions tab - handleAddToCalClick is declared in code.js
-  if (event.target.closest(".addToCal")) {
+  if (event.target?.closest(".addToCal")) {
     handleAddToCalClick(event);
     return;
   }
