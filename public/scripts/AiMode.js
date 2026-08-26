@@ -1,3 +1,59 @@
+let messages = [];
+let tripId = localStorage.getItem("selectedTripId");
+const threadContainer = document.getElementById("convoThread");
+async function checkChatHistory() {
+  const response = await fetch(`/previousConvo/${tripId}`);
+  if (response.ok) {
+    const data = await response.json();
+    // if data not null
+    if (data) {
+      messages = data.history;
+      messages.forEach((msg) => {
+        if (
+          msg.role === "user" &&
+          !Array.isArray(msg.content) &&
+          !msg.content.includes("Preference Form") &&
+          !msg.content.includes(
+            "I've picked these activities from your suggestions",
+          )
+        )
+          renderChat({ query: msg.content });
+        else if (msg.role === "assistant") {
+          msg.content.forEach((item) => {
+            if (item.type === "text") {
+              renderChat({ response: [item] });
+            }
+          });
+        }
+      });
+    } else {
+      threadContainer.innerHTML = `<div class="chat chat-start">
+                <div class="chat-image avatar">
+                  <div
+                    class="w-8 rounded-full flex items-center justify-center"
+                    style="background: #3c3489"
+                  >
+                    <span class="text-white text-base font-bold leading-none"
+                      >W</span
+                    >
+                  </div>
+                </div>
+                <div class="chat-header text-xs opacity-60">Claude</div>
+                <div
+                  class="chat-bubble md:text-md text-sm"
+                  style="background: #534ab7; color: white"
+                >
+                  Hi, I'm your trip assistant. I can help you find places to
+                  eat, see, check the weather, build out a full itinerary, and
+                  add things straight to your calendar and suggest a packing
+                  list for you upcoming trip. Just ask!
+                </div>
+              </div>`;
+      return;
+    }
+  }
+}
+
 // fallback shape for a candidate Claude never called attach_place_details on -
 // matches attach_place_details' own input shape (buildPlaceDetailRows reads
 // .priceInfo/.duration/.ticketRequired off it), not a bare "unconfirmed" string
@@ -7,10 +63,8 @@ const unconfirmedDetails = {
   ticketRequired: false,
 };
 
-let tripId = localStorage.getItem("selectedTripId");
 const pickTripBtn = document.getElementById("pickTripComposerBtn");
 const composerInput = document.getElementById("composerInput");
-const threadContainer = document.getElementById("convoThread");
 const conversationScroll = document.getElementById("conversationScroll");
 const formAi = document.getElementById("my_modal_Ai");
 
@@ -31,8 +85,9 @@ async function getPlacesKey() {
 function checkToggleWithSpinner() {
   const pageLoading = document.getElementById("pageLoading");
   pageLoading.classList.remove("hidden");
-  checkToggle();
-  setTimeout(() => pageLoading.classList.add("hidden"), 400);
+  checkToggle().then(() =>
+    document.getElementById("pageLoading").classList.add("hidden"),
+  );
 }
 
 document.addEventListener("changeTrip", (e) => {
@@ -49,8 +104,9 @@ document.addEventListener("tripAdded", (e) => {
 });
 
 // shows the trip-picker button or the real composer input, based on whether a trip is selected
-function checkToggle() {
+async function checkToggle() {
   if (tripId) {
+    await checkChatHistory();
     pickTripBtn.classList.add("hidden");
     composerInput.classList.remove("hidden");
   } else {
@@ -58,8 +114,9 @@ function checkToggle() {
     composerInput.classList.add("hidden");
   }
 }
-checkToggle();
-document.getElementById("pageLoading").classList.add("hidden");
+checkToggle().then(() =>
+  document.getElementById("pageLoading").classList.add("hidden"),
+);
 
 pickTripBtn.addEventListener("click", () => {
   loadTrips().then(() => suggestModal.showModal());
@@ -74,8 +131,6 @@ inputField.addEventListener("keydown", (event) => {
     inputField.focus();
   }
 });
-
-let messages = [];
 
 // sends the user's message to Claude and renders whatever comes back
 async function aiChat(query) {
