@@ -120,10 +120,10 @@ async function aiChat(query) {
         .flatMap((element) => element.content)
         .filter((block) => block && block.type === "tool_result");
 
-      const searchPlacesToolUsed = allToolUsedBlocks.findLast(
+      const searchPlacesToolUsed = allToolUsedBlocks.filter(
         (block) => block.name === "search_places",
       );
-      const activitiesPreviewToolUsed = allToolUsedBlocks.findLast(
+      const activitiesPreviewToolUsed = allToolUsedBlocks.filter(
         (block) => block.name === "activities_preview",
       );
 
@@ -175,15 +175,21 @@ async function aiChat(query) {
       // search_places is a quick one-off browse, activities_preview is the
       // full-itinerary shortlist; renderChat uses placesSource to pick which
       // card template (add-to-calendar vs pick-and-confirm) to render
-      const placesToolUsed = searchPlacesToolUsed || activitiesPreviewToolUsed;
+       let placesToolUsed = [];
+      if(searchPlacesToolUsed.length !== 0){
+         placesToolUsed = searchPlacesToolUsed
+      } else if (activitiesPreviewToolUsed.length !== 0) {
+         placesToolUsed =  activitiesPreviewToolUsed;
+      }
+
       let enrichedPlaces = [];
       let placesSource = null;
-      if (placesToolUsed) {
-        const toolResult = allToolResultBlocks.find(
-          (block) => block.tool_use_id === placesToolUsed.id,
-        );
-        if (toolResult) {
-          placesSource = placesToolUsed.name;
+      if (placesToolUsed.length !== 0) {
+        const toolResult = placesToolUsed
+          .map(block => allToolResultBlocks.find(el => el.tool_use_id === block.id))
+          .filter(Boolean); // filter(Boolean) is for filtering any falsey values such as undefined
+        if (toolResult.length !== 0) {
+          placesSource = placesToolUsed.map(block => block.name);
           const allDetailBlocks = messages
             .filter((m) => m.role === "assistant")
             .flatMap((m) =>
@@ -193,8 +199,18 @@ async function aiChat(query) {
               ),
             );
 
-          const places = JSON.parse(toolResult.content).places;
-          if (placesSource === "search_places") {
+          // multiple tool calls (e.g. one search_places per interest) can
+          // return overlapping places - dedupe by id like activities_preview does
+          const seenPlaceIds = [];
+          const places = toolResult
+            .flatMap(block => JSON.parse(block.content).places || [])
+            .filter(place => {
+              if (seenPlaceIds.includes(place.id)) return false;
+              seenPlaceIds.push(place.id);
+              return true;
+            });
+            
+          if (placesSource.includes("search_places")) {
             // photos come back as a resource name, not a URL - need our own
             // key (same one used for the Autocomplete widget/Suggestions
             // cards, see code.js) to build the actual Photo media URL
@@ -307,9 +323,9 @@ function renderChat(block) {
       const places = block.response[1];
       const placesSource = block.response[2];
 
-      if (placesSource === "activities_preview") {
+      if (placesSource.includes("activities_preview")) {
         renderActivitiesPreviewCards(places);
-      } else if (placesSource === "search_places") {
+      } else if (placesSource.includes("search_places")) {
         renderSearchPlacesCards(places);
       }
     }
