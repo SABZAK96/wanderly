@@ -46,6 +46,25 @@ let finalQuery;
 let builtResults = [];
 let nextPageToken;
 
+const cachedSuggestionQuery = localStorage.getItem(`suggestionQuery:${tripId}`);
+if (cachedSuggestionQuery) {
+  pageLoadSpinner();
+  finalQuery = cachedSuggestionQuery;
+  document.getElementById("suggestionSearch").value = finalQuery;
+  emptySuggestionContainer.classList.add("hidden");
+  googleSuggestion(cachedSuggestionQuery, "")
+    .then((token) => {
+      nextPageToken = token;
+      loadMoreWrap.classList.toggle("hidden", !nextPageToken);
+    })
+    .catch(() => {
+      emptySuggestionContainer.classList.remove("hidden");
+    })
+    .finally(() => {
+      document.getElementById("suggestionSpinner")?.remove();
+    });
+}
+
 const suggestionInput = document.getElementById("suggestionSearch");
 document.getElementById("searchSuggest").addEventListener("click", async () => {
   msg.textContent = "";
@@ -70,6 +89,7 @@ document.getElementById("searchSuggest").addEventListener("click", async () => {
     nextPageToken = await googleSuggestion(finalQuery, "").finally(() =>
       document.getElementById("suggestionSpinner")?.remove(),
     );
+    localStorage.setItem(`suggestionQuery:${tripId}`, finalQuery);
     // toggle's 2nd arg (force) sets the class to exactly that boolean instead of flipping it - see notes/classlist-toggle-force.md
     loadMoreWrap.classList.toggle("hidden", !nextPageToken);
   }
@@ -94,6 +114,7 @@ loadMoreBtn.addEventListener("click", async () => {
   )?.ariaLabel;
 
   nextPageToken = await googleSuggestion(finalQuery, nextPageToken);
+  localStorage.setItem(`suggestionQuery:${tripId}`, finalQuery);
 
   // re-check whichever freshly-built pill matches what was active before
   // the fetch reset them, so the UI and the re-render agree
@@ -478,7 +499,9 @@ function handleAddToCalClick(event) {
   document.getElementById("startDateCal").value = date;
   calModal.showModal();
 }
-document.getElementById("non-AI").addEventListener("click", handleAddToCalClick);
+document
+  .getElementById("non-AI")
+  .addEventListener("click", handleAddToCalClick);
 
 // resets the add-to-calendar modal's time inputs and radio selection so stale values from a previous activity don't leak into the next one
 function cleanUpCalendarModal() {
