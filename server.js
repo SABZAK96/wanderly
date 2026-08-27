@@ -12,6 +12,16 @@ const ASK_AI_SYSTEM_PROMPT = fs.readFileSync(
   "./prompts/ask-ai-system-prompt.md",
   "utf8",
 );
+const GENERATE_PACKING_SYSTEM_PROMPT = fs.readFileSync(
+  "./prompts/generate-packing-system-prompt.md",
+  "utf8",
+);
+// the "Generate my packing list" button only ever needs these three 
+const packingTools = askAiTools.filter((tool) =>
+  ["list_activities", "get_weather_forecast", "add_packing_items"].includes(
+    tool.name,
+  ),
+);
 
 const port = process.env.PORT || 5000;
 const db = process.env.MONGO_URI;
@@ -1441,6 +1451,84 @@ app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
         },
       },
     );
+    res.status(500).send("Could not reach the AI assistant.");
+  }
+});
+
+// Packing tab's "Generate my packing list" button - a one-shot request, not
+// a turn in the Ask AI conversation, so unlike /askAI it doesn't touch
+// AiChatModel (nothing here belongs in a conversation the user can see/
+// resume) and only hands Claude the 3 tools this actually needs
+app.post("/generatePacking/:tripId", requireTripMember, async (req, res) => {
+  const user = { userId: req.session.userId, tripId: req.params.tripId };
+  try {
+    let iterations = 0;
+    const MAX_ITERATIONS = 15;
+
+    let messages = [
+      {
+        role: "user",
+        content:
+          "Generate a packing list for my trip, based on my activities in the calendar and the weather.",
+      },
+    ];
+    let response;
+
+    do {
+      response = await anthropic.messages.create({
+        model: "claude-sonnet-5",
+        max_tokens: 4096,
+        system: [
+          {
+            type: "text",
+            text: GENERATE_PACKING_SYSTEM_PROMPT,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+        tools: packingTools,
+        messages,
+      });
+
+      messages = [
+        ...messages,
+        { role: "assistant", content: response.content },
+      ];
+
+      if (response.stop_reason === "tool_use") {
+        const toolResults = await Promise.all(
+          response.content
+            .filter((item) => item.type === "tool_use")
+            .map(async (item) => {
+              try {
+                const result = await toolHandlers[item.name](item.input, user);
+                return {
+                  type: "tool_result",
+                  tool_use_id: item.id,
+                  content: JSON.stringify(result),
+                };
+              } catch (err) {
+                return {
+                  type: "tool_result",
+                  tool_use_id: item.id,
+                  content: "Something went wrong running this tool.",
+                  is_error: true,
+                };
+              }
+            }),
+        );
+        messages = [...messages, { role: "user", content: toolResults }];
+      }
+
+      iterations++;
+    } while (
+      (response.stop_reason === "tool_use" ||
+        response.stop_reason === "pause_turn") &&
+      iterations < MAX_ITERATIONS
+    );
+
+    res.json({ stopReason: response.stop_reason });
+  } catch (error) {
+    console.error("generatePacking error:", error);
     res.status(500).send("Could not reach the AI assistant.");
   }
 });
