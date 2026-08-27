@@ -1,18 +1,26 @@
 let tripId = localStorage.getItem("selectedTripId");
 let currentPackingList = [];
-if (tripId) {
-  getCurrentPackingDetails(tripId).then((data) => toggle(tripId, data));
-}
-toggle(tripId, currentPackingList);
 const packingContainer = document.getElementById("packingContainer");
 const generatedSection = document.getElementById("generated");
 const notGeneratedSection = document.getElementById("notGenerated");
+if (tripId) {
+  getCurrentPackingDetails(tripId).then((data) => {
+    currentPackingList = data;
+    toggle(tripId, currentPackingList);
+  });
+}
+toggle(tripId, currentPackingList);
 
 function loadingPage(mode) {
   document.getElementById("pageLoading").classList.remove("hidden");
   if (mode === "initial") {
     document.getElementById("pageLoadingText").textContent =
       "Looking at the forecast and your itinerary...";
+    document.getElementById("pageLoadingText").classList.remove("hidden");
+  }
+  if (mode === "notInitial") {
+    document.getElementById("pageLoadingText").textContent =
+      "Retrieving your list ...";
     document.getElementById("pageLoadingText").classList.remove("hidden");
   }
 }
@@ -36,16 +44,22 @@ document.addEventListener("tripHeaderRendered", () => {
 });
 
 function toggle(tripId, currentPackingList) {
-  if (tripId && currentPackingList.length !== 0) {
-    loadingPage("notInitial");
-    generatedSection.classList.remove("hidden");
-    notGeneratedSection.classList.add("hidden");
-    // callers already have the fresh list by the time they call toggle - no need to re-fetch it here
-    renderResulst(currentPackingList);
-  } else {
-    generatedSection.classList.add("hidden");
-    notGeneratedSection.classList.remove("hidden");
+  if (tripId) {
+    const NotInitialized = currentPackingList.every(
+      (el) => el.items.length === 0,
+    );
+    if (!NotInitialized) {
+      loadingPage("notInitial");
+      generatedSection.classList.remove("hidden");
+      notGeneratedSection.classList.add("hidden");
+      // callers already have the fresh list by the time they call toggle - no need to re-fetch it here
+      renderResulst(currentPackingList);
+      removeLoading();
+      return;
+    }
   }
+  generatedSection.classList.add("hidden");
+  notGeneratedSection.classList.remove("hidden");
 }
 
 // re-sync tripId and the visible section when the sidebar switches trips
@@ -73,23 +87,12 @@ document.addEventListener("tripAdded", (e) => {
 
 // start by initializing the page when user clicks on generate the packing list
 document.getElementById("aiGenerate").addEventListener("click", async () => {
-  // mock a user request to claude
-  let messages = [
-    {
-      role: "user",
-      content:
-        "Generate a packing list for my trip, based on my activities in the calendar and the weather.",
-    },
-  ];
   const packingError = document.getElementById("packingError");
   loadingPage("initial");
   try {
-    const response = await fetch(`/askAI/${tripId}`, {
+    // dedicated route
+    const response = await fetch(`/generatePacking/${tripId}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ messages }),
     });
     if (response.ok) {
       const data = await response.json();
