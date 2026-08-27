@@ -1,6 +1,8 @@
 let messages = [];
 let tripId = localStorage.getItem("selectedTripId");
 const threadContainer = document.getElementById("convoThread");
+
+// restore the previous chat about that trip with Claude
 async function checkChatHistory() {
   const response = await fetch(`/previousConvo/${tripId}`);
   if (response.ok) {
@@ -19,11 +21,15 @@ async function checkChatHistory() {
         )
           renderChat({ query: msg.content });
         else if (msg.role === "assistant") {
+          let concatenatedResponse = "";
+
           msg.content.forEach((item) => {
             if (item.type === "text") {
-              renderChat({ response: [item] });
+              concatenatedResponse += item.text.trim();
             }
           });
+          if (concatenatedResponse !== "")
+            renderChat({ response: [{ text: concatenatedResponse }] });
         }
       });
     } else {
@@ -156,14 +162,26 @@ async function aiChat(query) {
 
       messages = data.messages;
       // filter assistant messages
-      const textResponses = currentMessage
+      currentMessage
         .filter((element) => element.role === "assistant")
-        .flatMap((element) => element.content)
-        .filter((element) => element && element.type === "text");
+        .forEach((element) => {
+          // concatenate text responses within a single content array
+          let turnResponse = "";
+          element.content.forEach((block) => {
+            if (block.type === "text") {
+              turnResponse += block.text;
+            }
+          });
+          renderChat({ response: [{ text: turnResponse }] });
+          if (turnResponse.includes("Preference Form")) {
+            clearUpFormAi();
+            //pop up the form after 1.5 secs
+            setTimeout(() => {
+              formAi.showModal();
+            }, 3500);
+          }
+        });
 
-      const lastResponse = textResponses.findLast(
-        (element) => element.type === "text",
-      );
       const allToolUsedBlocks = currentMessage
         .filter((item) => item.role === "assistant")
         .flatMap((item) =>
@@ -297,15 +315,9 @@ async function aiChat(query) {
         }
       }
 
-      renderChat({ response: [lastResponse, enrichedPlaces, placesSource] });
-
-      if (lastResponse?.text?.includes("Preference Form")) {
-        clearUpFormAi();
-        //pop up the form after 1.5 secs
-        setTimeout(() => {
-          formAi.showModal();
-        }, 3500);
-      }
+      renderChat({
+        response: [{ text: "" }, enrichedPlaces, placesSource],
+      });
     } else {
       const text = await response.text();
       renderChat({ error: text });
@@ -350,7 +362,7 @@ function renderChat(block) {
     // block.response[0] is aiChat()'s lastResponse - a single { type, text }
     // block (from .findLast), not an array - render it directly rather than
     // iterating it as one
-    if (block.response[0]) {
+    if (block.response[0] && block.response[0].text !== "") {
       // the marked cdn script gives a global marked object , converts everything that looks like markup
       const rawHtml = marked.parse(block.response[0].text);
       // dompurify cleans up output from potential unwanted tags claude might return
