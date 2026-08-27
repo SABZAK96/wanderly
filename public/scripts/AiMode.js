@@ -200,8 +200,18 @@ async function aiChat(query) {
         (block) => block.name === "activities_preview",
       );
 
-      const activityToolUsed = allToolUsedBlocks.findLast((block) =>
-        ["add_activity_group", "add_activity_solo"].includes(block.name),
+      // a single turn can call several of these at once (e.g. one
+      // add_activity_group per confirmed itinerary pick, or a delete
+      // followed by adds) - keep every match, not just the last one, so a
+      // failure on an earlier call isn't silently dropped
+      const activityToolsUsed = allToolUsedBlocks.filter((block) =>
+        [
+          "add_activity_group",
+          "add_activity_solo",
+          "edit_activity",
+          "delete_activity_solo",
+          "delete_activity_group",
+        ].includes(block.name),
       );
 
       const createTripToolUsed = allToolUsedBlocks.findLast(
@@ -229,18 +239,25 @@ async function aiChat(query) {
           }
         }
       }
-      if (activityToolUsed) {
-        const activityResult = allToolResultBlocks.find(
-          (block) => block.tool_use_id === activityToolUsed.id,
-        );
-        if (activityResult) {
+      if (activityToolsUsed.length !== 0) {
+        // one error bubble per failed call, but only one sidebar refresh
+        // even if several calls succeeded - it re-fetches everything fresh
+        let anySucceeded = false;
+        activityToolsUsed.forEach((toolUsed) => {
+          const activityResult = allToolResultBlocks.find(
+            (block) => block.tool_use_id === toolUsed.id,
+          );
+          if (!activityResult) return;
           const parsedActivityResult = JSON.parse(activityResult.content);
-          // only refresh the sidebar when there is no error
           if (!parsedActivityResult.error) {
-            getRecentActivities(tripId);
+            anySucceeded = true;
           } else {
             renderChat({ error: parsedActivityResult.error });
           }
+        });
+        // update sidebar if atleast 1 request goes through. if all of them failed no need to update sidebar
+        if (anySucceeded) {
+          getRecentActivities(tripId);
         }
       }
 
@@ -399,7 +416,10 @@ function renderChat(block) {
       }
     }
   }
-  conversationScroll.scrollTop = conversationScroll.scrollHeight;
+  conversationScroll.scrollTo({
+    top: conversationScroll.scrollHeight,
+    behavior: "smooth",
+  });
 }
 
 // activities_preview: full-itinerary shortlist - multi-select checkbox cards,
@@ -887,4 +907,8 @@ function AiThinking() {
             </div>
           </div>`;
   threadContainer.insertAdjacentHTML("beforeend", typingBubble);
+  conversationScroll.scrollTo({
+    top: conversationScroll.scrollHeight,
+    behavior: "smooth",
+  });
 }
