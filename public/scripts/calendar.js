@@ -147,10 +147,13 @@ async function initCalendar() {
 
       // addedBy isn't a reserved FullCalendar field, so it lands in extendedProps automatically - same as solo below
       if (info.event.extendedProps.addedBy === "claude") {
-        const createdBy = document.createElement("p");
+        // appended INSIDE .fc-event-title-container (a flex row) 
+        const createdBy = document.createElement("span");
         createdBy.textContent = "(By Claude)";
-        createdBy.className = "text-sm";
-        info.el.querySelector(".fc-event-main-frame")?.appendChild(createdBy);
+        createdBy.className = "text-xs shrink-0";
+        info.el
+          .querySelector(".fc-event-title-container")
+          ?.appendChild(createdBy);
       }
 
       const { lat, lng, placeId } = info.event.extendedProps;
@@ -161,8 +164,7 @@ async function initCalendar() {
       mapLink.target = "_blank";
       // .rel noopener comes with _blank target
       mapLink.rel = "noopener";
-      mapLink.className =
-        "text-xs underline mb-5 inline-flex items-center gap-1 shrink-0";
+      mapLink.className = "text-[10px] mb-5 underline inline-flex items-center gap-1 shrink-0";
       // heroicons "arrow-top-right-on-square" - signals this opens elsewhere (a new tab), matching target="_blank" above
       mapLink.innerHTML = `
         View on Map
@@ -175,7 +177,7 @@ async function initCalendar() {
 
       // appended as a SIBLING of .fc-event-title-container (not inside it) -
       // their shared parent (.fc-event-main-frame) is flex-direction: column,
-      // so this lands on its own line instead of next to the title
+      // so this lands on its own line below the title/"(By Claude)" row
       info.el.querySelector(".fc-event-main-frame")?.appendChild(mapLink); // not all events have main frame (like all-day events), so we should do optional chaining for safety
     },
 
