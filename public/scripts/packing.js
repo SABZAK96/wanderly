@@ -4,11 +4,13 @@ const packingContainer = document.getElementById("packingContainer");
 const generatedSection = document.getElementById("generated");
 const notGeneratedSection = document.getElementById("notGenerated");
 if (tripId) {
+  loadingPage("normal");
   getCurrentPackingDetails(tripId).then((data) => {
     currentPackingList = data;
     toggle(tripId, currentPackingList);
   });
 }
+loadingPage("normal");
 toggle(tripId, currentPackingList);
 
 function loadingPage(mode) {
@@ -17,12 +19,11 @@ function loadingPage(mode) {
     document.getElementById("pageLoadingText").textContent =
       "Looking at the forecast and your itinerary...";
     document.getElementById("pageLoadingText").classList.remove("hidden");
-  }
-  if (mode === "notInitial") {
+  } else if (mode === "notInitial") {
     document.getElementById("pageLoadingText").textContent =
       "Retrieving your list ...";
     document.getElementById("pageLoadingText").classList.remove("hidden");
-  }
+  } else if (mode === "normal") return;
 }
 function removeLoading() {
   document.getElementById("pageLoading").classList.add("hidden");
@@ -58,13 +59,16 @@ function toggle(tripId, currentPackingList) {
       return;
     }
   }
+
   generatedSection.classList.add("hidden");
   notGeneratedSection.classList.remove("hidden");
+  removeLoading();
 }
 
 // re-sync tripId and the visible section when the sidebar switches trips
 document.addEventListener("changeTrip", (e) => {
   tripId = e.detail.tripId;
+  loadingPage("normal");
   getCurrentPackingDetails(tripId).then((data) => {
     currentPackingList = data;
     toggle(tripId, currentPackingList);
@@ -74,11 +78,13 @@ document.addEventListener("changeTrip", (e) => {
 document.addEventListener("tripDeleted", () => {
   tripId = null;
   currentPackingList = [];
+  loadingPage("normal");
   toggle(tripId, currentPackingList);
 });
 
 document.addEventListener("tripAdded", (e) => {
   tripId = e.detail.tripId;
+  loadingPage("normal");
   getCurrentPackingDetails(tripId).then((data) => {
     currentPackingList = data;
     toggle(tripId, currentPackingList);
