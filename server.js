@@ -311,7 +311,7 @@ async function requireTripMember(req, res, next) {
     }
     next();
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not verify trip membership.");
   }
 }
 
@@ -328,7 +328,7 @@ async function requireActivityMember(req, res, next) {
     }
     next();
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not verify activity access.");
   }
 }
 
@@ -357,7 +357,7 @@ async function validateActivityDate(req, res, next) {
     req.trip = trip;
     next();
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not validate the activity date.");
   }
 }
 
@@ -428,7 +428,7 @@ app.post("/addTrip", async (req, res) => {
 
     res.json(trip._id);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not create the trip.");
   }
 });
 
@@ -442,7 +442,7 @@ app.get("/allTrips", async (req, res) => {
     );
     res.json(userTrips);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not fetch your trips.");
   }
 });
 
@@ -452,7 +452,7 @@ app.get("/singleTripDetails/:id", requireTripMember, async (req, res) => {
     const trip = await tripModel.findById(req.params.id);
     res.json(trip);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not fetch trip details.");
   }
 });
 
@@ -489,7 +489,7 @@ app.delete("/deleteTrip/:id", requireTripMember, async (req, res) => {
     }
     res.sendStatus(200);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not delete the trip.");
   }
 });
 
@@ -512,7 +512,7 @@ app.put("/editTrip/:id", requireTripMember, async (req, res) => {
     );
     res.json(trip);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not update the trip.");
   }
 });
 
@@ -532,7 +532,7 @@ app.get("/people/:id", requireTripMember, async (req, res) => {
     );
     res.json(result.filter(Boolean));
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not fetch trip members.");
   }
 });
 
@@ -557,7 +557,7 @@ app.post("/addGhostMember/:id", requireTripMember, async (req, res) => {
 
     res.json(ghost);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not add the ghost member.");
   }
 });
 
@@ -617,7 +617,7 @@ app.post("/newExpense/:id", requireTripMember, async (req, res) => {
     // send just the new expense with its real _id
     res.json(trip.expenses.at(-1));
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not add the expense.");
   }
 });
 
@@ -643,7 +643,7 @@ app.put(
       await trip.save();
       res.json(expense);
     } catch (error) {
-      res.status(500).send("Server Error!");
+      res.status(500).send("Could not update the expense.");
     }
   },
 );
@@ -657,7 +657,7 @@ app.get("/getExpenses/:id", requireTripMember, async (req, res) => {
 
     res.json(tripExpenses);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not fetch expenses.");
   }
 });
 
@@ -674,7 +674,7 @@ app.delete(
       );
       res.json(expense);
     } catch (error) {
-      res.status(500).send("Server Error!");
+      res.status(500).send("Could not delete the expense.");
     }
   },
 );
@@ -689,7 +689,7 @@ app.delete("/resetTrip/:tripId", requireTripMember, async (req, res) => {
     );
     res.json(trip);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not reset the trip.");
   }
 });
 
@@ -721,7 +721,7 @@ app.put("/markSettled/:tripId", requireTripMember, async (req, res) => {
     await trip.save();
     res.json(trip);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not update settled amounts.");
   }
 });
 
@@ -740,7 +740,7 @@ app.post("/payment/:tripId", requireTripMember, async (req, res) => {
     );
     res.json(trip);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not record the payment.");
   }
 });
 
@@ -773,7 +773,7 @@ app.get(
       };
       res.json(response);
     } catch (error) {
-      res.status(500).send("Server Error!");
+      res.status(500).send("Could not fetch spending details.");
     }
   },
 );
@@ -804,7 +804,7 @@ app.get("/joinTrip/:id", async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not check the invite link.");
   }
 });
 
@@ -843,7 +843,7 @@ app.post("/joinPerson", async (req, res) => {
 
     res.sendStatus(200);
   } catch (error) {
-    res.status(500).send("Server Error!");
+    res.status(500).send("Could not join the trip.");
   }
 });
 
@@ -853,7 +853,7 @@ app.get("/userInfo", async (req, res) => {
     const user = await userModel.findById(req.session.userId);
     res.json({ id: req.session.userId, email: user.email, name: user.name });
   } catch (error) {
-    res.status(500).send("could not get user Data.");
+    res.status(500).send("Could not fetch user info.");
   }
 });
 
@@ -1009,7 +1009,7 @@ app.post("/googleAPI", async (req, res) => {
       res.json(apiCall);
     }
   } catch (error) {
-    res.status(500).send("error connecting to the api.");
+    res.status(500).send("Could not fetch place suggestions.");
   }
 });
 
@@ -1185,7 +1185,7 @@ app.post("/getWeather", async (req, res) => {
       res.json(apiCall);
     }
   } catch (error) {
-    res.status(500).send("error connecting to the api.");
+    res.status(500).send("Could not fetch the weather forecast.");
   }
 });
 
@@ -1205,7 +1205,7 @@ app.post("/currentWeather", async (req, res) => {
       res.json(apiCall);
     }
   } catch (error) {
-    res.status(500).send("error connecting to the api.");
+    res.status(500).send("Could not fetch current weather.");
   }
 });
 
