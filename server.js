@@ -27,9 +27,9 @@ const port = process.env.PORT || 5000;
 const db = process.env.MONGO_URI;
 const secret = process.env.SESSION_SECRET;
 
-// storing sessions in a file
+// storing sessions in Mongo
 var session = require("express-session");
-const FileStore = require("session-file-store")(session);
+const { MongoStore } = require("connect-mongo");
 
 // bcrypt
 const bcrypt = require("bcrypt");
@@ -46,10 +46,7 @@ app.use(express.json({ limit: "50mb" }));
 // setting up session
 app.use(
   session({
-    store: new FileStore({
-      path: "./sessions",
-      secret: secret,
-    }),
+    store: MongoStore.create({ mongoUrl: db }), // reuses the same MONGO_URI/db
     secret: secret,
     resave: false,
     saveUninitialized: false,
