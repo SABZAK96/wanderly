@@ -231,12 +231,24 @@ const packingSchema = new mongoose.Schema({
     },
   ],
 });
+// schema for chat with claude
+// minimize: false - Mongoose's default minimize:true recursively strips empty-object
+// values (e.g. a zero-argument tool_use's input: {}) - corrupts history for Anthropic's API on the next /previousConvo fetch
+const AiChatSchema = new mongoose.Schema(
+  {
+    userId: String, //userId goes here
+    tripId: String, //tripId goes here
+    history: [], // messages history goes here
+  },
+  { minimize: false },
+);
 
 const userModel = mongoose.model("users", userSchema);
 const tripModel = mongoose.model("trips", tripSchema);
 const activityModel = mongoose.model("activities", activitySchema);
 const placesCacheModel = mongoose.model("places", placesCacheSchema);
 const packingModel = mongoose.model("packing", packingSchema);
+const AiChatModel = mongoose.model("AiMessages", AiChatSchema);
 
 // gives userId a badge color if they don't already have one, picking a color
 // not already used by anyone currently in existingPeopleIds (their trip-mates) -
@@ -455,6 +467,12 @@ app.delete("/deleteTrip/:id", requireTripMember, async (req, res) => {
     // delete the packing list for that person for that trip
     await packingModel.findOneAndDelete({
       person: req.session.userId,
+      tripId: req.params.id,
+    });
+
+    //delete AI convo when user delets the trip
+    await AiChatModel.findOneAndDelete({
+      userId: req.session.userId,
       tripId: req.params.id,
     });
 
@@ -892,6 +910,10 @@ app.delete("/deleteAccount", async (req, res) => {
         if (trip.people.length === 0) {
           await tripModel.findByIdAndDelete(tripId);
         }
+        await AiChatModel.findOneAndDelete({
+          userId: req.session.userId,
+          tripId,
+        });
       }),
     );
 
@@ -1281,14 +1303,30 @@ app.post("/addcategory/:tripId", requireTripMember, async (req, res) => {
 // plan.html's #pickTripComposerBtn), so there's nothing to chat about
 // before then.
 app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
+  const user = { userId: req.session.userId, tripId: req.params.tripId };
   try {
-    const user = { userId: req.session.userId, tripId: req.params.tripId };
     // a confused model could keep calling tools indefinitely
     let iterations = 0;
     const MAX_ITERATIONS = 15;
 
     let messages = req.body.messages;
     let response;
+    const isCreated = await AiChatModel.findOne({
+      userId: user.userId,
+      tripId: user.tripId,
+    });
+    if (!isCreated) {
+      await AiChatModel.create({
+        userId: user.userId,
+        tripId: user.tripId,
+        history: messages,
+      });
+    } else {
+      await AiChatModel.findOneAndUpdate(
+        { userId: user.userId, tripId: user.tripId },
+        { $push: { history: messages[messages.length - 1] } },
+      );
+    }
 
     do {
       // tag the last block of the last message so the growing conversation
@@ -1332,6 +1370,12 @@ app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
         ...messages,
         { role: "assistant", content: response.content },
       ];
+      await AiChatModel.findOneAndUpdate(
+        { userId: user.userId, tripId: user.tripId },
+        {
+          $push: { history: { role: "assistant", content: response.content } },
+        },
+      );
 
       // dispatch tool
       if (response.stop_reason === "tool_use") {
@@ -1367,6 +1411,12 @@ app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
         // output goes here); this is what reports the tool's outcome back to Claude
         //  this is the mechanism that lets the conversation keep going at all. Claude's previous turn ended with stop_reason: "tool_use"
         messages = [...messages, { role: "user", content: toolResults }];
+        await AiChatModel.findOneAndUpdate(
+          { userId: user.userId, tripId: user.tripId },
+          {
+            $push: { history: { role: "user", content: toolResults } },
+          },
+        );
       }
 
       iterations++;
@@ -1379,6 +1429,34 @@ app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
     //response holds the last iteration of response, we send the reason why its ended for handling the frontend
     res.json({ messages, stopReason: response.stop_reason });
   } catch (error) {
+    console.error("askAI error:", error);
+    await AiChatModel.findOneAndUpdate(
+      { userId: user.userId, tripId: user.tripId },
+      {
+        $push: {
+          history: {
+            role: "assistant",
+            content: [{ type: "text", text: "[Error: request failed]" }],
+          },
+        },
+      },
+    );
     res.status(500).send("Could not reach the AI assistant.");
+  }
+});
+
+// get stored conversation with AI
+app.get("/previousConvo/:tripId", requireTripMember, async (req, res) => {
+  try {
+    const history = await AiChatModel.findOne({
+      userId: req.session.userId,
+      tripId: req.params.tripId,
+    });
+    if (!history) {
+      return res.json(null);
+    }
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ error: "Could not load previous conversation." });
   }
 });
