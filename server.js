@@ -372,25 +372,25 @@ async function main() {
     .then(async () => {
       console.log("Connected to MongoDB!");
       app.listen(port, () => console.log("Server running!"));
-
-      // update badge colors — delete after running once
-      // await userModel.updateOne({ name: "Soroush" }, { $set: { badgeInfo: { bg: "#fef9c3", color: "#a16207", border: "#a16207" } } });
-      // await userModel.updateOne({ name: "Shohreh" }, { $set: { badgeInfo: { bg: "#cffafe", color: "#0e7490", border: "#0e7490" } } });
-      // console.log("Badge colors updated");
-
-      // one-time backfill for people who predate badge assignment - delete after running once
-      // const allTrips = await tripModel.find({});
-      // for (const t of allTrips) {
-      //   for (const p of t.people) {
-      //     await assignBadgeIfNeeded(p.person, t._id);
-      //   }
-      // }
-      // console.log("Badge backfill complete");
     })
     .catch((err) => {
       console.error("MongoDB connection failed:", err);
+      // reconnect mongo after 5 secs
+      setTimeout(main, 5000);
     });
 }
+
+mongoose.connection.on("disconnected", () => {
+  console.log("MongoDB disconnected");
+});
+
+mongoose.connection.on("reconnected", () => {
+  console.log("MongoDB reconnected");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.log("MongoDB error:", err);
+});
 
 // add a trip
 app.post("/addTrip", async (req, res) => {
