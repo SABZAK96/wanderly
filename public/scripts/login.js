@@ -56,6 +56,8 @@ loginBtn.addEventListener("click", async () => {
       // login.js is used in another html file , upon successful login we should do different stuff - this part hanldes normal flow withouth invitation
       if (!location.search.includes("trip=")) {
         window.location.href = "/plan.html";
+        if (localStorage.getItem("selectedTripId"))
+          localStorage.removeItem("selectedTripId");
         // hand over to join.js
       } else {
         handleInviteLogin();

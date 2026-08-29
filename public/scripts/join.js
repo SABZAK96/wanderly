@@ -82,6 +82,7 @@ document
     });
 
     if (response.ok) {
+      localStorage.removeItem("selectedTripId");
       window.location.href = "/plan.html";
     } else {
       joinError.textContent = "Could not join the trip. Please try again.";
