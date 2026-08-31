@@ -1382,7 +1382,7 @@ app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
 
       response = await anthropic.messages.create({
         model: "claude-sonnet-5",
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: [
           {
             type: "text",
@@ -1393,6 +1393,27 @@ app.post("/askAI/:tripId", requireTripMember, async (req, res) => {
         tools: askAiTools,
         messages: messagesWithCache,
       });
+
+      // a max_tokens cutoff can land mid tool_use block - saving that turn would
+      // leave a tool_use id with no matching tool_result, which 400s every
+      // later message in this chat. bail out here instead of persisting it.
+      if (response.stop_reason === "max_tokens") {
+        const cutoffMessage = {
+          role: "assistant",
+          content: [
+            {
+              type: "text",
+              text: "That response got too long and was cut off. Try asking for something more specific.",
+            },
+          ],
+        };
+        await AiChatModel.findOneAndUpdate(
+          { userId: user.userId, tripId: user.tripId },
+          { $push: { history: cutoffMessage } },
+        );
+        messages = [...messages, cutoffMessage];
+        return res.json({ messages, stopReason: response.stop_reason });
+      }
 
       messages = [
         ...messages,
