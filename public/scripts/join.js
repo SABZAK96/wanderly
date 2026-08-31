@@ -31,14 +31,15 @@ async function handleInviteLogin() {
       const date = formatTripDates(start, end);
 
       // resolve the inviter's id (from the "from" query param) to their name
-      const people = await (await fetch(`/people/${urlInfo.tripId}`)).json();
-      const inviter = people.find((person) => person._id === urlInfo.inviter);
+      const inviter = await (
+        await fetch(`/inviterName/${urlInfo.tripId}/${urlInfo.inviter}`)
+      ).json();
 
       document.getElementById("tripDestination").textContent =
         response.destination;
       document.getElementById("tripDates").textContent = date.full;
       // fallback for a stale link - the inviter left the trip or deleted their account since sharing it
-      document.getElementById("tripInviter").textContent = inviter
+      document.getElementById("tripInviter").textContent = inviter.name
         ? inviter.name
         : "a trip member";
 

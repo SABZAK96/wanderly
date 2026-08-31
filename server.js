@@ -815,6 +815,20 @@ app.get("/joinTrip/:id", async (req, res) => {
   }
 });
 
+// resolve just the inviter's name for a not-yet-joined invitee - no requireTripMember
+app.get("/inviterName/:tripId/:inviterId", async (req, res) => {
+  try {
+    const inviter = await userModel.findById(req.params.inviterId);
+    if (inviter) {
+      res.json({ name: inviter.name });
+    } else {
+      res.json({ name: null });
+    }
+  } catch (error) {
+    res.status(500).send("Could not resolve the inviter.");
+  }
+});
+
 // join a person to the trip
 app.post("/joinPerson", async (req, res) => {
   try {
