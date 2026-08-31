@@ -147,7 +147,7 @@ async function initCalendar() {
 
       // addedBy isn't a reserved FullCalendar field, so it lands in extendedProps automatically - same as solo below
       if (info.event.extendedProps.addedBy === "claude") {
-        // appended INSIDE .fc-event-title-container (a flex row) 
+        // appended INSIDE .fc-event-title-container (a flex row)
         const createdBy = document.createElement("span");
         createdBy.textContent = "(By Claude)";
         createdBy.className = "text-xs shrink-0";
@@ -164,7 +164,8 @@ async function initCalendar() {
       mapLink.target = "_blank";
       // .rel noopener comes with _blank target
       mapLink.rel = "noopener";
-      mapLink.className = "text-[10px] mb-5 underline inline-flex items-center gap-1 shrink-0";
+      mapLink.className =
+        "text-[10px] mb-5 underline inline-flex items-center gap-1 shrink-0";
       // heroicons "arrow-top-right-on-square" - signals this opens elsewhere (a new tab), matching target="_blank" above
       mapLink.innerHTML = `
         View on Map
@@ -251,6 +252,7 @@ async function initCalendar() {
             modal.close();
             await initCalendar();
             renderHeadsUpBanner();
+            getRecentActivities(tripId);
           } else {
             errorMsg.textContent = await response.text();
             errorMsg.classList.remove("hidden");
@@ -299,6 +301,7 @@ async function initCalendar() {
             modal.close();
             await initCalendar();
             renderHeadsUpBanner();
+            getRecentActivities(tripId);
           } else {
             errorMsg.textContent = await response.text();
             errorMsg.classList.remove("hidden");
@@ -373,6 +376,7 @@ saveEventEdit.addEventListener("click", async () => {
       eventActionModal.close();
       await initCalendar();
       renderHeadsUpBanner();
+      getRecentActivities(tripId);
     } else {
       eventEditError.textContent = await response.text();
       eventEditError.classList.remove("hidden");
@@ -413,6 +417,7 @@ confirmEventDelete.addEventListener("click", async () => {
       eventActionModal.close();
       await initCalendar();
       renderHeadsUpBanner();
+      getRecentActivities(tripId);
     } else {
       eventDeleteError.textContent = await response.text();
       eventDeleteError.classList.remove("hidden");
@@ -472,7 +477,7 @@ document.getElementById("addEvent").addEventListener("click", async () => {
   addEventModal.showModal();
 });
 
-// submit modal
+// submit modal fir adding a new event
 const addEventBtn = document.getElementById("createAct");
 const addEventError = document.getElementById("actError");
 addEventBtn.addEventListener("click", async () => {
@@ -542,6 +547,7 @@ addEventBtn.addEventListener("click", async () => {
       addEventModal.close();
       await initCalendar();
       renderHeadsUpBanner();
+      getRecentActivities(tripId);
     } else {
       addEventError.textContent = await response.text();
       addEventError.classList.remove("hidden");
@@ -639,12 +645,7 @@ async function requestWeatherData() {
     // show a network error - no response to read a message from here
     const message = "Could not reach the server. Try again.";
     carouselContainer.classList.remove("md:h-[200px]", "h-[140px]", "mb-1");
-    carouselContainer.classList.add(
-      "card",
-      "items-start",
-      "gap-3",
-      "md:gap-4",
-    );
+    carouselContainer.classList.add("card", "items-start", "gap-3", "md:gap-4");
     carouselContainer.style.backgroundColor = "#e0dbfb";
     carouselContainer.style.boxShadow =
       "0 12px 28px -6px rgba(83, 74, 183, 0.35)";
