@@ -132,7 +132,7 @@ pickTripBtn.addEventListener("click", () => {
 const inputField = composerInput.querySelector("input");
 inputField.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
-    aiChat(inputField.value);
+    if (inputField.value.trim() !== "") aiChat(inputField.value);
     inputField.value = "";
     inputField.focus();
   }
