@@ -16,7 +16,7 @@ const GENERATE_PACKING_SYSTEM_PROMPT = fs.readFileSync(
   "./prompts/generate-packing-system-prompt.md",
   "utf8",
 );
-// the "Generate my packing list" button only ever needs these three 
+// the "Generate my packing list" button only ever needs these three
 const packingTools = askAiTools.filter((tool) =>
   ["list_activities", "get_weather_forecast", "add_packing_items"].includes(
     tool.name,
@@ -699,6 +699,9 @@ app.put("/markSettled/:tripId", requireTripMember, async (req, res) => {
     const body = req.body;
     const trip = await tripModel.findById(req.params.tripId);
 
+    if (body.some((entry) => entry.debtor !== req.session.userId)) {
+      return res.status(403).send("You can only settle your own debts.");
+    }
     body.forEach((entry) => {
       // step 1: find the specific expense inside the expenses array
       const expense = trip.expenses.id(entry.expenseId);
@@ -729,6 +732,10 @@ app.put("/markSettled/:tripId", requireTripMember, async (req, res) => {
 app.post("/payment/:tripId", requireTripMember, async (req, res) => {
   try {
     const body = req.body;
+
+    if (body.from !== req.session.userId) {
+      return res.status(403).send("You can only settle your own debts.");
+    }
     const trip = await tripModel.findByIdAndUpdate(
       req.params.tripId,
       {
